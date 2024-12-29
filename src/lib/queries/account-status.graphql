@@ -1,0 +1,42 @@
+query AccountStatus($account: String!) {
+  trackingPeriods(where: { period: JAN_2 }) {
+    period
+    totalApprovedTransfersIn
+  }
+  trackingPeriodForAccounts(where: { account: $account, period: JAN_2 }) {
+    netApprovedTransfersIn
+    period
+  }
+  sentTransfers: transfers(
+    where: { period: JAN_2, from: $account }
+    orderBy: blockTimestamp
+    orderDirection: desc
+    first: 1000 
+  ) {
+    fromIsApprovedSource
+    blockTimestamp
+    from {
+      id
+    }
+    to {
+      id
+    }
+    value
+  }
+  receivedTransfers: transfers(
+    where: { period: JAN_2, to: $account }
+    orderBy: blockTimestamp
+    orderDirection: desc
+    first: 1000
+  ) {
+    fromIsApprovedSource
+    blockTimestamp
+    from {
+      id
+    }
+    to {
+      id
+    }
+    value
+  }
+}

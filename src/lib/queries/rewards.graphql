@@ -1,0 +1,12 @@
+query Top {
+  trackingPeriods {
+    period
+    totalApprovedTransfersIn
+  }
+  trackingPeriodForAccounts (where: {period: JAN_2}, orderBy: netApprovedTransfersIn, orderDirection:desc) {
+    account {
+      id
+    }
+    netApprovedTransfersIn
+  }
+}
