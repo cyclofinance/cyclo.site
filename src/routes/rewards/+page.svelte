@@ -1,8 +1,17 @@
 <script lang="ts">
-	import AccountStatus from '$lib/components/AccountStatus.svelte';
+	import AccountSummary from '$lib/components/AccountSummary.svelte';
+	import RewardsPlaceholder from '$lib/components/RewardsPlaceholder.svelte';
+	import Leaderboard from '$lib/components/Leaderboard.svelte';
+	import CurrentAPY from '$lib/components/CurrentAPY.svelte';
 	import { signerAddress } from 'svelte-wagmi';
 </script>
 
-{#if $signerAddress}
-	<AccountStatus account="0x1d56a5ed5cbeaa8885bb61c820b7f897da00531c" />
-{/if}
+<div class="mx-auto max-w-7xl space-y-8 px-4 py-8">
+	<CurrentAPY />
+	{#if $signerAddress}
+		<AccountSummary account={$signerAddress} />
+	{:else}
+		<RewardsPlaceholder />
+	{/if}
+	<Leaderboard />
+</div>

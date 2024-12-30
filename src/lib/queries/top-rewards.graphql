@@ -1,4 +1,4 @@
-query Top {
+query TopRewards {
   trackingPeriods {
     period
     totalApprovedTransfersIn

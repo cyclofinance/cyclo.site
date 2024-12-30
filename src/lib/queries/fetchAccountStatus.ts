@@ -1,12 +1,13 @@
 import { type AccountStatusQuery } from '../../generated-graphql';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
+import { formatEther } from 'ethers';
 
 export type PeriodStats = {
 	period: string;
 	totalNet: string;
 	accountNet: string;
-	percentage: string;
-	proRataReward: string;
+	percentage: number;
+	proRataReward: number;
 };
 
 const TOTAL_REWARD = 1_000_000; // 1M rFLR
@@ -27,12 +28,13 @@ export async function fetchAccountStatus(account: string): Promise<{
 		}
 	);
 	const data: AccountStatusQuery = (await response.json()).data;
+
 	console.log(data);
 
-	// Calculate period stats - now we know we only have JAN_2
+	// Calculate period stats
 	const totalNet = data.trackingPeriods[0]?.totalApprovedTransfersIn ?? '0';
 	const accountNet = data.trackingPeriodForAccounts[0]?.netApprovedTransfersIn ?? '0';
-	const percentage = (Number(accountNet) / Number(totalNet)) * 100;
+	const percentage = (Number(formatEther(accountNet)) / Number(formatEther(totalNet))) * 100;
 	const proRataReward = percentage * (TOTAL_REWARD / 100);
 
 	const periodStats = [
@@ -40,8 +42,8 @@ export async function fetchAccountStatus(account: string): Promise<{
 			period: 'JAN_2',
 			totalNet,
 			accountNet,
-			percentage: percentage.toFixed(4),
-			proRataReward: proRataReward.toFixed(2)
+			percentage,
+			proRataReward
 		}
 	];
 
