@@ -38,28 +38,28 @@
 	</div>
 {:else}
 	<div class="space-y-8">
-		<Card>
+		<Card customClass="items-stretch">
 			<div class="space-y-6">
 				<h2 class="text-xl font-semibold text-white">
 					Estimated Rewards for {account.slice(0, 6)}...{account.slice(-4)}
 				</h2>
 
 				{#if !isEligible}
-					<div class="bg-error/10 rounded text-gray-200">
+					<div class="bg-error/10 rounded py-4 text-gray-200">
 						This account is not eligible for rewards. Only accounts with positive net transfers from
 						approved sources are eligible.
 					</div>
 				{/if}
 
 				{#each periodStats as stat}
-					<div class="grid grid-cols-4 gap-8">
+					<div class="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-8">
 						<div class="space-y-1">
 							<div class="text-sm text-gray-300">Period</div>
 							<div class="font-medium text-white">{stat.period}</div>
 						</div>
 						<div class="space-y-1">
 							<div class="text-sm text-gray-300">Net Transfers</div>
-							<div class="font-medium text-white">{formatEther(stat.accountNet)}</div>
+							<div class="truncate font-medium text-white">{formatEther(stat.accountNet)}</div>
 						</div>
 						{#if isEligible}
 							<div class="space-y-1">
@@ -90,27 +90,36 @@
 				<h2 class="text-xl font-semibold text-white">Transfer History</h2>
 				<div class="space-y-2">
 					{#each transfers as transfer}
-						<div
-							class="flex items-center justify-between rounded {transfer.fromIsApprovedSource
-								? 'border-success bg-white/20'
-								: 'bg-base-200'}"
+						<a
+							href={`https://flarescan.com/tx/${transfer.transactionHash}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="flex items-center justify-between rounded py-2 {transfer.fromIsApprovedSource
+								? 'border-success bg-base-200 border-l-4'
+								: 'bg-base-200'} hover:bg-base-300"
 						>
 							<div class="space-y-1">
-								<div class="text-sm text-white">
+								<div class="text-sm">
 									{#if transfer.from.id === account}
-										<span class="text-error">Sent to {transfer.to.id}</span>
+										<span class="text-error"
+											>Sent to {transfer.to.id.slice(0, 6)}...{transfer.to.id.slice(-4)}</span
+										>
 									{:else}
-										<span class="text-success">Received from {transfer.from.id}</span>
+										<span class="text-success"
+											>Received from {transfer.from.id.slice(0, 6)}...{transfer.from.id.slice(
+												-4
+											)}</span
+										>
 									{/if}
 								</div>
 								<div class="text-xs text-gray-300">
 									{new Date(+transfer.blockTimestamp * 1000).toLocaleString()}
 								</div>
 							</div>
-							<div class="font-medium text-white">
+							<div class="truncate pl-4 font-medium text-white">
 								{formatEther(transfer.value)}
 							</div>
-						</div>
+						</a>
 					{/each}
 				</div>
 			</div>

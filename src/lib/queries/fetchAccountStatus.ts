@@ -29,8 +29,6 @@ export async function fetchAccountStatus(account: string): Promise<{
 	);
 	const data: AccountStatusQuery = (await response.json()).data;
 
-	console.log(data);
-
 	// Calculate period stats
 	const totalNet = data.trackingPeriods[0]?.totalApprovedTransfersIn ?? '0';
 	const accountNet = data.trackingPeriodForAccounts[0]?.netApprovedTransfersIn ?? '0';
@@ -39,7 +37,7 @@ export async function fetchAccountStatus(account: string): Promise<{
 
 	const periodStats = [
 		{
-			period: 'JAN_2',
+			period: data.trackingPeriods[0]?.period ?? '',
 			totalNet,
 			accountNet,
 			percentage,

@@ -1,26 +1,17 @@
 <script lang="ts">
 	import Card from './Card.svelte';
 	import { base } from '$app/paths';
-
-	// This would ideally come from an API or be calculated, but for now we'll hardcode it
-	const CURRENT_APY = 99145.3;
 </script>
 
 <Card>
-	<div class="space-y-6">
-		<div class="flex flex-wrap items-center justify-between gap-8">
-			<div class="flex-1 space-y-2">
-				<h2 class="text-xl font-semibold text-white">Cyclo Rewards</h2>
-				<p class="text-gray-300">
-					The first rewards period runs from January 2, 2025 at 00:00 UTC to February 1, 2025 at
-					00:00 UTC. After this period ends, 1M rFLR will be distributed to eligible cysFLR holders
-					based on their participation during the period.
-				</p>
-			</div>
-			<div class="flex h-full w-1/2 flex-1 flex-col items-center justify-center">
-				<div class="text-md text-gray-300">Current APY</div>
-				<div class="text-3xl font-bold text-white">{CURRENT_APY}%</div>
-			</div>
+	<div class="prose space-y-6">
+		<div>
+			<h2 class="mt-0 text-xl font-semibold text-white">Cyclo Rewards</h2>
+			<p class="text-gray-300">
+				The first rewards period runs from January 2, 2025 at 00:00 UTC to February 1, 2025 at 00:00
+				UTC. After this period ends, 1M rFLR will be distributed to eligible cysFLR holders based on
+				their participation during the period.
+			</p>
 		</div>
 
 		<div class="space-y-4 text-gray-300">
@@ -44,8 +35,8 @@
 			<p>
 				Rewards are earned by acquiring cysFLR through approved sources (Raindex, SparkDEX, or
 				BlazeSwap) and holding it.
-				<a href={base + '/docs/rewards'} class="text-primary hover:underline">Learn more →</a>
 			</p>
+			<a href={base + '/docs/rflr-incentives'} class="text-white hover:underline">Learn more →</a>
 		</div>
 	</div>
 </Card>
