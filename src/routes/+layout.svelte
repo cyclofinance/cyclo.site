@@ -9,6 +9,7 @@
 	import { flare } from '@wagmi/core/chains';
 	import { cusdxAddress, cysFlrAddress, quoterAddress, sFlrAddress } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
+	import blockNumberStore from '$lib/blockNumberStore';
 	import { onDestroy } from 'svelte';
 
 	let intervalId: ReturnType<typeof setInterval>;
@@ -24,6 +25,7 @@
 		startGettingPricesAndBalances();
 	};
 	const getPricesAndBalances = () => {
+		blockNumberStore.refresh($wagmiConfig);
 		balancesStore.refreshPrices(
 			$wagmiConfig,
 			$cysFlrAddress,
@@ -45,6 +47,7 @@
 	}
 
 	const startGettingPricesAndBalances = () => {
+		blockNumberStore.refresh($wagmiConfig);
 		balancesStore.refreshPrices(
 			$wagmiConfig,
 			$cysFlrAddress,
@@ -52,7 +55,7 @@
 			$cusdxAddress,
 			$sFlrAddress
 		);
-		intervalId = setInterval(getPricesAndBalances, 5000);
+		intervalId = setInterval(getPricesAndBalances, 3000);
 	};
 
 	function stopGettingPriceRatio() {
