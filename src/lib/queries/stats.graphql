@@ -1,8 +1,8 @@
 query Stats {
-  trackingPeriods (where: { period: FEB_1 }) {
+  trackingPeriods (where: { period: ALL_TIME }) {
     totalApprovedTransfersIn
   }
-  trackingPeriodForAccounts(where: { netApprovedTransfersIn_gt: "0", period: FEB_1 }) {
+  trackingPeriodForAccounts(where: { netApprovedTransfersIn_gt: "0", period: ALL_TIME }) {
     id
   }
 } 

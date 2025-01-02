@@ -13,7 +13,7 @@ const MONTHLY_REWARDS = 1_000_000; // 1M rFLR
 
 export async function fetchStats(): Promise<GlobalStats> {
 	const response = await fetch(
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.23/gn',
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.24/gn',
 		{
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },

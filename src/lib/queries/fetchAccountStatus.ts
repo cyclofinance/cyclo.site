@@ -17,7 +17,7 @@ export async function fetchAccountStatus(account: string): Promise<{
 	transfers: NonNullable<AccountStatusQuery['sentTransfers']>;
 }> {
 	const response = await fetch(
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.23/gn',
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.24/gn',
 		{
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },

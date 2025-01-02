@@ -1,14 +1,14 @@
 query AccountStatus($account: String!) {
-  trackingPeriods(where: { period: FEB_1 }) {
+  trackingPeriods(where: { period: ALL_TIME }) {
     period
     totalApprovedTransfersIn
   }
-  trackingPeriodForAccounts(where: { account: $account, period: FEB_1 }) {
+  trackingPeriodForAccounts(where: { account: $account, period: ALL_TIME }) {
     netApprovedTransfersIn
     period
   }
   sentTransfers: transfers(
-    where: { period: FEB_1, from: $account }
+    where: { period: ALL_TIME, from: $account }
     orderBy: blockTimestamp
     orderDirection: desc
     first: 1000 
@@ -25,7 +25,7 @@ query AccountStatus($account: String!) {
     value
   }
   receivedTransfers: transfers(
-    where: { period: FEB_1, to: $account }
+    where: { period: ALL_TIME, to: $account }
     orderBy: blockTimestamp
     orderDirection: desc
     first: 1000
