@@ -17,6 +17,8 @@ The program will be reviewed each month for integrity and utility, against inten
 
 The reward distribution is based on two random snapshots taken each month, with rewards allocated pro-rata based on eligible cysFLR holdings. The monthly reward pool of 1M rFLR is distributed according to these snapshots, with timing intentionally not announced to encourage consistent holding behavior.
 
+Note that while snapshots are taken during the specified period, your eligible balance is calculated based on all transfers since the cysFLR token deployment - there is no "start date" for transfer tracking. This means if you already hold eligible cysFLR (acquired through approved sources), these holdings count towards the first rewards period.
+
 ### Eligible Sources
 
 cysFLR must be acquired through approved sources:
@@ -29,10 +31,13 @@ cysFLR must be acquired through approved sources:
 
 Your eligible balance is calculated as:
 
-Net eligible balance \= Total transfers in from approved sources \- Total transfers out
+```
+Net eligible balance = Total transfers in from approved sources - Total transfers out
+```
 
 Key points about balance calculation:
 
+- Tracking starts from the cysFLR token deployment, not from the beginning of the period  
 - All transfers out are counted against your balance  
 - Transfers out are counted even if they occur before transfers in  
 - Most wallets may show negative net balances, which is expected  

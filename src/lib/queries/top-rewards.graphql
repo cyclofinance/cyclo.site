@@ -1,9 +1,9 @@
 query TopRewards {
-  trackingPeriods (where: { period: FEB_1 }) {
+  trackingPeriods (where: { period: ALL_TIME }) {
     period
     totalApprovedTransfersIn
   }
-  trackingPeriodForAccounts (where: {period: FEB_1}, orderBy: netApprovedTransfersIn, orderDirection:desc) {
+  trackingPeriodForAccounts (where: {period: ALL_TIME}, orderBy: netApprovedTransfersIn, orderDirection:desc) {
     account {
       id
     }

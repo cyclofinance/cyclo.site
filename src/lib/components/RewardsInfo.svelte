@@ -12,6 +12,10 @@
 				UTC. After this period ends, 1M rFLR will be distributed to eligible cysFLR holders based on
 				their participation during the period.
 			</p>
+			<p class="text-gray-300">
+				Note that rewards are calculated based on all transfers since the cysFLR token deployment,
+				not from the beginning of the period.
+			</p>
 		</div>
 
 		<div class="space-y-4 text-gray-300">
