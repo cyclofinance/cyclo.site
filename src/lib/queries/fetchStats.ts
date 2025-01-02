@@ -1,6 +1,7 @@
 import { type StatsQuery } from '../../generated-graphql';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
+import { SUBGRAPH_URL } from '$lib/constants';
 
 export type GlobalStats = {
 	eligibleHolders: number;
@@ -12,16 +13,13 @@ export type GlobalStats = {
 const MONTHLY_REWARDS = 1_000_000n * 10n ** 18n; // 1M rFLR
 
 export async function fetchStats(): Promise<GlobalStats> {
-	const response = await fetch(
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.24/gn',
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				query: Stats
-			})
-		}
-	);
+	const response = await fetch(SUBGRAPH_URL, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			query: Stats
+		})
+	});
 	const data: StatsQuery = (await response.json()).data;
 
 	const totalEligibleHoldings = BigInt(data.trackingPeriods[0]?.totalApprovedTransfersIn ?? 0);
