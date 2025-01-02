@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Card from './Card.svelte';
 	import { fetchStats, type GlobalStats } from '$lib/queries/fetchStats';
+	import { formatEther } from 'ethers';
 
 	let loading = true;
 	let error: string | null = null;
@@ -33,7 +34,7 @@
 			<div class="space-y-1">
 				<div class="text-sm text-gray-300">Current APY</div>
 				<div class="text-lg font-bold text-white sm:text-2xl">
-					{stats.currentApy.toLocaleString()}%
+					~{Number(formatEther(stats.currentApy)).toFixed(4).toLocaleString()}%
 				</div>
 			</div>
 			<div class="space-y-1">
@@ -45,13 +46,13 @@
 			<div class="space-y-1">
 				<div class="text-sm text-gray-300">Total Eligible cysFLR</div>
 				<div class="text-lg font-bold text-white sm:text-2xl">
-					{stats.totalEligibleHoldings.toLocaleString()}
+					{Number(formatEther(stats.totalEligibleHoldings)).toFixed(8).toLocaleString()}
 				</div>
 			</div>
 			<div class="space-y-1">
 				<div class="text-sm text-gray-300">Monthly rFLR Rewards</div>
 				<div class="text-lg font-bold text-white sm:text-2xl">
-					{stats.monthlyRewards.toLocaleString()}
+					{Number(formatEther(stats.monthlyRewards)).toLocaleString()}
 				</div>
 			</div>
 		</div>
