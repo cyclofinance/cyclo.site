@@ -4,7 +4,6 @@
 	import { formatEther } from 'ethers';
 	import Card from './Card.svelte';
 	import { goto } from '$app/navigation';
-	import { base } from '$app/paths';
 
 	export let account: string;
 
