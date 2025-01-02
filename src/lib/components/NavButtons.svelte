@@ -23,6 +23,13 @@
 			goto(base + '/docs');
 		}}>Docs</button
 	>
+	<button
+		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
+		class:hidden={$page.url.pathname === '/rewards'}
+		on:click={() => {
+			goto(base + '/rewards');
+		}}>Rewards</button
+	>
 </div>
 
 <div class="hidden items-center justify-center gap-4 sm:flex">
@@ -42,5 +49,12 @@
 		on:click={() => {
 			goto(base + '/docs');
 		}}>Docs</button
+	>
+	<button
+		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
+		class:underline={$page.url.pathname === '/rewards'}
+		on:click={() => {
+			goto(base + '/rewards');
+		}}>Rewards</button
 	>
 </div>
