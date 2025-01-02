@@ -355,7 +355,7 @@
 
 <style lang="postcss">
 	.fill-circle {
-		animation: fillAnimation 5s ease-out infinite;
+		animation: fillAnimation 3s ease-out infinite;
 		transform: rotate(-90deg);
 		transform-origin: 50% 50%;
 	}

@@ -64,6 +64,10 @@ describe('TransactionModal Component', () => {
 				'href',
 				'https://flarescan.com/tx/0xMockTransactionHash'
 			);
+			expect(screen.getByTestId('sell-cysflr-link')).toHaveAttribute(
+				'href',
+				'https://sparkdex.ai/swap/'
+			);
 		});
 
 		const dismissButton = screen.getByTestId('dismiss-button');
