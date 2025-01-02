@@ -1,44 +1,44 @@
 query AccountStatus($account: String!) {
-  trackingPeriods(where: { period: ALL_TIME }) {
-    period
-    totalApprovedTransfersIn
-  }
-  trackingPeriodForAccounts(where: { account: $account, period: ALL_TIME }) {
-    netApprovedTransfersIn
-    period
-  }
-  sentTransfers: transfers(
-    where: { period: ALL_TIME, from: $account }
-    orderBy: blockTimestamp
-    orderDirection: desc
-    first: 1000 
-  ) {
-    fromIsApprovedSource
-    blockTimestamp
-    transactionHash
-    from {
-      id
-    }
-    to {
-      id
-    }
-    value
-  }
-  receivedTransfers: transfers(
-    where: { period: ALL_TIME, to: $account }
-    orderBy: blockTimestamp
-    orderDirection: desc
-    first: 1000
-  ) {
-    fromIsApprovedSource
-    blockTimestamp
-    transactionHash
-    from {
-      id
-    }
-    to {
-      id
-    }
-    value
-  }
+	trackingPeriods(where: { period: ALL_TIME }) {
+		period
+		totalApprovedTransfersIn
+	}
+	trackingPeriodForAccounts(where: { account: $account, period: ALL_TIME }) {
+		netApprovedTransfersIn
+		period
+	}
+	sentTransfers: transfers(
+		where: { period: ALL_TIME, from: $account }
+		orderBy: blockTimestamp
+		orderDirection: desc
+		first: 1000
+	) {
+		fromIsApprovedSource
+		blockTimestamp
+		transactionHash
+		from {
+			id
+		}
+		to {
+			id
+		}
+		value
+	}
+	receivedTransfers: transfers(
+		where: { period: ALL_TIME, to: $account }
+		orderBy: blockTimestamp
+		orderDirection: desc
+		first: 1000
+	) {
+		fromIsApprovedSource
+		blockTimestamp
+		transactionHash
+		from {
+			id
+		}
+		to {
+			id
+		}
+		value
+	}
 }

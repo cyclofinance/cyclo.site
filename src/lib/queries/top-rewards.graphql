@@ -1,12 +1,16 @@
 query TopRewards {
-  trackingPeriods (where: { period: ALL_TIME }) {
-    period
-    totalApprovedTransfersIn
-  }
-  trackingPeriodForAccounts (where: {period: ALL_TIME}, orderBy: netApprovedTransfersIn, orderDirection:desc) {
-    account {
-      id
-    }
-    netApprovedTransfersIn
-  }
+	trackingPeriods(where: { period: ALL_TIME }) {
+		period
+		totalApprovedTransfersIn
+	}
+	trackingPeriodForAccounts(
+		where: { period: ALL_TIME }
+		orderBy: netApprovedTransfersIn
+		orderDirection: desc
+	) {
+		account {
+			id
+		}
+		netApprovedTransfersIn
+	}
 }
