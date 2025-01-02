@@ -1,6 +1,7 @@
 import { type AccountStatusQuery } from '../../generated-graphql';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
 import { formatEther } from 'ethers';
+import { SUBGRAPH_URL } from '$lib/constants';
 
 export type PeriodStats = {
 	period: string;
@@ -16,17 +17,14 @@ export async function fetchAccountStatus(account: string): Promise<{
 	periodStats: PeriodStats[];
 	transfers: NonNullable<AccountStatusQuery['sentTransfers']>;
 }> {
-	const response = await fetch(
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.24/gn',
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				query: AccountStatus,
-				variables: { account }
-			})
-		}
-	);
+	const response = await fetch(SUBGRAPH_URL, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			query: AccountStatus,
+			variables: { account }
+		})
+	});
 	const data: AccountStatusQuery = (await response.json()).data;
 
 	// Calculate period stats

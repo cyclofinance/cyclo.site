@@ -1,6 +1,7 @@
 import { type TopRewardsQuery } from '../../generated-graphql';
 import TopRewards from '$lib/queries/top-rewards.graphql?raw';
 import { formatEther } from 'ethers';
+import { SUBGRAPH_URL } from '$lib/constants';
 
 export type LeaderboardEntry = {
 	account: string;
@@ -12,16 +13,13 @@ export type LeaderboardEntry = {
 const TOTAL_REWARD = 1_000_000; // 1M rFLR
 
 export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
-	const response = await fetch(
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.24/gn',
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				query: TopRewards
-			})
-		}
-	);
+	const response = await fetch(SUBGRAPH_URL, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			query: TopRewards
+		})
+	});
 	const data: TopRewardsQuery = (await response.json()).data;
 
 	const totalNet = data.trackingPeriods[0]?.totalApprovedTransfersIn ?? '0';
