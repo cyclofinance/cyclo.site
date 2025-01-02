@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fetchAccountStatus, type PeriodStats } from '$lib/queries/fetchAccountStatus';
 	import type { AccountStatusQuery } from '../../generated-graphql';
-	import { formatEther } from 'ethers';
+	import { formatEther, getAddress } from 'ethers';
 	import Card from './Card.svelte';
 
 	export let account: string;
@@ -100,7 +100,7 @@
 						>
 							<div class="space-y-1">
 								<div class="text-sm">
-									{#if transfer.from.id === account}
+									{#if getAddress(transfer.from.id) === getAddress(account)}
 										<span class="text-error"
 											>Sent to {transfer.to.id.slice(0, 6)}...{transfer.to.id.slice(-4)}</span
 										>
