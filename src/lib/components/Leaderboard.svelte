@@ -49,24 +49,26 @@
 					<div>Share</div>
 					<div>Estimated rFLR</div>
 				</div>
-				{#each leaderboard as entry, i}
-					<button
-						class="grid w-full grid-cols-4 gap-8 rounded py-4 text-left {isConnectedWallet(
-							entry.account
-						)
-							? 'bg-white/10 hover:bg-white/20'
-							: 'bg-base-200 hover:bg-base-300'}"
-						on:click={() => handleAccountClick(entry.account)}
-					>
-						<div class="truncate font-medium text-white">
-							#{i + 1}
-							{entry.account.slice(0, 6)}...{entry.account.slice(-4)}
-						</div>
-						<div class="truncate font-medium text-white">{formatEther(entry.netTransfers)}</div>
-						<div class="truncate font-medium text-white">{entry.percentage}%</div>
-						<div class="truncate font-medium text-white">{entry.proRataReward}</div>
-					</button>
-				{/each}
+				{#if leaderboard?.length > 0}
+					{#each leaderboard as entry, i}
+						<button
+							class="grid w-full grid-cols-4 gap-8 rounded py-4 text-left {isConnectedWallet(
+								entry.account
+							)
+								? 'bg-white/10 hover:bg-white/20'
+								: 'bg-base-200 hover:bg-base-300'}"
+							on:click={() => handleAccountClick(entry.account)}
+						>
+							<div class="truncate font-medium text-white">
+								#{i + 1}
+								{entry.account.slice(0, 6)}...{entry.account.slice(-4)}
+							</div>
+							<div class="truncate font-medium text-white">{formatEther(entry.netTransfers)}</div>
+							<div class="truncate font-medium text-white">{entry.percentage}%</div>
+							<div class="truncate font-medium text-white">{entry.proRataReward}</div>
+						</button>
+					{/each}
+				{/if}
 			</div>
 		{/if}
 	</div>
