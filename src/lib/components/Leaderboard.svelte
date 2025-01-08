@@ -34,7 +34,7 @@
 		<h2 class="text-xl font-semibold text-white">Top 50 Accounts</h2>
 
 		{#if loading}
-			<div class="flex min-h-[200px] items-center justify-center">
+			<div class="flex min-h-[200px] items-center justify-center" data-testid="loader">
 				<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
 			</div>
 		{:else if error}
