@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
-import Leaderboard from './Leaderboard.svelte';  // Path to your component
+import Leaderboard from './Leaderboard.svelte';
 
 
 describe('Leaderboard Component', () => {
 	beforeEach(() => {
-		vi.clearAllMocks();  // Clear mocks before each test
+		vi.clearAllMocks();
 	});
 
 	it('displays loading spinner while fetching data', async () => {
