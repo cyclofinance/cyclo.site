@@ -4,7 +4,7 @@
 </script>
 
 <Card>
-	<div class="prose space-y-6">
+	<div class="prose space-y-6" data-testid="rewards-info">
 		<div>
 			<h2 class="mt-0 text-xl font-semibold text-white">Cyclo Rewards</h2>
 			<p class="text-gray-300">
