@@ -15,7 +15,8 @@
 			</a>
 		</div>
 
-		<button data-testid="connect-message"
+		<button
+			data-testid="connect-message"
 			class="flex min-h-[100px] w-full items-center justify-center gap-2 text-gray-300 hover:text-gray-100"
 			on:click={() => $web3Modal.open()}
 		>
