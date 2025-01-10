@@ -3,13 +3,12 @@ import { vi, describe, beforeEach, it, expect } from 'vitest';
 import StatsPanel from './StatsPanel.svelte';
 import { type GlobalStats } from '$lib/queries/fetchStats';
 
-const globalStats: GlobalStats =
-	{
-		eligibleHolders: 96,
-		totalEligibleHoldings: BigInt(173689146516658495317091n),
-		monthlyRewards:  BigInt(1000000000000000000000000n),
-		currentApy: BigInt(291724135736581994400n)
-	}
+const globalStats: GlobalStats = {
+	eligibleHolders: 96,
+	totalEligibleHoldings: BigInt(173689146516658495317091n),
+	monthlyRewards: BigInt(1000000000000000000000000n),
+	currentApy: BigInt(291724135736581994400n)
+};
 
 vi.mock('$lib/queries/fetchStats', () => ({
 	fetchStats: vi.fn()
