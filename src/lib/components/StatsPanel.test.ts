@@ -21,4 +21,15 @@ describe('Leaderboard Component', () => {
 			expect(screen.getByTestId('loader')).toBeInTheDocument();
 		});
 	});
+
+	it('should show error when fetching stats fail', async () => {
+		const { fetchStats } = await import('$lib/queries/fetchStats');
+		vi.mocked(fetchStats).mockRejectedValue(new Error('Async error'));
+
+		render(StatsPanel);
+
+		await waitFor(() => {
+			expect(screen.getByTestId('error')).toBeInTheDocument();
+		});
+	});
 });

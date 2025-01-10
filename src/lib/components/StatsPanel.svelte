@@ -26,7 +26,7 @@
 			<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
 		</div>
 	{:else if error}
-		<div class="text-error bg-error/10 rounded-lg p-4">
+		<div class="text-error bg-error/10 rounded-lg p-4" data-testid="error">
 			{error}
 		</div>
 	{:else if stats}
