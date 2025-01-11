@@ -22,15 +22,15 @@
 
 <Card customClass="items-stretch">
 	{#if loading}
-		<div class="flex min-h-[100px] items-center justify-center">
+		<div class="flex min-h-[100px] items-center justify-center" data-testid="loader">
 			<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
 		</div>
 	{:else if error}
-		<div class="text-error bg-error/10 rounded-lg p-4">
+		<div class="text-error bg-error/10 rounded-lg p-4" data-testid="error">
 			{error}
 		</div>
 	{:else if stats}
-		<div class="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+		<div class="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-4" data-testid="stats-panel">
 			<div class="space-y-1">
 				<div class="text-sm text-gray-300">Current APY</div>
 				<div class="text-lg font-bold text-white sm:text-2xl">
