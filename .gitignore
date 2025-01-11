@@ -9,3 +9,4 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 src/generated.ts
+src/generated-graphql.ts
