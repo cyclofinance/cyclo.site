@@ -18,7 +18,7 @@ jobs:
       - run: nix develop -c forge build
         working-directory: ./cyclo.sol
       - run: nix develop -c npm run codegen
-
+      - run: nix develop -c npm run graphql-codegen
       - run: nix develop -c npm run test
         env:
           PUBLIC_WALLETCONNECT_ID: ${{ secrets.PUBLIC_WALLETCONNECT_ID }}
@@ -39,6 +39,7 @@ jobs:
       - run: nix develop -c forge build
         working-directory: ./cyclo.sol
       - run: nix develop -c npm run codegen
+      - run: nix develop -c npm run graphql-codegen
       - run: nix develop -c npm run svelte-lint-format-check
         env:
           PUBLIC_WALLETCONNECT_ID: ${{ secrets.PUBLIC_WALLETCONNECT_ID }}

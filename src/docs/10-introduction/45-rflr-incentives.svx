@@ -1,0 +1,167 @@
+---
+title: rFLR Incentives
+published: true
+---
+
+# Cyclo Rewards Program
+
+## Overview
+
+The Cyclo rewards program distributes 1M rFLR monthly to cysFLR holders who acquire tokens through approved purchase methods. The first rewards period begins January 2, 2025 at 00:00 UTC and ends February 1, 2025 at 00:00 UTC.
+
+This program is designed to incentivize genuine market activity and strengthen the protocol's core mechanics through thoughtful reward distribution.
+
+The program will be reviewed each month for integrity and utility, against intended outcomes and in light of new product/market developments.
+
+## How Rewards Work
+
+The reward distribution is based on two random snapshots taken each month, with rewards allocated pro-rata based on eligible cysFLR holdings. The monthly reward pool of 1M rFLR is distributed according to these snapshots, with timing intentionally not announced to encourage consistent holding behavior.
+
+Note that while snapshots are taken during the specified period, your eligible balance is calculated based on all transfers since the cysFLR token deployment - there is no "start date" for transfer tracking. This means if you already hold eligible cysFLR (acquired through approved sources), these holdings count towards the first rewards period.
+
+### Eligible Sources
+
+cysFLR must be acquired through approved sources:
+
+- Raindex withdrawals (including direct trades)  
+- SparkDEX pool swaps  
+- BlazeSwap pool swaps
+
+### Balance Calculation and Tracking
+
+Your eligible balance is calculated as:
+
+```
+Net eligible balance = Total transfers in from approved sources - Total transfers out
+```
+
+Key points about balance calculation:
+
+- Tracking starts from the cysFLR token deployment, not from the beginning of the period  
+- All transfers out are counted against your balance  
+- Transfers out are counted even if they occur before transfers in  
+- Most wallets may show negative net balances, which is expected  
+- Using a dedicated wallet for cysFLR rewards is recommended
+
+This is intended to be the simplest possible calculation that will remove all noise from minting, interwallet transfers, etc. It also means that if you have a lot of unrelated transfers out of your wallet you won't be eligible for rewards, hence the dedicated wallet recommendation. You can use the wallet for other non-Cyclo related things of course, and that won't impact the calculations, we're only tracking cysFLR token transfers.
+
+## Maximizing Your Rewards
+
+The program rewards consistent holding throughout each month. Since snapshot times are random and unannounced, your strategy should focus on:
+
+- Maintaining steady positions to capture both monthly snapshots  
+- Minimizing unnecessary transfers that could miss snapshots  
+- Using a dedicated wallet to avoid accidental balance reductions
+
+There are no arbitrary restrictions \- no maximum holding period, no minimum requirement, and no cap on rewards per wallet. The system's APY naturally adjusts based on participation levels (dilutes as more eligible cysFLR is purchased).
+
+## Why This Model Works
+
+The reward structure is carefully designed around the unique properties of cysFLR and its role in the protocol.
+
+### Why Not Reward Minting cysFLR?
+
+Cyclo as a system only grows when people sell their minted cysFLR in order to leverage their assets, which creates a natural requirement to buyback when they deleverage in the future. If we rewarded minting itself, users would simply mint cysFLR into their wallets and never sell it, creating artificial supply without supporting the critical secondary market activity that drives the protocol's growth.
+
+The core mechanism requires the cycle of:
+
+- Users minting cysFLR  
+- Selling it to actually achieve leverage  
+- Eventually buying back to deleverage and reclaim their collateral
+
+### Why Not LP Rewards?
+
+Liquidity provision already benefits from:
+
+- High natural trading volume relative to pool size  
+- Inherent impermanent loss resistance in cysFLR/stable pairs  
+- Strong organic incentives through pool fees
+
+Additionally, Raindex already provides trading automation for buying and selling cysFLR that can move thousands of cysFLR through the AMM pools without moving the market significantly.
+
+At the time of writing 19% of all cysFLR is already held by a single SparkDEX pool. There's currently no mechanical reason to further incentivise LPs relative to the current size and maturity of the market.
+
+We expect to see cysFLR purchases leading to increased leveraging, then cysFLR holding eventually leading to increased deleveraging and releveraging over time. This will indirectly bring more native DEX fees through the AMM pools anyway, without needing to directly send rFLR to LPs.
+
+Further, by not rewarding LPs for specific pools we avoid being "kingmaker". We don't want to push everyone to pair against cUSDX (currently the largest pool) vs. other potentially equally valid pairs such as USDC.e if that's what they'd rather do.
+
+### Benefits of Buy and Hold Rewards
+
+By incentivizing buying and holding, we create several positive effects:
+
+1. Force deleveraging through new market participants (new cysFLR mints)  
+2. Improve price discovery mechanisms  
+3. Generate natural pool volume  
+4. Strengthen protocol TVL organically  
+5. Diversify both sides of the markets across more participants, and positions over time, making the protocol more resilient overall
+
+### Sybils
+
+Every permissionless system must consider the potential negative impact of sybils. A sybil attack involves a single human or real world entity creating many wallets to try to confuse or exploit a protocol.
+
+As rewards are pro-rata according to token balance instantaneous snapshots, creating many wallets does not give an attacker any advantage or extra rewards.
+
+### Laundering mints
+
+A user could deposit sFLR into the Cyclo contract, mint some cysFLR then sell it on DEX then immediately re-buy it from some other wallet.
+
+This would make them eligible for rewards on that cysFLR, so appears to defeat the intent of the rewards program.
+
+However, at the time of writing cysFLR is trading at $0.231
+
+If we assume the rewards APY dilutes down to say \~10%, then every $1 spent buying cysFLR directly and holding will earn \~10% APY while each $1 deposited to mint and launder cysFLR for rewards will only earn \~2.31% APY on the deposit.
+
+The more that people attempt to launder mints for rewards, the greater the mint vs. buy discrepancy will become, further increasing the gap between rewards on direct purchases and those for minting.
+
+Minters can already sell their cysFLR for access to any financial opportunity globally, including simply buying and parking stables on Aave for \~10% APY. At some point it should make the most financial sense to either directly buy cysFLR for the most rewards, or to seek other opportunities with minted cysFLR.
+
+Unless/until there's some strong evidence that mint laundering is damaging the intent of the incentives (i.e. not just a handful of minor isolated cases), we're not going to attempt to track or punish anyone, or over complicate the incentives.
+
+## Tracking Your Rewards
+
+The Cyclo website provides tools to help you monitor your potential rewards and understand your current position. Visit the Rewards page to track:
+
+- Your complete transfer history (both eligible and non-eligible)  
+- Current net transfers in from approved sources  
+- Running calculation of your share of the total eligible supply  
+- Estimated monthly rewards based on current holdings
+
+### Understanding the Numbers
+
+These tracking tools are provided to help you understand your current position, but it's important to note that they are indicative only. Your final rewards will be determined by:
+
+1. Your average eligible balance across both random monthly snapshots  
+2. Your pro-rata share of the total eligible supply (the sum of all users' snapshot averages)
+
+For example, if you hold 1000 cysFLR of eligible balance today, but then sell half before one of the snapshots, your average holding would be 750 cysFLR. Similarly, if the total eligible supply changes between snapshots, this will affect everyone's pro-rata share because the total rFLR distribution size is fixed.
+
+### Monitoring Your Position
+
+The rewards tracker shows:
+
+- Each transfer in, clearly marked if from an approved source  
+- Each transfer out and its impact on your eligible balance  
+- Your current net eligible position  
+- An indicative share of the reward pool based on current data
+
+Remember that these numbers will fluctuate as:
+
+- Other users trade in and out of eligible positions  
+- Market activity affects the total eligible supply  
+- Your own trading activity changes your average position
+
+Your final monthly rewards will be calculated using the average of your eligible balance at both snapshot times divided by the average total eligible supply at those same snapshots, multiplied by the monthly reward pool of 1M rFLR.
+
+All distributions are subject to third party review and approval by the Flare rewards committee. We (Cyclo team) propose and administer the incentives for Cyclo once approved, but do not ultimately control the rFLR rewards program.
+
+## Technical Implementation
+
+The reward tracking system combines on-chain data with off-chain processing:
+
+- Two random monthly snapshots  
+- Off-chain indexing of approved source purchases  
+- Wallet transfer tracking  
+- Automated eligible balance calculations  
+- Distribution list generation
+
+This infrastructure ensures transparent and fair reward distribution while maintaining system efficiency.

@@ -1,0 +1,75 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { fetchTopRewards, type LeaderboardEntry } from '$lib/queries/fetchTopRewards';
+	import { formatEther } from 'ethers';
+	import Card from './Card.svelte';
+	import { goto } from '$app/navigation';
+	import { signerAddress } from 'svelte-wagmi';
+
+	let loading = true;
+	let error: string | null = null;
+	let leaderboard: LeaderboardEntry[] = [];
+
+	onMount(async () => {
+		try {
+			leaderboard = await fetchTopRewards();
+			loading = false;
+		} catch (e) {
+			console.error(e);
+			error = e instanceof Error ? e.message : 'Failed to fetch leaderboard';
+			loading = false;
+		}
+	});
+
+	function handleAccountClick(account: string) {
+		goto(`/rewards/${account}`);
+	}
+
+	$: isConnectedWallet = (account: string) =>
+		$signerAddress?.toLowerCase() === account.toLowerCase();
+</script>
+
+<Card customClass="items-stretch">
+	<div class="space-y-6">
+		<h2 class="text-xl font-semibold text-white">Top 50 Accounts</h2>
+
+		{#if loading}
+			<div class="flex min-h-[200px] items-center justify-center" data-testid="loader">
+				<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
+			</div>
+		{:else if error}
+			<div class="text-error bg-error/10 rounded-lg p-4">
+				{error}
+			</div>
+		{:else}
+			<div class="space-y-2">
+				<div class="grid grid-cols-4 gap-8 text-sm text-gray-300">
+					<div>Account</div>
+					<div>Net Transfers</div>
+					<div>Share</div>
+					<div>Estimated rFLR</div>
+				</div>
+				{#if leaderboard?.length > 0}
+					{#each leaderboard as entry, i}
+						<button
+							class="grid w-full grid-cols-4 gap-8 rounded py-4 text-left {isConnectedWallet(
+								entry.account
+							)
+								? 'bg-white/10 hover:bg-white/20'
+								: 'bg-base-200 hover:bg-base-300'}"
+							on:click={() => handleAccountClick(entry.account)}
+						>
+							<div class="truncate font-medium text-white">
+								#{i + 1}
+								{entry.account.slice(0, 6)}...{entry.account.slice(-4)}
+							</div>
+							<div class="truncate font-medium text-white">{formatEther(entry.netTransfers)}</div>
+							<div class="truncate font-medium text-white">{entry.percentage}%</div>
+							<div class="truncate font-medium text-white">{entry.proRataReward}</div>
+						</button>
+					{/each}
+				{/if}
+			</div>
+		{/if}
+	</div>
+</Card>

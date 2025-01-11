@@ -19,12 +19,13 @@ jobs:
       - run: nix develop -c forge build
         working-directory: ./cyclo.sol
       - run: nix develop -c npm run codegen
+      - run: nix develop -c npm run graphql-codegen
       - run: nix develop -c npm run build
         env:
           BASE_PATH: '/${{ github.event.repository.name }}'
           PUBLIC_WALLETCONNECT_ID: ${{ secrets.PUBLIC_WALLETCONNECT_ID }}
           PUBLIC_LAUNCHED: ${{ vars.PUBLIC_LAUNCHED }}
-          
+
       - name: Upload Artifacts
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
