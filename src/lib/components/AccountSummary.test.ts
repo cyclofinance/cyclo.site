@@ -97,6 +97,9 @@ describe('AccountSummary Component', () => {
 					`This account is not eligible for rewards. Only accounts with positive net transfers from approved sources are eligible.`
 				)
 			).toBeInTheDocument();
+
+			expect(screen.getByText(`0%`)).toBeInTheDocument();
+			expect(screen.getByText(`0`)).toBeInTheDocument();
 		});
 	});
 
