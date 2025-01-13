@@ -99,4 +99,26 @@ describe('AccountStatus Component', () => {
 			expect(screen.getByText(`Sent to 0x2b46...bda4`)).toBeInTheDocument();
 		});
 	});
+
+	it('should check transfer from different account', async () => {
+		transfers = [
+			{
+				fromIsApprovedSource: true,
+				blockTimestamp: '35754197',
+				transactionHash: '0xe2ad712db50bbb1a9b5fbd39d6efe8833d4d99e9d7a5588ac9a28c00b9fb5aea',
+				value: '1515222',
+				from: { id: '0xc0D477556c25C9d67E1f57245C7453DA776B51cf' },
+				to: { id: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' }
+			}
+		];
+
+		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
+		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
+		render(AccountStatus, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
+
+		await waitFor(() => {
+			expect(screen.getByTestId('transfer-history')).toBeInTheDocument();
+			expect(screen.getByText(`Received from 0xc0D4...51cf`)).toBeInTheDocument();
+		});
+	});
 });
