@@ -20,7 +20,7 @@ const periodStats: PeriodStats[] = [
 	}
 ] as unknown as PeriodStats[];
 
-const transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
+let transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
 
 describe('AccountStatus Component', () => {
 	beforeEach(() => {
@@ -76,6 +76,27 @@ describe('AccountStatus Component', () => {
 					`This account is not eligible for rewards. Only accounts with positive net transfers from approved sources are eligible.`
 				)
 			).toBeInTheDocument();
+		});
+	});
+
+	it('should display Transfer History', async () => {
+		transfers = [
+			{
+				fromIsApprovedSource: true,
+				blockTimestamp: '35754197',
+				transactionHash: '0xe2ad712db50bbb1a9b5fbd39d6efe8833d4d99e9d7a5588ac9a28c00b9fb5aea',
+				value: '1515222',
+				from: { id: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' },
+				to: { id: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' }
+			}
+		];
+
+		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
+		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
+		render(AccountStatus, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
+		await waitFor(() => {
+			expect(screen.getByTestId('transfer-history')).toBeInTheDocument();
+			expect(screen.getByText(`Sent to 0x2b46...bda4`)).toBeInTheDocument();
 		});
 	});
 });

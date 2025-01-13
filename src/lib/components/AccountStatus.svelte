@@ -86,7 +86,7 @@
 		</Card>
 
 		<Card customClass="items-stretch">
-			<div class="space-y-6">
+			<div class="space-y-6" data-testid="transfer-history">
 				<h2 class="text-xl font-semibold text-white">Transfer History</h2>
 				<div class="space-y-2">
 					{#each transfers as transfer}
