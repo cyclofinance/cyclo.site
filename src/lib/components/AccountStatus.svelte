@@ -29,7 +29,7 @@
 </script>
 
 {#if loading}
-	<div class="flex min-h-[200px] items-center justify-center">
+	<div class="flex min-h-[200px] items-center justify-center" data-testid="loader">
 		<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-white" />
 	</div>
 {:else if error}
