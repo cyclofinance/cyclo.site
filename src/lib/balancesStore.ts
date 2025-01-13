@@ -36,6 +36,7 @@ const getSwapQuote = async (
 	quoterAddress: Hex,
 	blockNumber: bigint
 ) => {
+
 	const client = await getPublicClient();
 
 	try {
@@ -71,6 +72,7 @@ const getSwapQuote = async (
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		return { cysFlrOutput: depositPreviewValue.result, cusdxOutput: (swapQuote as any)[0] };
+
 	} catch (error) {
 		console.error('Error getting swapQuote:', error);
 		return { cysFlrOutput: 0n, cusdxOutput: 0n };
