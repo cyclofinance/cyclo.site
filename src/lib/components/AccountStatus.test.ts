@@ -115,7 +115,7 @@ describe('AccountStatus Component', () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
 		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
 		render(AccountStatus, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
-	  const timeStamp = 	new Date(+transfers[0].blockTimestamp * 1000).toLocaleString()
+		const timeStamp = new Date(+transfers[0].blockTimestamp * 1000).toLocaleString();
 
 		await waitFor(() => {
 			expect(screen.getByTestId('transfer-history')).toBeInTheDocument();
