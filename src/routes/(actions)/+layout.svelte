@@ -1,18 +1,21 @@
-<script>
+<script lang="ts">
 	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import balancesStore from '$lib/balancesStore';
 	import TransactionModal from '$lib/components/TransactionModal.svelte';
-	import { cysFlrAddress, sFlrAddress } from '$lib/stores';
+	import { selectedCyToken } from '$lib/stores';
 
 	import Button from '$lib/components/Button.svelte';
 	import { base } from '$app/paths';
 	import Footer from '$lib/components/Footer.svelte';
 
-	$: if ($signerAddress) {
-		balancesStore.refreshBalances($wagmiConfig, $sFlrAddress, $cysFlrAddress, $signerAddress);
+	$: if ($selectedCyToken && $signerAddress) {
+		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
+		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
 	}
+
+	$: console.log($balancesStore);
 </script>
 
 <div class="flex flex-grow flex-col items-center gap-6 bg-[#1C02B8] p-2 sm:p-6">

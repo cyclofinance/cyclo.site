@@ -6,67 +6,117 @@ import {
 	simulateQuoterQuoteExactInputSingle,
 	simulateQuoterQuoteExactOutputSingle
 } from '../generated';
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import { ZeroAddress } from 'ethers';
+import type { CyToken } from './types';
+import { quoterAddress, tokens } from './stores';
 
-const initialState = {
-	cysFlrBalance: BigInt(0),
-	sFlrBalance: BigInt(0),
-	status: 'Checking',
-	lockPrice: BigInt(0),
-	cysFlrUsdPrice: BigInt(0),
-	cysFlrSupply: BigInt(0),
-	TVLsFlr: BigInt(0),
-	TVLUsd: BigInt(0),
+interface StatsState {
+	status: string;
+	statsLoading: boolean;
+	stats: {
+		[key: string]: {
+			supply: bigint;
+			price: bigint;
+			lockPrice: bigint;
+			underlyingTvl: bigint;
+			usdTvl: bigint;
+		};
+	};
+	balances: {
+		[key: string]: {
+			signerBalance: bigint;
+			signerUnderlyingBalance: bigint;
+		};
+	};
 	swapQuotes: {
-		cysFlrOutput: BigInt(0),
+		cyTokenOutput: bigint;
+		cusdxOutput: bigint;
+	};
+}
+
+const initialState: StatsState = {
+	status: 'Checking',
+	statsLoading: true,
+	stats: {
+		cysFLR: {
+			supply: BigInt(0),
+			price: BigInt(0),
+			lockPrice: BigInt(0),
+			underlyingTvl: BigInt(0),
+			usdTvl: BigInt(0)
+		},
+		cyWETH: {
+			supply: BigInt(0),
+			price: BigInt(0),
+			lockPrice: BigInt(0),
+			underlyingTvl: BigInt(0),
+			usdTvl: BigInt(0)
+		}
+	},
+	balances: {
+		cysFLR: {
+			signerBalance: BigInt(0),
+			signerUnderlyingBalance: BigInt(0)
+		},
+		cyWETH: {
+			signerBalance: BigInt(0),
+			signerUnderlyingBalance: BigInt(0)
+		}
+	},
+	swapQuotes: {
+		cyTokenOutput: BigInt(0),
 		cusdxOutput: BigInt(0)
 	}
 };
 
-const getSwapQuote = async (
+const getDepositPreviewSwapValue = async (
 	config: Config,
-	cysFlrAddress: Hex,
-	cusdxAddress: Hex,
-	assets: bigint,
-	quoterAddress: Hex
+	selectedToken: CyToken,
+	valueToken: Hex,
+	depositAmount: bigint
 ) => {
 	const { result: depositPreviewValue } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(
 		config,
 		{
-			address: cysFlrAddress,
-			args: [assets, 0n],
+			address: selectedToken.address,
+			args: [depositAmount, 0n],
 			account: ZeroAddress as `0x${string}`
 		}
 	);
-	const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
-		address: quoterAddress,
-		args: [
-			{
-				tokenIn: cysFlrAddress,
-				tokenOut: cusdxAddress,
-				amountIn: depositPreviewValue,
-				fee: 3000,
-				sqrtPriceLimitX96: BigInt(0)
-			}
-		]
-	});
-	return { cysFlrOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
+
+	let cusdxOutput = BigInt(0);
+	if (selectedToken.name === 'cysFLR') {
+		const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
+			address: get(quoterAddress),
+			args: [
+				{
+					tokenIn: selectedToken.address,
+					tokenOut: valueToken,
+					amountIn: depositPreviewValue,
+					fee: 3000,
+					sqrtPriceLimitX96: BigInt(0)
+				}
+			]
+		});
+		cusdxOutput = swapQuote[0];
+	}
+	return { cyTokenOutput: depositPreviewValue, cusdxOutput };
 };
 
-const getcysFLRUsdPrice = async (
+const getCyTokenUsdPrice = async (
 	config: Config,
 	quoterAddress: Hex,
 	cusdxAddress: Hex,
-	cysFlrAddress: Hex
+	selectedToken: CyToken
 ) => {
 	const data = await simulateQuoterQuoteExactOutputSingle(config, {
 		address: quoterAddress,
 		args: [
 			{
 				tokenIn: cusdxAddress,
-				tokenOut: cysFlrAddress,
+				tokenOut: selectedToken.address,
 				amount: BigInt(1e18),
 				fee: 3000,
 				sqrtPriceLimitX96: BigInt(0)
@@ -76,116 +126,199 @@ const getcysFLRUsdPrice = async (
 	return data.result[0] || 0n;
 };
 
-const getLockPrice = async (config: Config, cysFlrAddress: Hex) => {
+const getLockPrice = async (config: Config, selectedToken: CyToken) => {
 	const { result } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
-		address: cysFlrAddress,
+		address: selectedToken.address,
 		args: [BigInt(1e18), 0n],
 		account: ZeroAddress as `0x${string}`
 	});
 	return result;
 };
 
-const getcysFLRSupply = async (config: Config, cysFlrAddress: Hex) => {
+const getcysFLRSupply = async (config: Config, selectedToken: CyToken) => {
 	const data = await readErc20TotalSupply(config, {
-		address: cysFlrAddress
+		address: selectedToken.address
 	});
 	return data;
 };
 
 // Get the TVL
-
-const getsFLRBalanceLockedInCysFlr = async (
+const getUnderlyingBalanceLockedInCysToken = async (
 	config: Config,
-	cysFlrAddress: Hex,
-	sFlrAddress: Hex
+	selectedToken: CyToken,
+	underlyingAddress: Hex
 ) => {
-	const sFlrBalanceLockedInCysFlr = await readErc20BalanceOf(config, {
-		address: sFlrAddress,
-		args: [cysFlrAddress]
+	const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(config, {
+		address: underlyingAddress,
+		args: [selectedToken.address]
 	});
-	return sFlrBalanceLockedInCysFlr;
+	return underlyingBalanceLockedInCysToken;
 };
 
 const balancesStore = () => {
-	const { subscribe, set, update } = writable(initialState);
+	const { subscribe, set, update } = writable<StatsState>({
+		status: 'Checking',
+		statsLoading: true,
+		stats: {
+			cysFLR: {
+				supply: BigInt(0),
+				price: BigInt(0),
+				lockPrice: BigInt(0),
+				underlyingTvl: BigInt(0),
+				usdTvl: BigInt(0)
+			},
+			cyWETH: {
+				supply: BigInt(0),
+				price: BigInt(0),
+				lockPrice: BigInt(0),
+				underlyingTvl: BigInt(0),
+				usdTvl: BigInt(0)
+			}
+		},
+		balances: {
+			cysFLR: {
+				signerBalance: BigInt(0),
+				signerUnderlyingBalance: BigInt(0)
+			},
+			cyWETH: {
+				signerBalance: BigInt(0),
+				signerUnderlyingBalance: BigInt(0)
+			}
+		},
+		swapQuotes: {
+			cyTokenOutput: BigInt(0),
+			cusdxOutput: BigInt(0)
+		}
+	});
 	const reset = () => set(initialState);
 
-	const refreshPrices = async (
-		config: Config,
-		cysFlrAddress: Hex,
-		quoterAddress: Hex,
-		cusdxAddress: Hex,
-		sFlrAddress: Hex
-	) => {
-		const [cysFlrUsdPrice, lockPrice, cysFlrSupply, sFlrBalanceLockedInCysFlr] = await Promise.all([
-			getcysFLRUsdPrice(config, quoterAddress, cusdxAddress, cysFlrAddress),
-			getLockPrice(config, cysFlrAddress),
-			getcysFLRSupply(config, cysFlrAddress),
-			getsFLRBalanceLockedInCysFlr(config, cysFlrAddress, sFlrAddress)
+	const refreshPrices = async (config: Config, selectedToken: CyToken) => {
+		if (!selectedToken?.address) return;
+
+		const [lockPrice, cysFlrSupply, underlyingBalanceLockedInCysToken] = await Promise.all([
+			getLockPrice(config, selectedToken),
+			getcysFLRSupply(config, selectedToken),
+			getUnderlyingBalanceLockedInCysToken(config, selectedToken, selectedToken.underlyingAddress)
 		]);
-		const TVLUsd = (sFlrBalanceLockedInCysFlr * lockPrice) / BigInt(1e18);
-		const TVLsFlr = sFlrBalanceLockedInCysFlr;
+
 		update((state) => ({
 			...state,
 			status: 'Ready',
-			cysFlrUsdPrice,
-			lockPrice,
-			cysFlrSupply,
-			TVLsFlr,
-			TVLUsd
+			stats: {
+				...state.stats,
+				[selectedToken.name]: {
+					...state.stats[selectedToken.name],
+					price: state.stats[selectedToken.name].price,
+					lockPrice,
+					supply: cysFlrSupply,
+					underlyingTvl: underlyingBalanceLockedInCysToken,
+					usdTvl: (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
+				}
+			}
 		}));
 	};
 
-	const refreshBalances = async (
-		config: Config,
-		sFlrAddress: Hex,
-		cysFlrAddress: Hex,
-		signerAddress: string
-	) => {
+	const refreshBalances = async (config: Config, signerAddress: Hex) => {
 		try {
-			const [newSFlrBalance, newCysFlrBalance] = await Promise.all([
-				readErc20BalanceOf(config, {
-					address: sFlrAddress,
-					args: [signerAddress as Hex]
-				}),
-				readErc20BalanceOf(config, {
-					address: cysFlrAddress,
-					args: [signerAddress as Hex]
-				})
-			]);
+			update((state) => ({ ...state, status: 'Checking' }));
 
-			update((state) => ({
-				...state,
-				sFlrBalance: newSFlrBalance,
-				cysFlrBalance: newCysFlrBalance,
-				status: 'Ready'
-			}));
+			await Promise.all(
+				tokens.map(async (token: CyToken) => {
+					const [underlyingBalance, balance] = await Promise.all([
+						readErc20BalanceOf(config, {
+							address: token.underlyingAddress,
+							args: [signerAddress]
+						}),
+						readErc20BalanceOf(config, {
+							address: token.address,
+							args: [signerAddress]
+						})
+					]);
+
+					update((state) => ({
+						...state,
+						balances: {
+							...state.balances,
+							[token.name]: {
+								signerBalance: balance,
+								signerUnderlyingBalance: underlyingBalance
+							}
+						}
+					}));
+				})
+			);
+
+			update((state) => ({ ...state, status: 'Ready' }));
 		} catch (error) {
 			console.error('Error refreshing balances:', error);
-			update((state) => ({
-				...state,
-				status: 'Error'
-			}));
+			update((state) => ({ ...state, status: 'Error' }));
 		}
 	};
 
-	const refreshSwapQuote = async (
+	const refreshDepositPreviewSwapValue = async (
 		config: Config,
-		cysFlrAddress: Hex,
-		cusdxAddress: Hex,
-		assets: bigint,
-		quoterAddress: Hex
+		selectedToken: CyToken,
+		valueToken: Hex,
+		assets: bigint
 	) => {
-		const swapQuotes = await getSwapQuote(
-			config,
-			cysFlrAddress,
-			cusdxAddress,
-			assets,
-			quoterAddress
-		);
+		const swapQuotes = await getDepositPreviewSwapValue(config, selectedToken, valueToken, assets);
 		update((state) => ({
 			...state,
 			swapQuotes
+		}));
+	};
+
+	const refreshFooterStats = async (config: Config, quoterAddress: Hex, cusdxAddress: Hex) => {
+		const getTokenStats = async (token: CyToken) => {
+			const [supplyResult, priceResult, lockPriceResult, tvlResult] = await Promise.all([
+				getcysFLRSupply(config, token).catch((error) => {
+					console.log(`Failed to fetch supply for ${token.name}:`, error);
+					return BigInt(0);
+				}),
+				getCyTokenUsdPrice(config, quoterAddress, cusdxAddress, token).catch((error) => {
+					console.log(`Failed to fetch price for ${token.name}:`, error);
+					return BigInt(0);
+				}),
+				getLockPrice(config, token).catch((error) => {
+					console.log(`Failed to fetch lock price for ${token.name}:`, error);
+					return BigInt(0);
+				}),
+				getUnderlyingBalanceLockedInCysToken(config, token, token.underlyingAddress).catch(
+					(error) => {
+						console.log(`Failed to fetch TVL for ${token.name}:`, error);
+						return BigInt(0);
+					}
+				)
+			]);
+
+			const stats = {
+				supply: supplyResult,
+				price: priceResult,
+				lockPrice: lockPriceResult,
+				underlyingTvl: tvlResult,
+				usdTvl: lockPriceResult > 0n ? (tvlResult * lockPriceResult) / BigInt(1e18) : BigInt(0)
+			};
+
+			return stats;
+		};
+
+		const [cysFLRStats, cyWETHStats] = await Promise.all(
+			tokens.map(async (token) => await getTokenStats(token))
+		);
+
+		update((state) => ({
+			...state,
+			statsLoading: false,
+			stats: {
+				cysFLR: {
+					...state.stats.cysFLR,
+					...cysFLRStats
+				},
+				cyWETH: {
+					...state.stats.cyWETH,
+					...cyWETHStats
+				}
+			}
 		}));
 	};
 
@@ -194,7 +327,8 @@ const balancesStore = () => {
 		reset,
 		refreshBalances,
 		refreshPrices,
-		refreshSwapQuote
+		refreshDepositPreviewSwapValue,
+		refreshFooterStats
 	};
 };
 

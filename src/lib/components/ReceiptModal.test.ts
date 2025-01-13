@@ -11,7 +11,18 @@ const { mockBalancesStore, mockErc1155AddressStore, mockCysFlrAddressStore, mock
 	await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 vi.mock('$lib/stores', async () => ({
-	cysFlrAddress: mockCysFlrAddressStore,
+	selectedCyToken: {
+		subscribe: vi.fn(),
+		set: vi.fn(),
+		update: vi.fn(),
+		value: {
+			name: 'cysFLR',
+			address: mockCysFlrAddressStore.value,
+			underlyingAddress: mockSflrAddressStore.value,
+			underlyingSymbol: 'sFLR',
+			receiptAddress: mockErc1155AddressStore.value
+		}
+	},
 	erc1155Address: mockErc1155AddressStore,
 	sFlrAddress: mockSflrAddressStore
 }));

@@ -7,9 +7,15 @@
 	import { browser } from '$app/environment';
 	import { PUBLIC_LAUNCHED } from '$env/static/public';
 	import { flare } from '@wagmi/core/chains';
-	import { cusdxAddress, cysFlrAddress, quoterAddress, sFlrAddress } from '$lib/stores';
+	import {
+		cusdxAddress,
+		quoterAddress,
+		selectedCyToken,
+		targetNetwork,
+		wrongNetwork
+	} from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	let intervalId: ReturnType<typeof setInterval>;
 	const initWallet = async () => {
@@ -24,34 +30,20 @@
 		startGettingPricesAndBalances();
 	};
 	const getPricesAndBalances = () => {
-		balancesStore.refreshPrices(
-			$wagmiConfig,
-			$cysFlrAddress,
-			$quoterAddress,
-			$cusdxAddress,
-			$sFlrAddress
-		);
-		if ($signerAddress) {
-			balancesStore.refreshBalances($wagmiConfig, $sFlrAddress, $cysFlrAddress, $signerAddress);
-		}
+		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
+		balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
 	};
 
 	$: if (browser && window.navigator) {
 		initWallet();
 	}
 
-	$: if ($signerAddress) {
-		balancesStore.refreshBalances($wagmiConfig, $sFlrAddress, $cysFlrAddress, $signerAddress);
+	$: if ($selectedCyToken && $signerAddress) {
+		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 	}
 
 	const startGettingPricesAndBalances = () => {
-		balancesStore.refreshPrices(
-			$wagmiConfig,
-			$cysFlrAddress,
-			$quoterAddress,
-			$cusdxAddress,
-			$sFlrAddress
-		);
+		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
 		intervalId = setInterval(getPricesAndBalances, 5000);
 	};
 
@@ -61,6 +53,13 @@
 
 	onDestroy(() => {
 		stopGettingPriceRatio();
+	});
+
+	onMount(() => {
+		if ($signerAddress) {
+			balancesStore.refreshBalances($wagmiConfig, $signerAddress);
+			balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
+		}
 	});
 </script>
 

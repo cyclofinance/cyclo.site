@@ -12,6 +12,7 @@ import balancesStore from './balancesStore';
 import { myReceipts } from './stores';
 import { getReceipts } from './queries/getReceipts';
 import { TransactionErrorMessage } from './types/errors';
+import type { CyToken } from './types';
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 export const ONE = BigInt('1000000000000000000');
@@ -29,17 +30,14 @@ export enum TransactionStatus {
 
 export type initiateLockTransactionArgs = {
 	signerAddress: string | null;
-	sFlrAddress: Hex;
-	cysFlrAddress: Hex;
-	erc1155Address: Hex;
+	selectedToken: CyToken;
 	assets: bigint;
 	config: Config;
 };
 
 export type InitiateUnlockTransactionArgs = {
 	signerAddress: string | null;
-	cysFlrAddress: Hex;
-	sFlrAddress: Hex;
+	selectedToken: CyToken;
 	erc1155Address: Hex;
 	assets: bigint;
 	config: Config;
@@ -110,21 +108,20 @@ const transactionStore = () => {
 	const handleLockTransaction = async ({
 		signerAddress,
 		config,
-		cysFlrAddress,
-		sFlrAddress,
-		erc1155Address,
+		selectedToken,
 		assets
 	}: initiateLockTransactionArgs) => {
 		const writeLock = async () => {
 			let hash: Hex | undefined;
 			// GET WALLET CONFIRMATION
 			try {
-				awaitWalletConfirmation('Awaiting wallet confirmation to lock your SFLR...');
+				awaitWalletConfirmation('Awaiting wallet confirmation to lock...');
 				hash = await writeErc20PriceOracleReceiptVaultDeposit(config, {
-					address: cysFlrAddress,
+					address: selectedToken.address,
 					args: [assets, signerAddress as Hex, 0n, '0x']
 				});
-			} catch {
+			} catch (e) {
+				console.log(e);
 				return transactionError(TransactionErrorMessage.USER_REJECTED_LOCK);
 			}
 			awaitLockTx(hash);
@@ -136,13 +133,12 @@ const transactionStore = () => {
 			}
 			// UPDATE BALANCES AND RECEIPTS
 			try {
-				await balancesStore.refreshBalances(
-					config,
-					sFlrAddress,
-					cysFlrAddress,
-					signerAddress as string
+				await balancesStore.refreshBalances(config, signerAddress as Hex);
+				const getReceiptsResult = await getReceipts(
+					signerAddress as Hex,
+					selectedToken.receiptAddress,
+					config
 				);
-				const getReceiptsResult = await getReceipts(signerAddress as Hex, erc1155Address, config);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}
@@ -159,8 +155,8 @@ const transactionStore = () => {
 		checkingWalletAllowance();
 
 		const data = await readErc20Allowance(config, {
-			address: sFlrAddress,
-			args: [signerAddress as Hex, cysFlrAddress]
+			address: selectedToken.underlyingAddress,
+			args: [signerAddress as Hex, selectedToken.address]
 		});
 
 		if (data < assets) {
@@ -169,8 +165,8 @@ const transactionStore = () => {
 			let hash: Hex | undefined;
 			try {
 				hash = await writeErc20Approve(config, {
-					address: sFlrAddress,
-					args: [cysFlrAddress, assets]
+					address: selectedToken.underlyingAddress,
+					args: [selectedToken.address, assets]
 				});
 			} catch {
 				return transactionError(TransactionErrorMessage.USER_REJECTED_APPROVAL);
@@ -195,8 +191,7 @@ const transactionStore = () => {
 	const handleUnlockTransaction = async ({
 		signerAddress,
 		config,
-		cysFlrAddress,
-		sFlrAddress,
+		selectedToken,
 		erc1155Address,
 		tokenId,
 		assets
@@ -207,7 +202,7 @@ const transactionStore = () => {
 			try {
 				awaitWalletConfirmation('Awaiting wallet confirmation to unlock your SFLR...');
 				hash = await writeErc20PriceOracleReceiptVaultRedeem(config, {
-					address: cysFlrAddress,
+					address: selectedToken.address,
 					args: [assets, signerAddress as Hex, signerAddress as Hex, BigInt(tokenId), '0x']
 				});
 			} catch {
@@ -222,12 +217,7 @@ const transactionStore = () => {
 			}
 			// UPDATE BALANCES AND RECEIPTS
 			try {
-				await balancesStore.refreshBalances(
-					config,
-					sFlrAddress,
-					cysFlrAddress,
-					signerAddress as string
-				);
+				await balancesStore.refreshBalances(config, signerAddress as Hex);
 				const getReceiptsResult = await getReceipts(signerAddress as Hex, erc1155Address, config);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
