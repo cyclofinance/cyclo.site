@@ -41,6 +41,7 @@
 				<div class="flex items-center justify-between">
 					<h2 class="text-xl font-semibold text-white">Your Rewards</h2>
 					<button
+						data-testid="full-tx-history-button"
 						class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90"
 						on:click={() => goto(`/rewards/${account}`)}
 					>

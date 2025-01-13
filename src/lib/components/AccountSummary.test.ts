@@ -1,11 +1,16 @@
-import { render, screen, waitFor } from '@testing-library/svelte';
+import { render, screen, waitFor, fireEvent } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import AccountSummary from './AccountSummary.svelte';
 import { type PeriodStats } from '$lib/queries/fetchAccountStatus';
 import type { AccountStatusQuery } from '../../generated-graphql';
+import { goto } from '$app/navigation';
 
 vi.mock('$lib/queries/fetchAccountStatus', () => ({
 	fetchAccountStatus: vi.fn()
+}));
+
+vi.mock('$app/navigation', () => ({
+	goto: vi.fn()
 }));
 
 const periodStats: PeriodStats[] = [
@@ -19,8 +24,6 @@ const periodStats: PeriodStats[] = [
 		proRataReward: 10
 	}
 ] as unknown as PeriodStats[];
-
-let transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
 
 describe('AccountSummary Component', () => {
 	beforeEach(() => {
@@ -47,6 +50,23 @@ describe('AccountSummary Component', () => {
 		await waitFor(() => {
 			expect(screen.getByText('Your Rewards')).toBeInTheDocument();
 			expect(screen.getByText('Full Tx History')).toBeInTheDocument();
+		});
+	});
+
+	it('should navigate to correct url after button click', async () => {
+		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
+		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
+
+		const { getByTestId } = render(AccountSummary, {
+			props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' }
+		});
+
+		await waitFor(async () => {
+			const button = getByTestId('full-tx-history-button');
+
+			await fireEvent.click(button);
+
+			expect(goto).toHaveBeenCalledWith(`/rewards/0x2b462b16cb267f7545eb45829a2ce1559e56bda4`);
 		});
 	});
 });
