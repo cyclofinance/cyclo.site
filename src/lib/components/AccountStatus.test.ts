@@ -119,6 +119,8 @@ describe('AccountStatus Component', () => {
 		await waitFor(() => {
 			expect(screen.getByTestId('transfer-history')).toBeInTheDocument();
 			expect(screen.getByText(`Received from 0xc0D4...51cf`)).toBeInTheDocument();
+			expect(screen.getByText(`2/18/1971, 11:43:17 PM`)).toBeInTheDocument();
+			expect(screen.getByText(`0.000000000001515222`)).toBeInTheDocument();
 		});
 	});
 });
