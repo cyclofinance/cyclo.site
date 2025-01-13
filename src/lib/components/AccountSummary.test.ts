@@ -25,7 +25,7 @@ const periodStats: PeriodStats[] = [
 	}
 ] as unknown as PeriodStats[];
 
-let transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
+const transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
 
 describe('AccountSummary Component', () => {
 	beforeEach(() => {
@@ -97,6 +97,16 @@ describe('AccountSummary Component', () => {
 					`This account is not eligible for rewards. Only accounts with positive net transfers from approved sources are eligible.`
 				)
 			).toBeInTheDocument();
+		});
+	});
+
+	it('should display periodStats', async () => {
+		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
+		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
+		render(AccountSummary, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
+		await waitFor(() => {
+			expect(screen.getByText(`50%`)).toBeInTheDocument();
+			expect(screen.getByText(`10`)).toBeInTheDocument();
 		});
 	});
 });
