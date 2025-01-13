@@ -39,7 +39,7 @@
 {:else}
 	<div class="space-y-8">
 		<Card customClass="items-stretch">
-			<div class="space-y-6">
+			<div class="space-y-6" data-testid="period-stats">
 				<h2 class="text-xl font-semibold text-white">
 					Estimated Rewards for {account.slice(0, 6)}...{account.slice(-4)}
 				</h2>
