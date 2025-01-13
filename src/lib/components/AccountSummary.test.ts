@@ -25,6 +25,8 @@ const periodStats: PeriodStats[] = [
 	}
 ] as unknown as PeriodStats[];
 
+let transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
+
 describe('AccountSummary Component', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -67,6 +69,34 @@ describe('AccountSummary Component', () => {
 			await fireEvent.click(button);
 
 			expect(goto).toHaveBeenCalledWith(`/rewards/0x2b462b16cb267f7545eb45829a2ce1559e56bda4`);
+		});
+	});
+
+	it('should display `not eligible for rewards` text if account not eligible', async () => {
+		const mockPeriodStats: PeriodStats[] = [
+			{
+				account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4',
+				netTransfers: '20261529360304309332079',
+				period: 'ALL_TIMES',
+				totalNet: '20261529360304309332079',
+				accountNet: '61529360304309332079',
+				percentage: 0,
+				proRataReward: 0
+			}
+		] as unknown as PeriodStats[];
+
+		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
+		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats: mockPeriodStats, transfers });
+
+		render(AccountSummary, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
+
+		await waitFor(() => {
+			expect(screen.getByText(`Your Rewards`)).toBeInTheDocument();
+			expect(
+				screen.getByText(
+					`This account is not eligible for rewards. Only accounts with positive net transfers from approved sources are eligible.`
+				)
+			).toBeInTheDocument();
 		});
 	});
 });
