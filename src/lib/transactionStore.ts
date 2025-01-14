@@ -10,7 +10,7 @@ import {
 } from '../generated';
 import balancesStore from './balancesStore';
 import { myReceipts } from './stores';
-import { getReceipts } from './queries/getReceipts';
+import { refreshAllReceipts } from './queries/getReceipts';
 import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from './types';
 
@@ -19,11 +19,11 @@ export const ONE = BigInt('1000000000000000000');
 
 export enum TransactionStatus {
 	IDLE = 'Idle',
-	CHECKING_ALLOWANCE = 'Checking your approved sFLR spend...',
+	CHECKING_ALLOWANCE = 'Checking your approved spend...',
 	PENDING_WALLET = 'Waiting for wallet confirmation...',
-	PENDING_APPROVAL = 'Approving sFLR spend...',
-	PENDING_LOCK = 'Locking sFLR...',
-	PENDING_UNLOCK = 'Unlocking sFLR...',
+	PENDING_APPROVAL = 'Approving spend...',
+	PENDING_LOCK = 'Locking...',
+	PENDING_UNLOCK = 'Unlocking...',
 	SUCCESS = 'Success! Transaction confirmed',
 	ERROR = 'Something went wrong'
 }
@@ -134,11 +134,7 @@ const transactionStore = () => {
 			// UPDATE BALANCES AND RECEIPTS
 			try {
 				await balancesStore.refreshBalances(config, signerAddress as Hex);
-				const getReceiptsResult = await getReceipts(
-					signerAddress as Hex,
-					selectedToken.receiptAddress,
-					config
-				);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}
@@ -148,7 +144,7 @@ const transactionStore = () => {
 			// SUCCESS
 			return transactionSuccess(
 				hash,
-				"Congrats! You've successfully locked your SFLR in return for cysFLR. You can burn your cysFLR and receipts to redeem your original FLR at any time, or trade your cysFLR on the Flare Network."
+				`Congrats! You've successfully locked your ${selectedToken.underlyingSymbol} in return for ${selectedToken.name}. You can burn your ${selectedToken.name} and receipts to redeem your original ${selectedToken.underlyingSymbol} at any time, or trade your ${selectedToken.name} on the Flare Network.`
 			);
 		};
 
@@ -160,7 +156,9 @@ const transactionStore = () => {
 		});
 
 		if (data < assets) {
-			awaitWalletConfirmation('You need to approve the cysFLR contract to lock your SFLR...');
+			awaitWalletConfirmation(
+				`You need to approve the ${selectedToken.name} contract to lock your ${selectedToken.underlyingSymbol}...`
+			);
 			// GET WALLET CONFIRMATION FOR APPROVAL
 			let hash: Hex | undefined;
 			try {
@@ -192,7 +190,6 @@ const transactionStore = () => {
 		signerAddress,
 		config,
 		selectedToken,
-		erc1155Address,
 		tokenId,
 		assets
 	}: InitiateUnlockTransactionArgs) => {
@@ -200,7 +197,9 @@ const transactionStore = () => {
 			let hash: Hex | undefined;
 			// GET WALLET CONFIRMATION
 			try {
-				awaitWalletConfirmation('Awaiting wallet confirmation to unlock your SFLR...');
+				awaitWalletConfirmation(
+					`Awaiting wallet confirmation to unlock your ${selectedToken.underlyingSymbol} ...`
+				);
 				hash = await writeErc20PriceOracleReceiptVaultRedeem(config, {
 					address: selectedToken.address,
 					args: [assets, signerAddress as Hex, signerAddress as Hex, BigInt(tokenId), '0x']
@@ -218,7 +217,7 @@ const transactionStore = () => {
 			// UPDATE BALANCES AND RECEIPTS
 			try {
 				await balancesStore.refreshBalances(config, signerAddress as Hex);
-				const getReceiptsResult = await getReceipts(signerAddress as Hex, erc1155Address, config);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
-	import { getReceipts } from '$lib/queries/getReceipts';
+	import { refreshAllReceipts } from '$lib/queries/getReceipts';
 	import type { Receipt } from '$lib/types';
 	import { formatEther, parseEther } from 'ethers';
 	import ReceiptsTable from '$lib/components/ReceiptsTable.svelte';
@@ -13,36 +13,14 @@
 	import type { Hex } from 'viem';
 
 	let loading = true;
+	const setLoading = (_loading: boolean) => {
+		loading = _loading;
+	};
 
 	$: if ($signerAddress) {
-		refreshReceipts();
+		refreshAllReceipts($signerAddress, $wagmiConfig, setLoading);
 		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 	}
-
-	const refreshReceipts = async (): Promise<Receipt[]> => {
-		if (!$signerAddress) return [];
-		// Get receipts for both tokens
-		const [cysFLRReceipts, cyWETHReceipts] = await Promise.all([
-			getReceipts($signerAddress, tokens[0].receiptAddress, $wagmiConfig),
-			getReceipts($signerAddress, tokens[1].receiptAddress, $wagmiConfig)
-		]);
-
-		if (!cysFLRReceipts && !cyWETHReceipts) {
-			loading = false;
-			myReceipts.set([]);
-			return [];
-		}
-
-		// Add token identifier to each receipt
-		const allReceipts = [
-			...(cysFLRReceipts?.map((r) => ({ ...r, token: 'cysFLR' })) || []),
-			...(cyWETHReceipts?.map((r) => ({ ...r, token: 'cyWETH' })) || [])
-		];
-
-		loading = false;
-		myReceipts.set(allReceipts);
-		return allReceipts;
-	};
 
 	export let amountToUnlock = '';
 

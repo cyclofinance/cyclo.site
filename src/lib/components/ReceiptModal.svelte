@@ -1,8 +1,7 @@
 <script lang="ts">
 	import balancesStore from '$lib/balancesStore';
-	import type { Receipt } from '$lib/types';
+	import type { CyToken, Receipt } from '$lib/types';
 	import { fade } from 'svelte/transition';
-	import { erc1155Address, tokens } from '$lib/stores';
 	import transactionStore from '$lib/transactionStore';
 	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
 	import { formatEther, parseEther } from 'ethers';
@@ -11,12 +10,13 @@
 	import mobileBurnDia from '$lib/images/mobile-burn.svg';
 	import Input from './Input.svelte';
 	import Button from './Button.svelte';
+	import { selectedCyToken } from '$lib/stores';
 
 	export let receipt: Receipt;
 	export let token: CyToken;
 	enum ButtonStatus {
 		INSUFFICIENT_RECEIPTS = 'INSUFFICIENT RECEIPTS',
-		INSUFFICIENT_TOKEN = `INSUFFICIENT ${receipt.token}`,
+		INSUFFICIENT_TOKEN = `INSUFFICIENT cyTOKEN`,
 		READY = 'UNLOCK'
 	}
 	let buttonStatus: ButtonStatus = ButtonStatus.READY;
@@ -169,7 +169,7 @@
 				signerAddress: $signerAddress,
 				config: $wagmiConfig,
 				selectedToken: token,
-				erc1155Address: $erc1155Address,
+				erc1155Address: $selectedCyToken.receiptAddress,
 				tokenId: receipt.tokenId,
 				assets: amountToRedeem
 			})}

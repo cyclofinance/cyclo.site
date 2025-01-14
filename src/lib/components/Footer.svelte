@@ -65,13 +65,13 @@
 							)}
 						</span>
 					</div>
-					{#if $balancesStore.stats[token]?.tvl?.underlying}
+					{#if $balancesStore.stats[token]?.underlyingTvl}
 						<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="tvl">
 							<span>Total Value Locked</span>
 							<span>
-								{Number(formatEther($balancesStore.stats[token].tvl.underlying))}
+								{Number(formatEther($balancesStore.stats[token].underlyingTvl))}
 								{token.slice(2)}
-								/ $ {Number(formatUnits($balancesStore.stats[token].tvl.usd, 18))}
+								/ $ {Number(formatUnits($balancesStore.stats[token].usdTvl, 18))}
 							</span>
 						</div>
 					{/if}

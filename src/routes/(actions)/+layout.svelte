@@ -5,7 +5,7 @@
 	import balancesStore from '$lib/balancesStore';
 	import TransactionModal from '$lib/components/TransactionModal.svelte';
 	import { selectedCyToken } from '$lib/stores';
-
+	import type { Hex } from 'viem';
 	import Button from '$lib/components/Button.svelte';
 	import { base } from '$app/paths';
 	import Footer from '$lib/components/Footer.svelte';
@@ -14,8 +14,6 @@
 		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
 	}
-
-	$: console.log($balancesStore);
 </script>
 
 <div class="flex flex-grow flex-col items-center gap-6 bg-[#1C02B8] p-2 sm:p-6">

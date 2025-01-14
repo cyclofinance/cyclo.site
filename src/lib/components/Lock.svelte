@@ -3,7 +3,7 @@
 	import transactionStore from '$lib/transactionStore';
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
-	import { cusdxAddress, quoterAddress, selectedCyToken } from '$lib/stores';
+	import { cusdxAddress, selectedCyToken } from '$lib/stores';
 	import { base } from '$app/paths';
 	import mintDia from '$lib/images/mint-dia.svg';
 	import mintMobile from '$lib/images/mint-mobile.svg';
@@ -304,7 +304,8 @@
 	<div class="p-1 text-center sm:p-4">
 		<h2 class="mb-4 text-lg font-semibold text-red-600">Wait!</h2>
 		<p class="mb-4 text-sm text-gray-700 dark:text-gray-300">
-			Before you lock your sFLR, make sure you understand the following:
+			Before you lock your {$selectedCyToken.underlyingSymbol}, make sure you understand the
+			following:
 		</p>
 		<ul
 			class="mb-4 flex flex-col gap-1 pl-1 text-left text-xs text-gray-700 dark:text-gray-300 sm:pl-4"
@@ -332,16 +333,16 @@
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
-				Cyclo relies on oracles to determine the FLR/USD price and the sFLR/FLR exchange rate. These
-				are maintained by Flare Networks and Sceptre respectively.
+				Cyclo relies on oracles to determine the ${$selectedCyToken.underlyingSymbol}/USD price.
+				These are maintained by Flare Networks (and Sceptre in the case of sFLR).
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
-				You must keep your receipt tokens safe to unlock your sFLR.
+				You must keep your receipt tokens safe to unlock your ${$selectedCyToken.underlyingSymbol}.
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
-				The value of cysFLR is determined solely by market forces.
+				The value of ${$selectedCyToken.name} is determined solely by market forces.
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
