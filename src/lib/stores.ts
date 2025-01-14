@@ -29,10 +29,10 @@ export const tokens = [
 	},
 	{
 		name: 'cyWETH',
-		address: '0xB771384475cc49AF079Cd21BEd845dcb13bC417a' as Hex,
+		address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex,
 		underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex, // weth
 		underlyingSymbol: 'WETH',
-		receiptAddress: '0xB61fa4cD42Af70A317398cD12db86458451229ac' as Hex
+		receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex
 	}
 ];
 
