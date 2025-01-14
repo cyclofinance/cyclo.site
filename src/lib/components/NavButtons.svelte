@@ -17,6 +17,7 @@
 		>
 	{/if}
 	<button
+		data-testid="docs-button-mobile"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:hidden={$page.url.pathname.startsWith('/docs') || $page.url.pathname === '/'}
 		on:click={() => {
@@ -24,6 +25,7 @@
 		}}>Docs</button
 	>
 	<button
+		data-testid="rewards-button-mobile"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:hidden={$page.url.pathname === '/rewards'}
 		on:click={() => {
@@ -44,6 +46,7 @@
 		>
 	{/if}
 	<button
+		data-testid="docs-button"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:underline={$page.url.pathname.startsWith('/docs')}
 		on:click={() => {
@@ -51,6 +54,7 @@
 		}}>Docs</button
 	>
 	<button
+		data-testid="rewards-button"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:underline={$page.url.pathname === '/rewards'}
 		on:click={() => {
