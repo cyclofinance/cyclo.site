@@ -1,4 +1,4 @@
-import type { Config } from '@wagmi/core';
+import { type Config } from '@wagmi/core';
 import {
 	readErc20BalanceOf,
 	readErc20TotalSupply,
@@ -11,6 +11,7 @@ import type { Hex } from 'viem';
 import { ZeroAddress } from 'ethers';
 import type { CyToken } from './types';
 import { quoterAddress, tokens } from './stores';
+import blockNumberStore from './blockNumberStore';
 
 interface StatsState {
 	status: string;
@@ -75,34 +76,38 @@ const getDepositPreviewSwapValue = async (
 	config: Config,
 	selectedToken: CyToken,
 	valueToken: Hex,
-	depositAmount: bigint
+	depositAmount: bigint,
+	blockNumber: bigint
 ) => {
-	const { result: depositPreviewValue } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(
-		config,
-		{
-			address: selectedToken.address,
-			args: [depositAmount, 0n],
-			account: ZeroAddress as `0x${string}`
-		}
-	);
+	try {
+		const { result: depositPreviewValue } =
+			await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
+				address: selectedToken.address,
+				args: [depositAmount, 0n],
+				account: ZeroAddress as `0x${string}`,
+				blockNumber: blockNumber
+			});
 
-	let cusdxOutput = BigInt(0);
-	if (selectedToken.name === 'cysFLR') {
-		const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
-			address: get(quoterAddress),
-			args: [
-				{
-					tokenIn: selectedToken.address,
-					tokenOut: valueToken,
-					amountIn: depositPreviewValue,
-					fee: 3000,
-					sqrtPriceLimitX96: BigInt(0)
-				}
-			]
-		});
-		cusdxOutput = swapQuote[0];
+		if (selectedToken.name === 'cysFLR') {
+			const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
+				address: get(quoterAddress),
+				args: [
+					{
+						tokenIn: selectedToken.address,
+						tokenOut: valueToken,
+						amountIn: depositPreviewValue,
+						fee: 3000,
+						sqrtPriceLimitX96: BigInt(0)
+					}
+				]
+			});
+			return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
+		}
+		return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
+	} catch (error) {
+		console.error('Error getting swapQuote:', error);
+		return { cyTokenOutput: 0n, cusdxOutput: 0n };
 	}
-	return { cyTokenOutput: depositPreviewValue, cusdxOutput };
 };
 
 const getCyTokenUsdPrice = async (
@@ -146,11 +151,13 @@ const getcysFLRSupply = async (config: Config, selectedToken: CyToken) => {
 const getUnderlyingBalanceLockedInCysToken = async (
 	config: Config,
 	selectedToken: CyToken,
-	underlyingAddress: Hex
+	underlyingAddress: Hex,
+	currentBlock: bigint
 ) => {
 	const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(config, {
 		address: underlyingAddress,
-		args: [selectedToken.address]
+		args: [selectedToken.address],
+		blockNumber: currentBlock
 	});
 	return underlyingBalanceLockedInCysToken;
 };
@@ -194,11 +201,17 @@ const balancesStore = () => {
 
 	const refreshPrices = async (config: Config, selectedToken: CyToken) => {
 		if (!selectedToken?.address) return;
+		const { blockNumber } = get(blockNumberStore);
 
 		const [lockPrice, cysFlrSupply, underlyingBalanceLockedInCysToken] = await Promise.all([
 			getLockPrice(config, selectedToken),
 			getcysFLRSupply(config, selectedToken),
-			getUnderlyingBalanceLockedInCysToken(config, selectedToken, selectedToken.underlyingAddress)
+			getUnderlyingBalanceLockedInCysToken(
+				config,
+				selectedToken,
+				selectedToken.underlyingAddress,
+				blockNumber
+			)
 		]);
 
 		update((state) => ({
@@ -261,7 +274,15 @@ const balancesStore = () => {
 		valueToken: Hex,
 		assets: bigint
 	) => {
-		const swapQuotes = await getDepositPreviewSwapValue(config, selectedToken, valueToken, assets);
+		const { blockNumber } = get(blockNumberStore);
+		const swapQuotes = await getDepositPreviewSwapValue(
+			config,
+			selectedToken,
+			valueToken,
+			assets,
+			blockNumber
+		);
+		console.log('swapQuotes', swapQuotes);
 		update((state) => ({
 			...state,
 			swapQuotes
@@ -269,6 +290,7 @@ const balancesStore = () => {
 	};
 
 	const refreshFooterStats = async (config: Config, quoterAddress: Hex, cusdxAddress: Hex) => {
+		const { blockNumber } = get(blockNumberStore);
 		const getTokenStats = async (token: CyToken) => {
 			const [supplyResult, priceResult, lockPriceResult, tvlResult] = await Promise.all([
 				getcysFLRSupply(config, token).catch((error) => {
@@ -283,12 +305,15 @@ const balancesStore = () => {
 					console.log(`Failed to fetch lock price for ${token.name}:`, error);
 					return BigInt(0);
 				}),
-				getUnderlyingBalanceLockedInCysToken(config, token, token.underlyingAddress).catch(
-					(error) => {
-						console.log(`Failed to fetch TVL for ${token.name}:`, error);
-						return BigInt(0);
-					}
-				)
+				getUnderlyingBalanceLockedInCysToken(
+					config,
+					token,
+					token.underlyingAddress,
+					blockNumber
+				).catch((error) => {
+					console.log(`Failed to fetch TVL for ${token.name}:`, error);
+					return BigInt(0);
+				})
 			]);
 
 			const stats = {
