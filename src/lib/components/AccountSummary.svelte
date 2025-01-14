@@ -28,7 +28,7 @@
 
 <Card customClass="items-stretch">
 	{#if loading}
-		<div class="flex min-h-[200px] items-center justify-center">
+		<div class="flex min-h-[200px] items-center justify-center" data-testid="loader">
 			<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-white" />
 		</div>
 	{:else if error}
@@ -41,6 +41,7 @@
 				<div class="flex items-center justify-between">
 					<h2 class="text-xl font-semibold text-white">Your Rewards</h2>
 					<button
+						data-testid="full-tx-history-button"
 						class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90"
 						on:click={() => goto(`/rewards/${account}`)}
 					>
