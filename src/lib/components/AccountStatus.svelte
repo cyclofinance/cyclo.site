@@ -29,7 +29,7 @@
 </script>
 
 {#if loading}
-	<div class="flex min-h-[200px] items-center justify-center">
+	<div class="flex min-h-[200px] items-center justify-center" data-testid="loader">
 		<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-white" />
 	</div>
 {:else if error}
@@ -39,7 +39,7 @@
 {:else}
 	<div class="space-y-8">
 		<Card customClass="items-stretch">
-			<div class="space-y-6">
+			<div class="space-y-6" data-testid="period-stats">
 				<h2 class="text-xl font-semibold text-white">
 					Estimated Rewards for {account.slice(0, 6)}...{account.slice(-4)}
 				</h2>
@@ -86,7 +86,7 @@
 		</Card>
 
 		<Card customClass="items-stretch">
-			<div class="space-y-6">
+			<div class="space-y-6" data-testid="transfer-history">
 				<h2 class="text-xl font-semibold text-white">Transfer History</h2>
 				<div class="space-y-2">
 					{#each transfers as transfer}
