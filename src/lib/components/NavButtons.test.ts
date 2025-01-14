@@ -38,4 +38,14 @@ describe('NavButtons Component', () => {
 			expect(goto).toHaveBeenCalledWith(base + '/lock');
 		});
 	});
+
+	it('should check app button is not displayed', async () => {
+		render(NavButtons, {
+			props: { launched: false }
+		});
+
+		await waitFor(async () => {
+			expect(screen.queryByText('App')).not.toBeInTheDocument();
+		});
+	});
 });
