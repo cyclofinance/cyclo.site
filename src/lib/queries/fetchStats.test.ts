@@ -37,8 +37,8 @@ describe('fetchTopRewards', () => {
 			json: async () => mockResponse
 		} as Response);
 
-		const cysFLRwFLRPrice = 2n * 10n ** 18n
-		const totalEligibleHoldings = 1000000000000000000000n
+		const cysFLRwFLRPrice = 2n * 10n ** 18n;
+		const totalEligibleHoldings = 1000000000000000000000n;
 		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(cysFLRwFLRPrice);
 
 		const totalEligibleHoldingsInFLR = (totalEligibleHoldings * cysFLRwFLRPrice) / 10n ** 18n;
