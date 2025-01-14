@@ -48,4 +48,22 @@ describe('NavButtons Component', () => {
 			expect(screen.queryByText('App')).not.toBeInTheDocument();
 		});
 	});
+
+	it('should check ', async () => {
+		const { getByTestId } = render(NavButtons, {
+			props: { launched: true }
+		});
+
+		await waitFor(async () => {
+			const docsButton = getByTestId('docs-button');
+			await fireEvent.click(docsButton);
+
+			expect(goto).toHaveBeenCalledWith(base + '/docs');
+
+			const rewardsButton = getByTestId('rewards-button');
+			await fireEvent.click(rewardsButton);
+
+			expect(goto).toHaveBeenCalledWith(base + '/rewards');
+		});
+	});
 });
