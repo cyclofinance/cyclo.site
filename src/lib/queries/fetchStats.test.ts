@@ -37,15 +37,19 @@ describe('fetchTopRewards', () => {
 			json: async () => mockResponse
 		} as Response);
 
-		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(2n * 10n ** 18n);
+		const cysFLRwFLRPrice = 2n * 10n ** 18n
+		const totalEligibleHoldings = 1000000000000000000000n
+		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(cysFLRwFLRPrice);
 
+		const totalEligibleHoldingsInFLR = (totalEligibleHoldings * cysFLRwFLRPrice) / 10n ** 18n;
+		const currentApy = ((MONTHLY_REWARDS * 10n ** 18n) / totalEligibleHoldingsInFLR) * 12n * 100n;
 		const result = await fetchStats();
 
 		expect(result).toEqual({
 			eligibleHolders: 2,
-			totalEligibleHoldings: 1000000000000000000000n,
+			totalEligibleHoldings,
 			monthlyRewards: MONTHLY_REWARDS,
-			currentApy: 600000000000000000000000n
+			currentApy
 		});
 
 		expect(global.fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
