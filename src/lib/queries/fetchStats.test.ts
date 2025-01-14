@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchStats } from './fetchStats';
 import { SUBGRAPH_URL } from '$lib/constants';
 import Stats from '$lib/queries/stats.graphql?raw';
+import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 
 vi.mock('$lib/constants', () => ({
 	SUBGRAPH_URL: 'http://mocked-subgraph-url'
@@ -9,25 +10,26 @@ vi.mock('$lib/constants', () => ({
 
 global.fetch = vi.fn();
 
+vi.mock('./cysFLRwFLRQuote', () => ({
+	getcysFLRwFLRPrice: vi.fn()
+}));
+
+const MONTHLY_REWARDS = 1_000_000n * 10n ** 18n; // 1M rFLR
+
 describe('fetchTopRewards', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it('fetches and computes stats correctly', async () => {
+	it('fetches and calculates stats correctly', async () => {
 		const mockResponse = {
 			data: {
-				trackingPeriods: [{ totalApprovedTransfersIn: '1000000000000000000000' }],
-				trackingPeriodForAccounts: [
+				trackingPeriods: [
 					{
-						account: { id: '0x123' },
-						netApprovedTransfersIn: '500000000000000000000'
-					},
-					{
-						account: { id: '0x456' },
-						netApprovedTransfersIn: '250000000000000000000'
+						totalApprovedTransfersIn: '1000000000000000000000' // 1000 cysFLR
 					}
-				]
+				],
+				trackingPeriodForAccounts: [{ account: { id: '0x123' } }, { account: { id: '0x456' } }]
 			}
 		};
 
@@ -35,27 +37,23 @@ describe('fetchTopRewards', () => {
 			json: async () => mockResponse
 		} as Response);
 
+		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(2n * 10n ** 18n);
+
 		const result = await fetchStats();
 
-		expect(result).toEqual([
-			{
-				account: '0x123',
-				netTransfers: '500000000000000000000',
-				percentage: 50,
-				proRataReward: 500000
-			},
-			{
-				account: '0x456',
-				netTransfers: '250000000000000000000',
-				percentage: 25,
-				proRataReward: 250000
-			}
-		]);
+		expect(result).toEqual({
+			eligibleHolders: 2,
+			totalEligibleHoldings: 1000000000000000000000n,
+			monthlyRewards: MONTHLY_REWARDS,
+			currentApy: 600000000000000000000000n
+		});
 
-		expect(fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
+		expect(global.fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ query: Stats })
 		});
+
+		expect(getcysFLRwFLRPrice).toHaveBeenCalled();
 	});
 });
