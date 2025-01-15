@@ -59,4 +59,37 @@ describe('fetchAccountStatus', () => {
 			body: JSON.stringify({ query: AccountStatus, variables: { account } })
 		});
 	});
+
+	it('correctly merges and sorts transfers by timestamp', async () => {
+		const account = '0x123';
+		const mockData = {
+			data: {
+				trackingPeriods: [
+					{ totalApprovedTransfersIn: '1000000000000000000000', period: 'ALL_TIMES' }
+				],
+				trackingPeriodForAccounts: [{ netApprovedTransfersIn: '100000000000000000000' }],
+				sentTransfers: [
+					{ id: '1', blockTimestamp: '10', amount: '500000000000000000' },
+					{ id: '2', blockTimestamp: '20', amount: '300000000000000000' }
+				],
+				receivedTransfers: [
+					{ id: '3', blockTimestamp: '15', amount: '200000000000000000' },
+					{ id: '4', blockTimestamp: '25', amount: '100000000000000000' }
+				]
+			}
+		};
+
+		vi.mocked(global.fetch).mockResolvedValueOnce({
+			json: async () => mockData
+		} as Response);
+
+		const result = await fetchAccountStatus(account);
+
+		expect(result.transfers).toEqual([
+			{ id: '3', blockTimestamp: '15', amount: '200000000000000000' },
+			{ id: '4', blockTimestamp: '25', amount: '100000000000000000' },
+			{ id: '1', blockTimestamp: '10', amount: '500000000000000000' },
+			{ id: '2', blockTimestamp: '20', amount: '300000000000000000' }
+		]);
+	});
 });
