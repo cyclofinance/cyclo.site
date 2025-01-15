@@ -1,63 +1,64 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStats } from './fetchStats';
-import { SUBGRAPH_URL } from '$lib/constants';
-import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
+import { createConfig, http, simulateContract } from '@wagmi/core';
+import { get } from 'svelte/store';
+import { quoterAddress, cysFlrAddress, cusdxAddress, usdcAddress, wFLRAddress } from '$lib/stores';
+import { quoterAbi } from '../../generated';
+import { flare } from '@wagmi/core/chains';
+import { createClient } from 'viem';
 
-vi.mock('$lib/constants', () => ({
-	SUBGRAPH_URL: 'http://mocked-subgraph-url'
-}));
-
-global.fetch = vi.fn();
-
-vi.mock('./cysFLRwFLRQuote', () => ({
-	getcysFLRwFLRPrice: vi.fn()
-}));
-
-const MONTHLY_REWARDS = 1_000_000n * 10n ** 18n; // 1M rFLR
-
-describe('fetchTopRewards', () => {
+describe('getcysFLRwFLRPrice', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it('fetches and calculates stats correctly', async () => {
-		const mockResponse = {
-			data: {
-				trackingPeriods: [
+	it('fetches and calculates wFLR per cysFLR price correctly', async () => {
+		const config = createConfig({
+			chains: [flare],
+			client({ chain }) {
+				return createClient({ chain, transport: http() });
+			}
+		});
+
+		const wFLRcUSDCPriceMock = (
+			await simulateContract(config, {
+				address: get(quoterAddress),
+				abi: quoterAbi,
+				functionName: 'quoteExactInputSingle',
+				args: [
 					{
-						totalApprovedTransfersIn: '1000000000000000000000' // 1000 cysFLR
+						tokenIn: get(wFLRAddress),
+						tokenOut: get(usdcAddress),
+						amountIn: BigInt(1e18),
+						fee: 3000,
+						sqrtPriceLimitX96: BigInt(0)
 					}
 				],
-				trackingPeriodForAccounts: [{ account: { id: '0x123' } }, { account: { id: '0x456' } }]
-			}
-		};
+				account: '0x0000000000000000000000000000000000000000'
+			})
+		).result[0];
 
-		vi.mocked(global.fetch).mockResolvedValueOnce({
-			json: async () => mockResponse
-		} as Response);
+		const cysFLRcUSDXPriceMock = (
+			await simulateContract(config, {
+				address: get(quoterAddress),
+				abi: quoterAbi,
+				functionName: 'quoteExactInputSingle',
+				args: [
+					{
+						tokenIn: get(cysFlrAddress),
+						tokenOut: get(cusdxAddress),
+						amountIn: BigInt(1e18),
+						fee: 3000,
+						sqrtPriceLimitX96: BigInt(0)
+					}
+				],
+				account: '0x0000000000000000000000000000000000000000'
+			})
+		).result[0];
 
-		const cysFLRwFLRPrice = 2n * 10n ** 18n;
-		const totalEligibleHoldings = 1000000000000000000000n;
-		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(cysFLRwFLRPrice);
+		const result = await getcysFLRwFLRPrice();
 
-		const totalEligibleHoldingsInFLR = (totalEligibleHoldings * cysFLRwFLRPrice) / 10n ** 18n;
-		const currentApy = ((MONTHLY_REWARDS * 10n ** 18n) / totalEligibleHoldingsInFLR) * 12n * 100n;
-		const result = await fetchStats();
-
-		expect(result).toEqual({
-			eligibleHolders: 2,
-			totalEligibleHoldings,
-			monthlyRewards: MONTHLY_REWARDS,
-			currentApy
-		});
-
-		expect(global.fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ query: Stats })
-		});
-
-		expect(getcysFLRwFLRPrice).toHaveBeenCalled();
+		const expectedPrice = (cysFLRcUSDXPriceMock * 10n ** 18n) / wFLRcUSDCPriceMock;
+		expect(result).toEqual(expectedPrice);
 	});
 });
