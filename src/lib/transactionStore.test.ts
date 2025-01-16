@@ -225,26 +225,23 @@ describe('transactionStore', () => {
 		});
 	});
 
-	// it('should handle user rejecting lock transaction confimation', async () => {
-	// 	(readErc20Allowance as Mock).mockResolvedValue(BigInt(500));
-	// 	(writeErc20Approve as Mock).mockResolvedValue('mockApproveHash');
-	// 	(writeErc20PriceOracleReceiptVaultDeposit as Mock).mockRejectedValue(
-	// 		new Error('UserRejectedRequestError')
-	// 	);
-	//
-	// 	await handleLockTransaction({
-	// 		signerAddress: mockSignerAddress,
-	// 		config: mockWagmiConfigStore as unknown as Config,
-	// 		sFlrAddress: mocksFlrAddress,
-	// 		cysFlrAddress: mockSelectedToken,
-	// 		erc1155Address: mockERC1155Address,
-	//
-	// 		assets: BigInt(100)
-	// 	});
-	//
-	// 	expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
-	// 	expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_LOCK);
-	// });
+	it('should handle user rejecting lock transaction confirmation', async () => {
+		(readErc20Allowance as Mock).mockResolvedValue(BigInt(500));
+		(writeErc20Approve as Mock).mockResolvedValue('mockApproveHash');
+		(writeErc20PriceOracleReceiptVaultDeposit as Mock).mockRejectedValue(
+			new Error('UserRejectedRequestError')
+		);
+
+		await handleLockTransaction({
+			signerAddress: mockSignerAddress,
+			config: mockWagmiConfigStore as unknown as Config,
+			selectedToken: mockSelectedToken,
+			assets: BigInt(100)
+		});
+
+		expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
+		expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_LOCK);
+	});
 	//
 	// it('should handle successful unlock transaction', async () => {
 	// 	(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockResolvedValue('mockRedeemHash');
