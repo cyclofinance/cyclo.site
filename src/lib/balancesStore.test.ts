@@ -9,6 +9,8 @@ import {
 import balancesStore from './balancesStore';
 import { getBlock, type Config } from '@wagmi/core';
 import { waitFor } from '@testing-library/svelte';
+import type { CyToken } from '$lib/types';
+const { mockErc1155AddressStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 const { mockWagmiConfigStore } = await vi.hoisted(() => import('./mocks/mockStores'));
 
@@ -107,18 +109,21 @@ describe('balancesStore', () => {
 		(readErc20BalanceOf as Mock).mockResolvedValue(BigInt(3e18));
 		(readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
 
-		await refreshPrices(
-			mockWagmiConfigStore as unknown as Config,
-			mockCysFlrAddress,
-			mockQuoterAddress,
-			mockCusdxAddress,
-			mocksFlrAddress
-		);
+		const mockToken: CyToken = {
+			name: 'cysFLR',
+			address: '0xcdef1234abcdef5678',
+			underlyingAddress: '0xabcd1234',
+			underlyingSymbol: 'sFLR',
+			receiptAddress: '0xeeff5678'
+		};
+
+		await refreshPrices(mockWagmiConfigStore as unknown as Config, mockToken);
 
 		const storeValue = get(balancesStore);
-		expect(storeValue.cysFlrUsdPrice).toBe(mockCysFlrUsdPriceReturn.result[0]);
-		expect(storeValue.cysFlrSupply).toBe(BigInt(1000));
-		await waitFor(() => expect(storeValue.TVLUsd).toBe(BigInt(3000n)));
+		expect(storeValue.stats.cysFLR.lockPrice).toBe(BigInt(1000n));
+		expect(storeValue.stats.cysFLR.supply).toBe(BigInt(1000n));
+		expect(storeValue.stats.cysFLR.underlyingTvl).toBe(BigInt(3e18));
+		expect(storeValue.stats.cysFLR.usdTvl).toBe((BigInt(3e18) * BigInt(1000n)) / BigInt(1e18));
 		expect(storeValue.status).toBe('Ready');
 	});
 
