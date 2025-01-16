@@ -13,6 +13,7 @@ import { TransactionErrorMessage } from './types/errors';
 import type { Hex } from 'viem';
 import type { CyToken } from '$lib/types';
 import balancesStore from '$lib/balancesStore';
+import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 const { refreshBalances } = balancesStore;
 
 const { mockWagmiConfigStore } = await vi.hoisted(() => import('./mocks/mockStores'));
@@ -279,24 +280,24 @@ describe('transactionStore', () => {
 		expect(get(transactionStore).error).toBe(TransactionErrorMessage.LOCK_FAILED);
 	});
 
-	// it('should handle transaction failure during unlock', async () => {
-	// 	(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockResolvedValue('mockRedeemHash');
-	// 	(waitForTransactionReceipt as Mock).mockRejectedValue(new Error('Receipt failed'));
-	//
-	// 	await handleUnlockTransaction({
-	// 		signerAddress: mockSignerAddress,
-	// 		config: mockWagmiConfigStore as unknown as Config,
-	// 		selectedToken: mockSelectedToken,
-	// tokenId: mockTokenId,
-	// 		assets: BigInt(100)
-	// 	});
-	//
-	// 	await waitFor(() => {
-	// 		expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
-	// 		expect(get(transactionStore).error).toBe(TransactionErrorMessage.UNLOCK_FAILED);
-	// 	});
-	// 	expect(get(transactionStore).hash).toBe('mockRedeemHash');
-	// });
+	it('should handle transaction failure during unlock', async () => {
+		(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockResolvedValue('mockRedeemHash');
+		(waitForTransactionReceipt as Mock).mockRejectedValue(new Error('Receipt failed'));
+
+		await handleUnlockTransaction({
+			signerAddress: mockSignerAddress,
+			config: mockWagmiConfigStore as unknown as Config,
+			selectedToken: mockSelectedToken,
+			tokenId: mockTokenId,
+			assets: BigInt(100)
+		});
+
+		await waitFor(() => {
+			expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
+			expect(get(transactionStore).error).toBe(TransactionErrorMessage.UNLOCK_FAILED);
+		});
+		expect(get(transactionStore).hash).toBe('mockRedeemHash');
+	});
 
 	it('should handle user rejecting unlock transaction', async () => {
 		(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockResolvedValue('mockRedeemHash');
