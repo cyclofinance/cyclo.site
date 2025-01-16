@@ -286,10 +286,8 @@ describe('transactionStore', () => {
 	// 	await handleUnlockTransaction({
 	// 		signerAddress: mockSignerAddress,
 	// 		config: mockWagmiConfigStore as unknown as Config,
-	// 		cysFlrAddress: mockSelectedToken,
-	// 		erc1155Address: mockERC1155Address,
-	// 		sFlrAddress: mocksFlrAddress,
-	// 		tokenId: mockTokenId,
+	// 		selectedToken: mockSelectedToken,
+	// tokenId: mockTokenId,
 	// 		assets: BigInt(100)
 	// 	});
 	//
@@ -299,24 +297,24 @@ describe('transactionStore', () => {
 	// 	});
 	// 	expect(get(transactionStore).hash).toBe('mockRedeemHash');
 	// });
-	// it('should handle user rejecting unlock transaction', async () => {
-	// 	(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockResolvedValue('mockRedeemHash');
-	// 	(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockRejectedValue(
-	// 		new Error('UserRejectedRequestError')
-	// 	);
-	// 	await handleUnlockTransaction({
-	// 		signerAddress: mockSignerAddress,
-	// 		config: mockWagmiConfigStore as unknown as Config,
-	// 		cysFlrAddress: mockSelectedToken,
-	// 		erc1155Address: mockERC1155Address,
-	// 		sFlrAddress: mocksFlrAddress,
-	// 		tokenId: mockTokenId,
-	// 		assets: BigInt(100)
-	// 	});
-	//
-	// 	await waitFor(() => {
-	// 		expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
-	// 		expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_UNLOCK);
-	// 	});
-	// });
+
+	it('should handle user rejecting unlock transaction', async () => {
+		(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockResolvedValue('mockRedeemHash');
+		(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockRejectedValue(
+			new Error('UserRejectedRequestError')
+		);
+
+		await handleUnlockTransaction({
+			signerAddress: mockSignerAddress,
+			config: mockWagmiConfigStore as unknown as Config,
+			selectedToken: mockSelectedToken,
+			tokenId: mockTokenId,
+			assets: BigInt(100)
+		});
+
+		await waitFor(() => {
+			expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
+			expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_UNLOCK);
+		});
+	});
 });
