@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { get } from 'svelte/store';
-import cysFlrBalanceStore from './balancesStore';
 import {
 	readErc20BalanceOf,
 	simulateQuoterQuoteExactOutputSingle,
@@ -24,7 +23,7 @@ vi.mock('@wagmi/core', () => ({
 	getBlock: vi.fn()
 }));
 
-describe('cysFlrBalanceStore', () => {
+describe('balancesStore', () => {
 	const mockSignerAddress = '0x1234567890abcdef';
 	const mocksFlrAddress = '0xabcdef1234567890';
 	const mockCysFlrAddress = '0xabcdefabcdef1234';
@@ -39,22 +38,41 @@ describe('cysFlrBalanceStore', () => {
 	});
 
 	it('should initialize with the correct default state', () => {
-		expect(get(cysFlrBalanceStore)).toEqual({
-			cysFlrBalance: BigInt(0),
-			sFlrBalance: BigInt(0),
-			lockPrice: BigInt(0),
+		expect(get(balancesStore)).toEqual({
+			balances: {
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			stats: {
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			statsLoading: true,
 			status: 'Checking',
-			cysFlrUsdPrice: BigInt(0),
-			cysFlrSupply: BigInt(0),
-			TVLsFlr: BigInt(0),
-			TVLUsd: BigInt(0),
 			swapQuotes: {
-				cysFlrOutput: BigInt(0),
-				cusdxOutput: BigInt(0)
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
 			}
 		});
 	});
-
 	it('should refresh sFlrBalance correctly', async () => {
 		(getBlock as Mock).mockResolvedValue({ number: BigInt(1000) });
 		const mocksFlrBalance = BigInt(1000);
@@ -62,12 +80,10 @@ describe('cysFlrBalanceStore', () => {
 
 		await refreshBalances(
 			mockWagmiConfigStore as unknown as Config,
-			mocksFlrAddress,
-			mockCysFlrAddress,
 			mockSignerAddress
 		);
 
-		const storeValue = get(cysFlrBalanceStore);
+		const storeValue = get(balancesStore);
 		expect(storeValue.sFlrBalance).toBe(mocksFlrBalance);
 		expect(storeValue.status).toBe('Ready');
 	});
@@ -78,12 +94,10 @@ describe('cysFlrBalanceStore', () => {
 
 		await refreshBalances(
 			mockWagmiConfigStore as unknown as Config,
-			mocksFlrAddress,
-			mockCysFlrAddress,
 			mockSignerAddress
 		);
 
-		const storeValue = get(cysFlrBalanceStore);
+		const storeValue = get(balancesStore);
 		expect(storeValue.cysFlrBalance).toBe(mockCysFlrBalance);
 		expect(storeValue.status).toBe('Ready');
 	});
@@ -105,7 +119,7 @@ describe('cysFlrBalanceStore', () => {
 			mocksFlrAddress
 		);
 
-		const storeValue = get(cysFlrBalanceStore);
+		const storeValue = get(balancesStore);
 		expect(storeValue.cysFlrUsdPrice).toBe(mockCysFlrUsdPriceReturn.result[0]);
 		expect(storeValue.cysFlrSupply).toBe(BigInt(1000));
 		await waitFor(() => expect(storeValue.TVLUsd).toBe(BigInt(3000n)));
@@ -117,14 +131,12 @@ describe('cysFlrBalanceStore', () => {
 		(readErc20BalanceOf as Mock).mockResolvedValue(mockWFlrBalance);
 		refreshBalances(
 			mockWagmiConfigStore as unknown as Config,
-			mocksFlrAddress,
-			mockCysFlrAddress,
 			mockSignerAddress
 		);
 
 		reset();
 
-		expect(get(cysFlrBalanceStore)).toEqual({
+		expect(get(balancesStore)).toEqual({
 			cysFlrBalance: BigInt(0),
 			sFlrBalance: BigInt(0),
 			lockPrice: BigInt(0),
