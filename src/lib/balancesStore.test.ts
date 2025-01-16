@@ -135,17 +135,37 @@ describe('balancesStore', () => {
 		reset();
 
 		expect(get(balancesStore)).toEqual({
-			cysFlrBalance: BigInt(0),
-			sFlrBalance: BigInt(0),
-			lockPrice: BigInt(0),
+			balances: {
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			stats: {
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			statsLoading: true,
 			status: 'Checking',
-			cysFlrUsdPrice: BigInt(0),
-			cysFlrSupply: BigInt(0),
-			TVLsFlr: BigInt(0),
-			TVLUsd: BigInt(0),
 			swapQuotes: {
-				cysFlrOutput: BigInt(0),
-				cusdxOutput: BigInt(0)
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
 			}
 		});
 	});
