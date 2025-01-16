@@ -153,24 +153,22 @@ describe('transactionStore', () => {
 		});
 	});
 
-	// it('should prompt the user to approve cysFLR contract to lock sFLR if allowance is less than assets', async () => {
-	// 	const mockAllowance = BigInt(500);
-	//
-	// 	(readErc20Allowance as Mock).mockResolvedValueOnce(mockAllowance);
-	//
-	// 	handleLockTransaction({
-	// 		signerAddress: '0x123',
-	// 		config: mockWagmiConfigStore as unknown as Config,
-	// 		sFlrAddress: '0x456',
-	// 		cysFlrAddress: mockSelectedToken,
-	// 		erc1155Address: '0xabc',
-	// 		assets: BigInt(1000)
-	// 	});
-	//
-	// 	awaitWalletConfirmation('You need to approve the cysFLR contract to lock your SFLR...');
-	//
-	// 	expect(get(transactionStore).status).toBe(TransactionStatus.PENDING_WALLET);
-	// });
+	it('should prompt the user to approve cysFLR contract to lock sFLR if allowance is less than assets', async () => {
+		const mockAllowance = BigInt(500);
+
+		(readErc20Allowance as Mock).mockResolvedValueOnce(mockAllowance);
+
+		await handleLockTransaction({
+			signerAddress: '0x123',
+			config: mockWagmiConfigStore as unknown as Config,
+			selectedToken: mockSelectedToken,
+			assets: BigInt(1000)
+		});
+
+		awaitWalletConfirmation('You need to approve the cysFLR contract to lock your SFLR...');
+
+		expect(get(transactionStore).status).toBe(TransactionStatus.PENDING_WALLET);
+	});
 	//
 	// it('should handle successful lock transaction', async () => {
 	// 	(readErc20Allowance as Mock).mockResolvedValue(BigInt(500));
