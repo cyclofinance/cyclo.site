@@ -86,14 +86,15 @@ describe('balancesStore', () => {
 		expect(storeValue.status).toBe('Ready');
 	});
 
-	it('should refresh cysFLRBalance correctly', async () => {
-		const mockCysFlrBalance = BigInt(2000);
-		(readErc20BalanceOf as Mock).mockResolvedValue(mockCysFlrBalance);
+	it('should refresh cyWETH Balance correctly', async () => {
+		const mockCyWETHBalance = BigInt(2000);
+		(readErc20BalanceOf as Mock).mockResolvedValue(mockCyWETHBalance);
 
 		await refreshBalances(mockWagmiConfigStore as unknown as Config, mockSignerAddress);
 
 		const storeValue = get(balancesStore);
-		expect(storeValue.cysFlrBalance).toBe(mockCysFlrBalance);
+		expect(storeValue.balances.cyWETH.signerBalance).toBe(mockCyWETHBalance);
+		expect(storeValue.balances.cyWETH.signerUnderlyingBalance).toBe(mockCyWETHBalance);
 		expect(storeValue.status).toBe('Ready');
 	});
 
