@@ -10,13 +10,8 @@ import {
 import { waitForTransactionReceipt, type Config } from '@wagmi/core';
 import { waitFor } from '@testing-library/svelte';
 import { TransactionErrorMessage } from './types/errors';
-import type { Hex } from 'viem';
 import type { CyToken } from '$lib/types';
-import balancesStore from '$lib/balancesStore';
 import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
-const { refreshBalances } = balancesStore;
-
-const { mockWagmiConfigStore } = await vi.hoisted(() => import('./mocks/mockStores'));
 
 vi.mock('$lib/queries/getReceipts', () => ({
 	getReceipts: vi.fn()
@@ -38,7 +33,6 @@ vi.mock('@wagmi/core', () => ({
 
 describe('transactionStore', () => {
 	const mockSignerAddress = '0x1234567890abcdef';
-	const mocksFlrAddress = '0xabcdef1234567890';
 	const mockSelectedToken: CyToken = {
 		name: 'cysFLR',
 		address: '0xcdef1234abcdef5678',
@@ -46,7 +40,6 @@ describe('transactionStore', () => {
 		underlyingSymbol: 'sFLR',
 		receiptAddress: '0xeeff5678'
 	};
-	const mockERC1155Address = '0xabcdefabcdef1234';
 	const mockTokenId = '1';
 	const mockAssets = BigInt(1000);
 
@@ -252,6 +245,7 @@ describe('transactionStore', () => {
 	// 		signerAddress: mockSignerAddress,
 	// 		config: mockWagmiConfigStore as unknown as Config,
 	// 		selectedToken: mockSelectedToken,
+	// 		tokenId: mockTokenId,
 	// 		assets: BigInt(100)
 	// 	});
 	//
