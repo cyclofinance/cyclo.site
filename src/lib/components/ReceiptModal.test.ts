@@ -125,34 +125,34 @@ describe('ReceiptModal Component', () => {
 			expect(button).toBeDisabled();
 		});
 	});
-	//
-	// it('should enable the unlock button when a valid amount is entered', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		BigInt(1000000000000000000),
-	// 		BigInt(1000000000000000000),
-	// 		'Ready',
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
-	// 	);
-	//
-	// 	render(ReceiptModal, { receipt: mockReceipt });
-	//
-	// 	const input = screen.getByTestId('redeem-input');
-	// 	await userEvent.type(input, '0.5');
-	// 	await waitFor(() => {
-	// 		const unlockButton = screen.getByTestId('unlock-button');
-	// 		expect(unlockButton.getAttribute('disabled')).toBeFalsy();
-	// 	});
-	// 	screen.debug();
-	// });
-	//
+
+	it('should enable the unlock button when a valid amount is entered', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			BigInt(1000000000000000000),
+			BigInt(1000000000000000000),
+			'Ready',
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
+		);
+
+		render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+		const input = screen.getByTestId('redeem-input');
+		await userEvent.type(input, '0.5');
+		await waitFor(() => {
+			const unlockButton = screen.getByTestId('unlock-button');
+			expect(unlockButton.getAttribute('disabled')).toBeFalsy();
+		});
+		screen.debug();
+	});
+
 	// it('should call handleUnlockTransaction when unlock button is clicked', async () => {
-	// 	render(ReceiptModal, { receipt: mockReceipt });
+	// 	render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
 	//
 	// 	const input = screen.getByTestId('redeem-input');
 	// 	await userEvent.type(input, '0.001');
@@ -184,7 +184,7 @@ describe('ReceiptModal Component', () => {
 	// 		{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
 	// 	);
 	//
-	// 	render(ReceiptModal, { receipt: mockReceipt });
+	// 	render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
 	//
 	// 	// Find the max button within the input component and click it
 	// 	const maxButton = screen.getByTestId('set-val-to-max');
@@ -228,7 +228,7 @@ describe('ReceiptModal Component', () => {
 	// 		{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
 	// 	);
 	//
-	// 	render(ReceiptModal, { receipt: mockReceipt });
+	// 	render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
 	//
 	// 	// Find the max button within the input component and click it
 	// 	const maxButton = screen.getByTestId('set-val-to-max');
