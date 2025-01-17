@@ -51,7 +51,7 @@
 					{/if}
 					<div
 						class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
-						data-testId="market-cap"
+						data-testId={`market-cap-${token}`}
 					>
 						<span>{token} Market Cap</span>
 						<span>

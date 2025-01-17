@@ -116,46 +116,46 @@ describe('Footer.svelte', () => {
 		});
 	});
 
-	// it('should display market cap correctly', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		'Ready',
-	// 		false,
-	// 		{
-	// 			cyWETH: {
-	// 				lockPrice: BigInt(0),
-	// 				price: BigInt(0),
-	// 				supply: BigInt(0),
-	// 				underlyingTvl: BigInt(0),
-	// 				usdTvl: BigInt(0)
-	// 			},
-	// 			cysFLR: {
-	// 				lockPrice: BigInt(0),
-	// 				price: BigInt(0),
-	// 				supply: BigInt(0),
-	// 				underlyingTvl: BigInt(0),
-	// 				usdTvl: BigInt(0)
-	// 			}
-	// 		},
-	// 		{
-	// 			cyWETH: {
-	// 				signerBalance: BigInt(0),
-	// 				signerUnderlyingBalance: BigInt(0)
-	// 			},
-	// 			cysFLR: {
-	// 				signerBalance: BigInt(1000000000000000000),
-	// 				signerUnderlyingBalance: BigInt(1000000000000000000)
-	// 			}
-	// 		},
-	// 		{
-	// 			cusdxOutput: BigInt(0),
-	// 			cyTokenOutput: BigInt(0)
-	// 		}
-	// 	);
-	// 	render(Footer);
-	//
-	// 	await waitFor(() => {
-	// 		expect(screen.getByTestId('market-cap')).toBeInTheDocument();
-	// 		expect(screen.getByText('$ 1000000000000.00')).toBeInTheDocument();
-	// 	});
-	// });
+	it('should display market cap correctly', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(1e18),
+					supply: BigInt(1),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
+		);
+		render(Footer);
+
+		await waitFor(() => {
+			expect(screen.getByTestId('market-cap-cysFLR')).toBeInTheDocument();
+			expect(screen.getByText('$ 1000000000000')).toBeInTheDocument();
+		});
+	});
 });
