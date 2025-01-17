@@ -71,51 +71,51 @@ describe('Footer.svelte', () => {
 			expect(screen.getByText('3000 sFLR / $ 3000')).toBeInTheDocument();
 		});
 	});
-	//
-	// it('should not display supply if fetch fails', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		'Ready',
-	// 		false,
-	// 		{
-	// 			cyWETH: {
-	// 				lockPrice: BigInt(0),
-	// 				price: BigInt(0),
-	// 				supply: BigInt(0),
-	// 				underlyingTvl: BigInt(0),
-	// 				usdTvl: BigInt(0)
-	// 			},
-	// 			cysFLR: {
-	// 				lockPrice: BigInt(0),
-	// 				price: BigInt(0),
-	// 				supply: BigInt(0),
-	// 				underlyingTvl: BigInt(0),
-	// 				usdTvl: BigInt(0)
-	// 			}
-	// 		},
-	// 		{
-	// 			cyWETH: {
-	// 				signerBalance: BigInt(0),
-	// 				signerUnderlyingBalance: BigInt(0)
-	// 			},
-	// 			cysFLR: {
-	// 				signerBalance: BigInt(0),
-	// 				signerUnderlyingBalance: BigInt(0)
-	// 			}
-	// 		},
-	// 		{
-	// 			cusdxOutput: BigInt(0),
-	// 			cyTokenOutput: BigInt(0)
-	// 		}
-	// 	);
-	//
-	// 	render(Footer);
-	//
-	// 	await waitFor(() => {
-	// 		expect(screen.queryByText('Total cysFLR supply')).not.toBeInTheDocument();
-	// 		expect(screen.queryByText('Total TVL')).not.toBeInTheDocument();
-	// 	});
-	// });
-	//
+
+	it('should not display supply if fetch fails', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
+		);
+
+		render(Footer);
+
+		await waitFor(() => {
+			expect(screen.queryByText('Total cysFLR supply')).not.toBeInTheDocument();
+			expect(screen.queryByText('Total TVL')).not.toBeInTheDocument();
+		});
+	});
+
 	// it('should display market cap correctly', async () => {
 	// 	mockBalancesStore.mockSetSubscribeValue(
 	// 		'Ready',
