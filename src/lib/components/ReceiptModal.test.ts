@@ -73,32 +73,32 @@ describe('ReceiptModal Component', () => {
 			expect(screen.getByTestId('flr-to-receive')).toHaveTextContent('21.663778162911611785 sFLR');
 		});
 	});
-	//
-	// it('should disable the unlock button when the redeem amount is greater than balance', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		'Ready',
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
-	// 	);
-	//
-	// 	render(ReceiptModal, { receipt: mockReceipt });
-	//
-	// 	const input = screen.getByTestId('redeem-input');
-	// 	await userEvent.type(input, '2000');
-	//
-	// 	await waitFor(() => {
-	// 		const unlockButton = screen.getByTestId('unlock-button');
-	// 		expect(unlockButton).toBeDisabled();
-	// 	});
-	// });
-	//
+
+	it('should disable the unlock button when the redeem amount is greater than balance', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			BigInt(0),
+			BigInt(0),
+			'Ready',
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
+		);
+
+		render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+		const input = screen.getByTestId('redeem-input');
+		await userEvent.type(input, '2000');
+
+		await waitFor(() => {
+			const unlockButton = screen.getByTestId('unlock-button');
+			expect(unlockButton).toBeDisabled();
+		});
+	});
+
 	// it('should display "INSUFFICIENT cysFLR" if cysFLR balance is insufficient', async () => {
 	// 	mockBalancesStore.mockSetSubscribeValue(
 	// 		BigInt(0),
