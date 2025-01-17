@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
-	import { refreshAllReceipts } from '$lib/queries/getReceipts';
+	import { refreshAllReceipts } from '$lib/queries/refreshAllReceipts';
 	import type { Receipt } from '$lib/types';
 	import { formatEther, parseEther } from 'ethers';
 	import ReceiptsTable from '$lib/components/ReceiptsTable.svelte';
