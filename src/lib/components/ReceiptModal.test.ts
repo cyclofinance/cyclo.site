@@ -99,32 +99,32 @@ describe('ReceiptModal Component', () => {
 		});
 	});
 
-	// it('should display "INSUFFICIENT cysFLR" if cysFLR balance is insufficient', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		'Ready',
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
-	// 	);
-	//
-	// 	render(ReceiptModal, { receipt: mockReceipt });
-	//
-	// 	const input = screen.getByTestId('redeem-input');
-	// 	await userEvent.type(input, '0.00002');
-	// 	await userEvent.tab();
-	//
-	// 	await waitFor(() => {
-	// 		const button = screen.getByTestId('unlock-button');
-	// 		expect(button).toHaveTextContent('INSUFFICIENT cysFLR');
-	// 		expect(button).toBeDisabled();
-	// 	});
-	// });
+	it('should display "INSUFFICIENT cysFLR" if cysFLR balance is insufficient', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			BigInt(0),
+			BigInt(0),
+			'Ready',
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			BigInt(0),
+			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
+		);
+
+		render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+		const input = screen.getByTestId('redeem-input');
+		await userEvent.type(input, '0.00002');
+		await userEvent.tab();
+
+		await waitFor(() => {
+			const button = screen.getByTestId('unlock-button');
+			expect(button).toHaveTextContent('INSUFFICIENT cyTOKEN');
+			expect(button).toBeDisabled();
+		});
+	});
 	//
 	// it('should enable the unlock button when a valid amount is entered', async () => {
 	// 	mockBalancesStore.mockSetSubscribeValue(
