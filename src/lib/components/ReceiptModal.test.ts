@@ -8,26 +8,8 @@ import { mockReceipt } from '$lib/mocks/mockReceipt';
 import userEvent from '@testing-library/user-event';
 import type { CyToken } from '$lib/types';
 
-const { mockBalancesStore, mockErc1155AddressStore, mockCysFlrAddressStore, mockSflrAddressStore } =
-	await vi.hoisted(() => import('$lib/mocks/mockStores'));
-//
-// vi.mock('$lib/stores', async () => ({
-// 	selectedCyToken: {
-// 		subscribe: vi.fn(),
-// 		set: vi.fn(),
-// 		update: vi.fn(),
-// 		value: {
-// 			name: 'cysFLR',
-// 			address: mockCysFlrAddressStore.value,
-// 			underlyingAddress: mockSflrAddressStore.value,
-// 			underlyingSymbol: 'sFLR',
-// 			receiptAddress: mockErc1155AddressStore.value
-// 		}
-// 	},
-// 	erc1155Address: mockErc1155AddressStore,
-// 	sFlrAddress: mockSflrAddressStore
-// }));
-//
+const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
+
 vi.mock('$lib/balancesStore', async () => {
 	return {
 		default: mockBalancesStore
@@ -216,24 +198,59 @@ describe('ReceiptModal Component', () => {
 		screen.debug();
 	});
 
-	// it('should call handleUnlockTransaction when unlock button is clicked', async () => {
-	// 	render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
-	//
-	// 	const input = screen.getByTestId('redeem-input');
-	// 	await userEvent.type(input, '0.001');
-	//
-	// 	await waitFor(() => {
-	// 		const unlockButton = screen.getByTestId('unlock-button');
-	// 		expect(unlockButton.getAttribute('disabled')).toBeFalsy();
-	// 	});
-	// 	const unlockButton = screen.getByTestId('unlock-button');
-	// 	await userEvent.click(unlockButton);
-	//
-	// 	await waitFor(() => {
-	// 		expect(initiateUnlockTransactionSpy).toHaveBeenCalledOnce();
-	// 	});
-	// });
-	//
+	it('should call handleUnlockTransaction when unlock button is clicked', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(1000000000000000000),
+					signerUnderlyingBalance: BigInt(1000000000000000000)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
+		);
+
+		render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+		const input = screen.getByTestId('redeem-input');
+		await userEvent.type(input, '0.0001');
+
+		await waitFor(() => {
+			const unlockButton = screen.getByTestId('unlock-button');
+			expect(unlockButton.getAttribute('disabled')).toBeFalsy();
+		});
+		const unlockButton = screen.getByTestId('unlock-button');
+		await userEvent.click(unlockButton);
+
+		await waitFor(() => {
+			expect(initiateUnlockTransactionSpy).toHaveBeenCalledOnce();
+		});
+	});
+
 	it('should set exact receipt balance when max button is clicked and receipt balance is less than cysFlrBalance', async () => {
 		const mockCysFlrBalance = BigInt('1000000000000000000');
 		mockBalancesStore.mockSetSubscribeValue(
