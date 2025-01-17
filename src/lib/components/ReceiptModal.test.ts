@@ -5,7 +5,7 @@ import transactionStore from '$lib/transactionStore';
 
 import { formatEther, parseEther } from 'ethers';
 import { mockReceipt } from '$lib/mocks/mockReceipt';
-// import userEvent from '@testing-library/user-event';
+import userEvent from '@testing-library/user-event';
 import type { CyToken } from '$lib/types';
 
 const { mockBalancesStore, mockErc1155AddressStore, mockSflrAddressStore } = await vi.hoisted(
@@ -62,17 +62,17 @@ describe('ReceiptModal Component', () => {
 			expect(screen.getByTestId('lock-up-price')).toHaveTextContent(lockUpPrice.toString());
 		});
 	});
-	//
-	// it('should calculate and display correct flrToReceive when redeem amount is entered', async () => {
-	// 	render(ReceiptModal, { receipt: mockReceipt });
-	//
-	// 	const input = screen.getByTestId('redeem-input');
-	// 	await userEvent.type(input, '0.5');
-	//
-	// 	await waitFor(() => {
-	// 		expect(screen.getByTestId('flr-to-receive')).toHaveTextContent('21.663778162911611785 sFLR');
-	// 	});
-	// });
+
+	it('should calculate and display correct flrToReceive when redeem amount is entered', async () => {
+		render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+		const input = screen.getByTestId('redeem-input');
+		await userEvent.type(input, '0.5');
+
+		await waitFor(() => {
+			expect(screen.getByTestId('flr-to-receive')).toHaveTextContent('21.663778162911611785 sFLR');
+		});
+	});
 	//
 	// it('should disable the unlock button when the redeem amount is greater than balance', async () => {
 	// 	mockBalancesStore.mockSetSubscribeValue(
