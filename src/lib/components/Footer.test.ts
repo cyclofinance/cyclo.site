@@ -34,7 +34,7 @@ describe('Footer.svelte', () => {
 					lockPrice: BigInt(1e18),
 					price: BigInt(0),
 					supply: BigInt(1e18),
-					underlyingTvl: BigInt(0),
+					underlyingTvl: BigInt(3000),
 					usdTvl: BigInt(3000)
 				}
 			},
@@ -63,14 +63,14 @@ describe('Footer.svelte', () => {
 		});
 	});
 
-	// it('should display TVL correctly', async () => {
-	// 	render(Footer);
-	//
-	// 	await waitFor(() => {
-	// 		expect(screen.getByTestId('TVL')).toBeInTheDocument();
-	// 		expect(screen.getByText('3000 sFLR / $ 3000.00')).toBeInTheDocument();
-	// 	});
-	// });
+	it('should display TVL correctly', async () => {
+		render(Footer);
+
+		await waitFor(() => {
+			expect(screen.getByTestId('tvl')).toBeInTheDocument();
+			expect(screen.getByText('3000 sFLR / $ 3000')).toBeInTheDocument();
+		});
+	});
 	//
 	// it('should not display supply if fetch fails', async () => {
 	// 	mockBalancesStore.mockSetSubscribeValue(
