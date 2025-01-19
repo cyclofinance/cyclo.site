@@ -251,31 +251,53 @@ describe('Lock Component', () => {
 			expect(balance).toHaveTextContent('9.876');
 		});
 	});
-	//
-	// it('should display correct USD value', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		BigInt('1000000000000000000'), // sFlrBalance (1 sFLR)
-	// 		BigInt('1000000000000000000'), // cysFlrBalance (1 cysFLR)
-	// 		'Ready',
-	// 		BigInt('1000000000000000000'), // lockPrice (1 USD, 18 decimals)
-	// 		BigInt('2000000'), // cysFlrUsdPrice (2 USD, 6 decimals)
-	// 		BigInt('1000000'), // sFlrUsdPrice (1 USD, 6 decimals)
-	// 		BigInt('1000000000000000000'), // cysFlrSupply
-	// 		BigInt('1000000000000000000'), // TVLsFlr
-	// 		BigInt('1000000000000000000'), // TVLUsd
-	// 		{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt('3000000000000000000') } // swapQuotes
-	// 	);
-	//
-	// 	render(Lock);
-	//
-	// 	const input = screen.getByTestId('lock-input');
-	// 	await userEvent.type(input, '500000');
-	//
-	// 	await waitFor(() => {
-	// 		const usdValueElement = screen.getByTestId('calculated-cysflr-usd');
-	// 		expect(usdValueElement).toHaveTextContent('Current market value ~$ 3000000000000.0');
-	// 	});
-	// });
+
+	it('should display correct USD value', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1000000000000000000),
+					price: BigInt(1000000000000000000),
+					supply: BigInt(1000000000000000000),
+					underlyingTvl: BigInt(1000000000000000000),
+					usdTvl: BigInt(1000000000000000000)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(1000000000000000000),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(3000000000000000000),
+				cyTokenOutput: BigInt(0)
+			}
+		);
+
+		render(Lock);
+
+		const input = screen.getByTestId('lock-input');
+		await userEvent.type(input, '500000');
+
+		await waitFor(() => {
+			const usdValueElement = screen.getByTestId('calculated-cysflr-usd');
+			expect(usdValueElement).toHaveTextContent('Current market value ~$ 3000000000000.0');
+		});
+	});
 	//
 	// it('should activate lock transaction when the disclaimer is accepted', async () => {
 	// 	render(Lock);
