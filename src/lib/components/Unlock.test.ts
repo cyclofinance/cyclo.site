@@ -1,14 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
-import { mockConnectedStore, mockSignerAddressStore , mockMyReceipts, mockSelectedCyToken} from '$lib/mocks/mockStores';
+import { mockConnectedStore, mockSignerAddressStore, mockMyReceipts } from '$lib/mocks/mockStores';
 import { refreshAllReceipts } from '$lib/queries/getReceipts';
+import userEvent from '@testing-library/user-event';
 
 const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 vi.mock('$lib/queries/getReceipts', () => ({
 	getSingleTokenReceipts: vi.fn(),
-	refreshAllReceipts: vi.fn(),
+	refreshAllReceipts: vi.fn()
 }));
 
 vi.mock('$lib/balancesStore', async () => {
@@ -141,12 +142,11 @@ describe('Unlock Component', () => {
 	// 	});
 	// });
 
-
 	it('should show "NO RECEIPTS FOUND" message when no receipts are available', async () => {
-			vi.mocked(refreshAllReceipts).mockImplementation( (signerAddress, config, setLoading) => {
-				setLoading(false);
-				return Promise.resolve([]);
-			});
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+			setLoading(false);
+			return Promise.resolve([]);
+		});
 
 		render(Unlock);
 
@@ -155,17 +155,22 @@ describe('Unlock Component', () => {
 		});
 	});
 
-	//
-	// it('should refresh receipts when wallet address changes', async () => {
-	// 	const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
-	// 	const getReceiptsSpy = vi.mocked(getSingleTokenReceipts);
-	//
-	// 	render(Unlock);
-	//
-	// 	await waitFor(() => {
-	// 		expect(getReceiptsSpy).toHaveBeenCalled();
-	// 	});
-	// });
+	it('should display correct token name when a different token is selected', async () => {
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+			setLoading(false);
+			return Promise.resolve([]);
+		});
+
+		render(Unlock);
+
+		// Simulate selecting a different token
+		const newTokenButton = screen.getByTestId('cyWETH-button');
+		await userEvent.click(newTokenButton);
+
+		await waitFor(() => {
+			expect(screen.queryByText('NO cyWETH RECEIPTS FOUND...')).toBeInTheDocument();
+		});
+	});
 	//
 	// it('should handle case when getReceipts returns empty', async () => {
 	// 	const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
