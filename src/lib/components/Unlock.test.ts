@@ -171,14 +171,4 @@ describe('Unlock Component', () => {
 			expect(screen.queryByText('NO cyWETH RECEIPTS FOUND...')).toBeInTheDocument();
 		});
 	});
-	//
-	// it('should handle case when getReceipts returns empty', async () => {
-	// 	const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
-	// 	vi.mocked(getSingleTokenReceipts).mockResolvedValue([]);
-	// 	render(Unlock);
-	//
-	// 	await waitFor(() => {
-	// 		expect(screen.getByText('NO RECEIPTS FOUND...')).toBeInTheDocument();
-	// 	});
-	// });
 });
