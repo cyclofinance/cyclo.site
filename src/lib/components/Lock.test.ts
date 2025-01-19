@@ -23,7 +23,8 @@ vi.mock('$lib/balancesStore', async () => {
 			...mockBalancesStore,
 			refreshSwapQuote: vi.fn(),
 			refreshBalances: vi.fn(),
-			refreshPrices: vi.fn()
+			refreshPrices: vi.fn(),
+			refreshDepositPreviewSwapValue: vi.fn()
 		}
 	};
 });
@@ -87,32 +88,53 @@ describe('Lock Component', () => {
 		});
 	});
 
-	// it('should calculate the correct cysFLR amount based on input', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		'Ready',
-	// 		BigInt(parseEther('1')),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		{ cysFlrOutput: BigInt(1234e18), cusdxOutput: BigInt(0) } // swapQuotes
-	// 	);
-	//
-	// 	render(Lock);
-	//
-	// 	const input = screen.getByTestId('lock-input');
-	// 	await userEvent.type(input, '0.5');
-	//
-	// 	await waitFor(() => {
-	// 		const priceRatio = screen.getByTestId('price-ratio');
-	// 		expect(priceRatio).toBeInTheDocument();
-	// 		const calculatedCysflr = screen.getByTestId('calculated-cysflr');
-	// 		expect(calculatedCysflr).toHaveTextContent('1234.0');
-	// 	});
-	// });
+	it('should calculate the correct cysFLR amount based on input', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(parseEther('1')),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(1234e18)
+			}
+		);
+		render(Lock);
+
+		const input = screen.getByTestId('lock-input');
+		await userEvent.type(input, '0.5');
+
+		await waitFor(() => {
+			const priceRatio = screen.getByTestId('price-ratio');
+			expect(priceRatio).toBeInTheDocument();
+			const calculatedCysflr = screen.getByTestId('calculated-cysflr');
+			expect(calculatedCysflr).toHaveTextContent('1234.0');
+		});
+	});
 	//
 	// it('should call handleLockTransaction when lock button is clicked', async () => {
 	// 	render(Lock);
