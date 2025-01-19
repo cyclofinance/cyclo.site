@@ -1,9 +1,16 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
-import { mockConnectedStore, mockSignerAddressStore, mockMyReceipts } from '$lib/mocks/mockStores';
+import {
+	mockConnectedStore,
+	mockSignerAddressStore,
+	mockMyReceipts,
+	mockSelectedCyToken
+} from '$lib/mocks/mockStores';
 import { refreshAllReceipts } from '$lib/queries/getReceipts';
 import userEvent from '@testing-library/user-event';
+import type { CyToken, Receipt } from '$lib/types';
+import { writable } from 'svelte/store';
 
 const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
@@ -24,10 +31,44 @@ vi.mock('$lib/balancesStore', async () => {
 	};
 });
 
+const selectedCyToken: CyToken = {
+	name: 'cysFLR',
+	address: '0xcdef1234abcdef5678',
+	underlyingAddress: '0xabcd1234',
+	underlyingSymbol: 'sFLR',
+	receiptAddress: '0xeeff5678'
+};
+
+const receipts: Receipt[] = [
+	{
+		balance: 36928000000000000n,
+		chainId: '14',
+		readableFlrPerReceipt: '43.32756',
+		readableTokenId: '0.02308',
+		readableTotalsFlr: '1.60000',
+		tokenAddress: '0x6D6111ab02800aC64f66456874add77F44529a90',
+		tokenId: '23080000000000000',
+		token: 'cysFLR',
+		totalsFlr: 536928000000000000n
+	},
+	{
+		balance: 36928000000000000n,
+		chainId: '14',
+		readableFlrPerReceipt: '43.32756',
+		readableTokenId: '0.02308',
+		readableTotalsFlr: '1.60000',
+		tokenAddress: '0x5D6111ab02800aC64f66456874add77F44529a90',
+		tokenId: '23080000000000000',
+		token: 'cyWETH',
+		totalsFlr: 536928000000000000n
+	}
+];
+
 vi.mock('$lib/store', async () => {
 	return {
 		default: {
-			myReceipts: mockMyReceipts
+			myReceipts: writable(receipts),
+			selectedCyToken: writable(selectedCyToken)
 		}
 	};
 });
@@ -101,46 +142,24 @@ describe('Unlock Component', () => {
 		});
 	});
 
-	// it('should display receipts table when receipts are available', async () => {
-	// 	const { refreshAllReceipts } = await import('$lib/queries/getReceipts');
-	// 	const mockReceipts :Receipt[]= [
-	// 		{
-	// 		balance: 36928000000000000n,
-	// 		chainId: '14',
-	// 		readableFlrPerReceipt: '43.32756',
-	// 		readableTokenId: '0.02308',
-	// 		readableTotalsFlr: '1.60000',
-	// 		tokenAddress: '0x6D6111ab02800aC64f66456874add77F44529a90',
-	// 		tokenId: '23080000000000000',
-	// 		token: 'cysFLR',
-	// 		totalsFlr: 536928000000000000n
-	// 	},
-	// 		{
-	// 			balance: 36928000000000000n,
-	// 			chainId: '14',
-	// 			readableFlrPerReceipt: '43.32756',
-	// 			readableTokenId: '0.02308',
-	// 			readableTotalsFlr: '1.60000',
-	// 			tokenAddress: '0x5D6111ab02800aC64f66456874add77F44529a90',
-	// 			tokenId: '23080000000000000',
-	// 			token: 'cyWETH',
-	// 			totalsFlr: 536928000000000000n
-	// 	}]
-	//
-	// 	vi.mocked(refreshAllReceipts).mockImplementation( (signerAddress, config, setLoading) => {
-	// 		setLoading(false);
-	// 	});
-	//
-	// 	mockMyReceipts.mockSetSubscribeValue(mockReceipts);
-	// 	mockSelectedCyToken.mockSetSubscribeValue('cyWETH');
-	//
-	// 	render(Unlock);
-	//
-	// 	await waitFor(() => {
-	// 		expect(screen.queryByText('NO cysFLR RECEIPTS FOUND...')).not.toBeInTheDocument();
-	// 		expect(screen.queryByText('LOADING...')).not.toBeInTheDocument();
-	// 	});
-	// });
+	it('should display receipts table when receipts are available', async () => {
+		const { refreshAllReceipts } = await import('$lib/queries/getReceipts');
+
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+			setLoading(false);
+			return Promise.resolve(receipts);
+		});
+
+		mockMyReceipts.mockSetSubscribeValue(receipts);
+		mockSelectedCyToken.mockSetSubscribeValue(selectedCyToken);
+
+		render(Unlock);
+
+		await waitFor(() => {
+			expect(screen.queryByText('NO cysFLR RECEIPTS FOUND...')).not.toBeInTheDocument();
+			expect(screen.queryByText('LOADING...')).not.toBeInTheDocument();
+		});
+	});
 
 	it('should show "NO RECEIPTS FOUND" message when no receipts are available', async () => {
 		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {

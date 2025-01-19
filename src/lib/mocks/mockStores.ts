@@ -3,7 +3,7 @@ import { writable } from 'svelte/store';
 import { type Config } from '@wagmi/core';
 import type { Hex } from 'viem';
 import { mockWeb3Config } from './mockWagmiConfig';
-import type { Receipt } from '$lib/types';
+import type { CyToken, Receipt } from '$lib/types';
 
 // Mock writable stores
 export const web3ModalStore = writable<null>(null);
@@ -17,6 +17,7 @@ const erc1155AddressWritable = writable<Hex>('0x6D6111ab02800aC64f66456874add77F
 const mockCysFlrAddressWritable = writable<Hex>('0x91e3B9820b47c7D4e6765E90F94C1638E7bc53C6');
 const mockSFlrAddressWritable = writable<Hex>('0x91e3B9820b47c7D4e6765E90F94C163123456789');
 const mockMyReceiptsWritable = writable<Receipt[]>([]);
+const mockSelectedCyTokenWritable = writable<CyToken>();
 
 type BalanceData = {
 	signerBalance: bigint;
@@ -167,4 +168,10 @@ export const mockMyReceipts = {
 	subscribe: mockMyReceiptsWritable.subscribe,
 	set: mockMyReceiptsWritable.set,
 	mockSetSubscribeValue: (value: Receipt[]): void => mockMyReceiptsWritable.set(value)
+};
+
+export const mockSelectedCyToken = {
+	subscribe: mockSelectedCyTokenWritable.subscribe,
+	set: mockSelectedCyTokenWritable.set,
+	mockSetSubscribeValue: (value: CyToken): void => mockSelectedCyTokenWritable.set(value)
 };
