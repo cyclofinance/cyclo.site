@@ -78,18 +78,17 @@ describe('Unlock Component', () => {
 		expect(screen.getByText('CONNECT WALLET TO VIEW RECEIPTS')).toBeInTheDocument();
 	});
 
-	// it('should display cysFLR balance correctly when wallet is connected', async () => {
-	// 	mockConnectedStore.mockSetSubscribeValue(true);
-	// 	mockSignerAddressStore.mockSetSubscribeValue('mockWalletAddress');
-	// 	render(Unlock);
-	//
-	// 	await waitFor(() => {
-	// 		const balanceText = screen.getByTestId('cysflr-balance');
-	// 		expect(balanceText).toBeInTheDocument();
-	// 		expect(screen.getByText('cysFLR')).toBeInTheDocument();
-	// 		expect(balanceText).toHaveTextContent('1.0');
-	// 	});
-	// });
+	it('should display cysFLR balance correctly when wallet is connected', async () => {
+		mockConnectedStore.mockSetSubscribeValue(true);
+		mockSignerAddressStore.mockSetSubscribeValue('mockWalletAddress');
+		render(Unlock);
+
+		await waitFor(() => {
+			const balanceText = screen.getByTestId('cysflr-balance');
+			expect(balanceText).toBeInTheDocument();
+			expect(balanceText).toHaveTextContent('1.0');
+		});
+	});
 
 	it('should show loading state while fetching receipts', async () => {
 		const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
