@@ -135,20 +135,20 @@ describe('Lock Component', () => {
 			expect(calculatedCysflr).toHaveTextContent('1234.0');
 		});
 	});
-	//
-	// it('should call handleLockTransaction when lock button is clicked', async () => {
-	// 	render(Lock);
-	//
-	// 	const input = screen.getByTestId('lock-input');
-	// 	await userEvent.type(input, '0.0005');
-	//
-	// 	const lockButton = screen.getByTestId('lock-button');
-	// 	await userEvent.click(lockButton);
-	//
-	// 	await waitFor(() => {
-	// 		expect(screen.getByTestId('disclaimer-modal')).toBeInTheDocument();
-	// 	});
-	// });
+
+	it('should call handleLockTransaction when lock button is clicked', async () => {
+		render(Lock);
+
+		const input = screen.getByTestId('lock-input');
+		await userEvent.type(input, '0.0005');
+
+		const lockButton = screen.getByTestId('lock-button');
+		await userEvent.click(lockButton);
+
+		await waitFor(() => {
+			expect(screen.getByTestId('disclaimer-modal')).toBeInTheDocument();
+		});
+	});
 	//
 	// it('should disable the lock button if SFLR balance is insufficient', async () => {
 	// 	mockBalancesStore.mockSetSubscribeValue(
