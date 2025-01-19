@@ -7,7 +7,7 @@ import { mockConnectedStore, mockSignerAddressStore } from '$lib/mocks/mockStore
 const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 vi.mock('$lib/queries/getReceipts', () => ({
-	getReceipts: vi.fn()
+	getSingleTokenReceipts: vi.fn()
 }));
 
 vi.mock('$lib/balancesStore', async () => {
@@ -63,8 +63,8 @@ describe('Unlock Component', () => {
 	});
 
 	it('should show loading state while fetching receipts', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockImplementation(() => new Promise(() => {}));
+		const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
+		vi.mocked(getSingleTokenReceipts).mockImplementation(() => new Promise(() => {}));
 
 		render(Unlock);
 
@@ -74,8 +74,8 @@ describe('Unlock Component', () => {
 	});
 
 	it('should display receipts table when receipts are available', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockResolvedValue(mockReceipts);
+		const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
+		vi.mocked(getSingleTokenReceipts).mockResolvedValue(mockReceipts);
 
 		render(Unlock);
 
@@ -86,8 +86,8 @@ describe('Unlock Component', () => {
 	});
 
 	it('should show "NO RECEIPTS FOUND" message when no receipts are available', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockResolvedValue([]);
+		const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
+		vi.mocked(getSingleTokenReceipts).mockResolvedValue([]);
 
 		render(Unlock);
 
@@ -97,8 +97,8 @@ describe('Unlock Component', () => {
 	});
 
 	it('should refresh receipts when wallet address changes', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		const getReceiptsSpy = vi.mocked(getReceipts);
+		const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
+		const getReceiptsSpy = vi.mocked(getSingleTokenReceipts);
 
 		render(Unlock);
 
@@ -108,8 +108,8 @@ describe('Unlock Component', () => {
 	});
 
 	it('should handle case when getReceipts returns empty', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockResolvedValue([]);
+		const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
+		vi.mocked(getSingleTokenReceipts).mockResolvedValue([]);
 		render(Unlock);
 
 		await waitFor(() => {
