@@ -3,6 +3,7 @@ import { writable } from 'svelte/store';
 import { type Config } from '@wagmi/core';
 import type { Hex } from 'viem';
 import { mockWeb3Config } from './mockWagmiConfig';
+import type { Receipt } from '$lib/types';
 
 // Mock writable stores
 export const web3ModalStore = writable<null>(null);
@@ -15,6 +16,8 @@ const mockWagmiConfigWritable = writable<Config>(mockWeb3Config);
 const erc1155AddressWritable = writable<Hex>('0x6D6111ab02800aC64f66456874add77F44529a90');
 const mockCysFlrAddressWritable = writable<Hex>('0x91e3B9820b47c7D4e6765E90F94C1638E7bc53C6');
 const mockSFlrAddressWritable = writable<Hex>('0x91e3B9820b47c7D4e6765E90F94C163123456789');
+const mockMyReceiptsWritable = writable<Receipt[]>([]);
+
 type BalanceData = {
 	signerBalance: bigint;
 	signerUnderlyingBalance: bigint;
@@ -158,4 +161,10 @@ export const mockSflrAddressStore = {
 	subscribe: mockSFlrAddressWritable.subscribe,
 	set: mockSFlrAddressWritable.set,
 	mockSetSubscribeValue: (value: Hex): void => mockSFlrAddressWritable.set(value)
+};
+
+export const mockMyReceipts = {
+	subscribe: mockMyReceiptsWritable.subscribe,
+	set: mockMyReceiptsWritable.set,
+	mockSetSubscribeValue: (value: Receipt[]): void => mockMyReceiptsWritable.set(value)
 };

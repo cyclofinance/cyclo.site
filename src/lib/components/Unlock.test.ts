@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
-import type { Receipt } from '$lib/types';
 import { mockConnectedStore, mockSignerAddressStore } from '$lib/mocks/mockStores';
+import { refreshAllReceipts } from '$lib/queries/getReceipts';
 
-const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
+const { mockBalancesStore, mockMyReceipts } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 vi.mock('$lib/queries/getReceipts', () => ({
 	getSingleTokenReceipts: vi.fn(),
@@ -23,13 +23,13 @@ vi.mock('$lib/balancesStore', async () => {
 	};
 });
 
-const mockReceipts: Receipt[] = [
-	{
-		chainId: '14',
-		balance: BigInt(1000000000000000000),
-		tokenId: '1'
-	}
-] as unknown as Receipt[];
+vi.mock('$lib/store', async () => {
+	return {
+		default: {
+			myReceipts: mockMyReceipts
+		}
+	};
+});
 
 describe('Unlock Component', () => {
 	beforeEach(() => {
@@ -91,10 +91,7 @@ describe('Unlock Component', () => {
 	});
 
 	it('should show loading state while fetching receipts', async () => {
-		const { getSingleTokenReceipts } = await import('$lib/queries/getReceipts');
-		mockSignerAddressStore.mockSetSubscribeValue('0x1234567890123456789012345678901234567890');
-		vi.mocked(getSingleTokenReceipts).mockImplementation(() => new Promise(() => {}));
-
+		vi.mocked(refreshAllReceipts).mockImplementation(() => new Promise(() => {}));
 		render(Unlock);
 
 		await waitFor(() => {
