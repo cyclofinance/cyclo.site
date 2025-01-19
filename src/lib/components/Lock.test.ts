@@ -192,43 +192,65 @@ describe('Lock Component', () => {
 		expect(lockButton).toBeDisabled();
 		expect(lockButton).toHaveTextContent('INSUFFICIENT sFLR');
 	});
-	//
-	// it('should disable the lock button if no value had been entered', async () => {
-	// 	mockBalancesStore.mockSetSubscribeValue(
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		'Ready',
-	// 		BigInt(1),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		BigInt(0),
-	// 		{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) } // swapQuotes
-	// 	);
-	// 	render(Lock);
-	// 	const lockButton = screen.getByTestId('lock-button');
-	// 	expect(lockButton).toBeDisabled();
-	// 	expect(lockButton).toHaveTextContent('LOCK');
-	// });
-	//
-	// it('should show the connect message if there is no signerAddress', async () => {
-	// 	mockSignerAddressStore.mockSetSubscribeValue('');
-	// 	render(Lock);
-	// 	await waitFor(() => {
-	// 		expect(screen.getByTestId('connect-message')).toBeInTheDocument();
-	// 	});
-	// });
-	//
-	// it('should show the sFLR balance if there is a signerAddress', async () => {
-	// 	mockSignerAddressStore.mockSetSubscribeValue('0x0000');
-	// 	render(Lock);
-	// 	await waitFor(() => {
-	// 		const balance = screen.getByTestId('your-balance');
-	// 		expect(balance).toBeInTheDocument();
-	// 		expect(balance).toHaveTextContent('9.876');
-	// 	});
-	// });
+
+	it('should disable the lock button if no value had been entered', async () => {
+		mockBalancesStore.mockSetSubscribeValue(
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
+		);
+		render(Lock);
+		const lockButton = screen.getByTestId('lock-button');
+		expect(lockButton).toBeDisabled();
+		expect(lockButton).toHaveTextContent('LOCK');
+	});
+
+	it('should show the connect message if there is no signerAddress', async () => {
+		mockSignerAddressStore.mockSetSubscribeValue('');
+		render(Lock);
+		await waitFor(() => {
+			expect(screen.getByTestId('connect-message')).toBeInTheDocument();
+		});
+	});
+
+	it('should show the sFLR balance if there is a signerAddress', async () => {
+		mockSignerAddressStore.mockSetSubscribeValue('0x0000');
+		render(Lock);
+		await waitFor(() => {
+			const balance = screen.getByTestId('your-balance');
+			expect(balance).toBeInTheDocument();
+			expect(balance).toHaveTextContent('9.876');
+		});
+	});
 	//
 	// it('should display correct USD value', async () => {
 	// 	mockBalancesStore.mockSetSubscribeValue(
