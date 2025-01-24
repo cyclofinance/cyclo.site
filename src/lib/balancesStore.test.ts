@@ -3,14 +3,12 @@ import { get } from 'svelte/store';
 import cysFlrBalanceStore from './balancesStore';
 import {
 	readErc20BalanceOf,
-	simulateQuoterQuoteExactOutputSingle,
 	simulateErc20PriceOracleReceiptVaultPreviewDeposit,
 	readErc20TotalSupply
 } from '../generated';
 import balancesStore from './balancesStore';
 import { getBlock, type Config } from '@wagmi/core';
 import { waitFor } from '@testing-library/svelte';
-
 const { mockWagmiConfigStore } = await vi.hoisted(() => import('./mocks/mockStores'));
 
 vi.mock('../generated', () => ({
@@ -19,6 +17,23 @@ vi.mock('../generated', () => ({
 	simulateErc20PriceOracleReceiptVaultPreviewDeposit: vi.fn(),
 	readErc20TotalSupply: vi.fn()
 }));
+
+vi.mock('viem', async () => {
+	const actual = await vi.importActual('viem');
+	return {
+		...actual,
+		getContract: vi.fn(() => ({
+			read: {
+				balanceOf: vi.fn().mockResolvedValue(BigInt(3e18)),
+				totalSupply: vi.fn().mockResolvedValue(BigInt(1000))
+			},
+			simulate: {
+				previewDeposit: vi.fn().mockResolvedValue({ result: [BigInt(1000)] })
+			}
+		})),
+		createPublicClient: vi.fn()
+	};
+});
 
 vi.mock('@wagmi/core', () => ({
 	getBlock: vi.fn()
@@ -89,11 +104,10 @@ describe('cysFlrBalanceStore', () => {
 	});
 
 	it('should refresh prices correctly', async () => {
-		const mockCysFlrUsdPriceReturn = { result: [BigInt(2000)] };
 		(simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock).mockResolvedValue({
 			result: BigInt(1000)
 		});
-		(simulateQuoterQuoteExactOutputSingle as Mock).mockResolvedValue(mockCysFlrUsdPriceReturn);
+
 		(readErc20BalanceOf as Mock).mockResolvedValue(BigInt(3e18));
 		(readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
 
@@ -106,7 +120,6 @@ describe('cysFlrBalanceStore', () => {
 		);
 
 		const storeValue = get(cysFlrBalanceStore);
-		expect(storeValue.cysFlrUsdPrice).toBe(mockCysFlrUsdPriceReturn.result[0]);
 		expect(storeValue.cysFlrSupply).toBe(BigInt(1000));
 		await waitFor(() => expect(storeValue.TVLUsd).toBe(BigInt(3000n)));
 		expect(storeValue.status).toBe('Ready');

@@ -2,15 +2,17 @@ import { type Config } from '@wagmi/core';
 import {
 	readErc20BalanceOf,
 	readErc20TotalSupply,
-	simulateErc20PriceOracleReceiptVaultPreviewDeposit,
-	simulateQuoterQuoteExactInputSingle,
-	simulateQuoterQuoteExactOutputSingle
+	simulateErc20PriceOracleReceiptVaultPreviewDeposit
 } from '../generated';
 import { writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import { ZeroAddress } from 'ethers';
 import blockNumberStore from './blockNumberStore';
 import { get } from 'svelte/store';
+import { erc20PriceOracleReceiptVaultAbi } from './contracts/erc20PriceOracleReceiptVaultAbi';
+import { quoterAbi } from './contracts/quoterAbi';
+import { getPublicClient } from './getPublicClient';
+import { getContract } from 'viem';
 
 const initialState = {
 	cysFlrBalance: BigInt(0),
@@ -28,35 +30,49 @@ const initialState = {
 };
 
 const getSwapQuote = async (
-	config: Config,
 	cysFlrAddress: Hex,
 	cusdxAddress: Hex,
 	assets: bigint,
 	quoterAddress: Hex,
 	blockNumber: bigint
 ) => {
+
+	const client = await getPublicClient();
+
 	try {
-		const { result: depositPreviewValue } =
-			await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
-				address: cysFlrAddress,
-				args: [assets, 0n],
-				account: ZeroAddress as `0x${string}`,
-				blockNumber: blockNumber
-			});
-		const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
+		const cysFlrContract = getContract({
+			address: cysFlrAddress,
+			abi: erc20PriceOracleReceiptVaultAbi,
+			client
+		});
+
+		const quoterContract = getContract({
 			address: quoterAddress,
-			blockNumber: blockNumber,
-			args: [
+			abi: quoterAbi,
+			client
+		});
+
+		const depositPreviewValue = await cysFlrContract.simulate.previewDeposit([assets, 0n], {
+			account: ZeroAddress as `0x${string}`,
+			blockNumber
+		});
+
+		const swapQuote = await quoterContract.read.quoteExactInputSingle(
+			[
 				{
 					tokenIn: cysFlrAddress,
 					tokenOut: cusdxAddress,
-					amountIn: depositPreviewValue,
+					amountIn: depositPreviewValue.result,
 					fee: 3000,
 					sqrtPriceLimitX96: BigInt(0)
 				}
-			]
-		});
-		return { cysFlrOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
+			],
+			{ blockNumber }
+		);
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return { cysFlrOutput: depositPreviewValue.result, cusdxOutput: (swapQuote as any)[0] };
+
 	} catch (error) {
 		console.error('Error getting swapQuote:', error);
 		return { cysFlrOutput: 0n, cusdxOutput: 0n };
@@ -64,17 +80,22 @@ const getSwapQuote = async (
 };
 
 const getcysFLRUsdPrice = async (
-	config: Config,
 	quoterAddress: Hex,
 	cusdxAddress: Hex,
 	cysFlrAddress: Hex,
 	blockNumber: bigint
 ) => {
+	const client = await getPublicClient();
+
 	try {
-		const data = await simulateQuoterQuoteExactOutputSingle(config, {
+		const quoterContract = getContract({
 			address: quoterAddress,
-			blockNumber: blockNumber,
-			args: [
+			abi: quoterAbi,
+			client
+		});
+
+		const quote = await quoterContract.simulate.quoteExactOutputSingle(
+			[
 				{
 					tokenIn: cusdxAddress,
 					tokenOut: cysFlrAddress,
@@ -82,9 +103,12 @@ const getcysFLRUsdPrice = async (
 					fee: 3000,
 					sqrtPriceLimitX96: BigInt(0)
 				}
-			]
-		});
-		return data.result[0] || 0n;
+			],
+			{ blockNumber }
+		);
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		return (quote as any)[0] || 0n;
 	} catch (error) {
 		console.error('Error getting cysFLRUsdPrice:', error);
 		return 0n;
@@ -154,7 +178,7 @@ const balancesStore = () => {
 		const { blockNumber } = get(blockNumberStore);
 
 		const [cysFlrUsdPrice, lockPrice, cysFlrSupply, sFlrBalanceLockedInCysFlr] = await Promise.all([
-			getcysFLRUsdPrice(config, quoterAddress, cusdxAddress, cysFlrAddress, blockNumber),
+			getcysFLRUsdPrice(quoterAddress, cusdxAddress, cysFlrAddress, blockNumber),
 			getLockPrice(config, cysFlrAddress, blockNumber),
 			getcysFLRSupply(config, cysFlrAddress, blockNumber),
 			getsFLRBalanceLockedInCysFlr(config, cysFlrAddress, sFlrAddress, blockNumber)
@@ -219,7 +243,6 @@ const balancesStore = () => {
 	) => {
 		const { blockNumber } = get(blockNumberStore);
 		const swapQuotes = await getSwapQuote(
-			config,
 			cysFlrAddress,
 			cusdxAddress,
 			assets,
