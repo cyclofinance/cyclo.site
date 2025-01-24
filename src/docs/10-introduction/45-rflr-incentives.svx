@@ -23,8 +23,8 @@ Note that while snapshots are taken during the specified period, your eligible b
 
 cysFLR must be acquired through approved sources:
 
-- Raindex withdrawals (including direct trades)  
-- SparkDEX pool swaps  
+- Raindex withdrawals (including direct trades)
+- SparkDEX pool swaps
 - BlazeSwap pool swaps
 
 ### Balance Calculation and Tracking
@@ -37,10 +37,10 @@ Net eligible balance = Total transfers in from approved sources - Total transfer
 
 Key points about balance calculation:
 
-- Tracking starts from the cysFLR token deployment, not from the beginning of the period  
-- All transfers out are counted against your balance  
-- Transfers out are counted even if they occur before transfers in  
-- Most wallets may show negative net balances, which is expected  
+- Tracking starts from the cysFLR token deployment, not from the beginning of the period
+- All transfers out are counted against your balance
+- Transfers out are counted even if they occur before transfers in
+- Most wallets may show negative net balances, which is expected
 - Using a dedicated wallet for cysFLR rewards is recommended
 
 This is intended to be the simplest possible calculation that will remove all noise from minting, interwallet transfers, etc. It also means that if you have a lot of unrelated transfers out of your wallet you won't be eligible for rewards, hence the dedicated wallet recommendation. You can use the wallet for other non-Cyclo related things of course, and that won't impact the calculations, we're only tracking cysFLR token transfers.
@@ -49,8 +49,8 @@ This is intended to be the simplest possible calculation that will remove all no
 
 The program rewards consistent holding throughout each month. Since snapshot times are random and unannounced, your strategy should focus on:
 
-- Maintaining steady positions to capture both monthly snapshots  
-- Minimizing unnecessary transfers that could miss snapshots  
+- Maintaining steady positions to capture both monthly snapshots
+- Minimizing unnecessary transfers that could miss snapshots
 - Using a dedicated wallet to avoid accidental balance reductions
 
 There are no arbitrary restrictions \- no maximum holding period, no minimum requirement, and no cap on rewards per wallet. The system's APY naturally adjusts based on participation levels (dilutes as more eligible cysFLR is purchased).
@@ -65,16 +65,16 @@ Cyclo as a system only grows when people sell their minted cysFLR in order to le
 
 The core mechanism requires the cycle of:
 
-- Users minting cysFLR  
-- Selling it to actually achieve leverage  
+- Users minting cysFLR
+- Selling it to actually achieve leverage
 - Eventually buying back to deleverage and reclaim their collateral
 
 ### Why Not LP Rewards?
 
 Liquidity provision already benefits from:
 
-- High natural trading volume relative to pool size  
-- Inherent impermanent loss resistance in cysFLR/stable pairs  
+- High natural trading volume relative to pool size
+- Inherent impermanent loss resistance in cysFLR/stable pairs
 - Strong organic incentives through pool fees
 
 Additionally, Raindex already provides trading automation for buying and selling cysFLR that can move thousands of cysFLR through the AMM pools without moving the market significantly.
@@ -89,10 +89,10 @@ Further, by not rewarding LPs for specific pools we avoid being "kingmaker". We 
 
 By incentivizing buying and holding, we create several positive effects:
 
-1. Force deleveraging through new market participants (new cysFLR mints)  
-2. Improve price discovery mechanisms  
-3. Generate natural pool volume  
-4. Strengthen protocol TVL organically  
+1. Force deleveraging through new market participants (new cysFLR mints)
+2. Improve price discovery mechanisms
+3. Generate natural pool volume
+4. Strengthen protocol TVL organically
 5. Diversify both sides of the markets across more participants, and positions over time, making the protocol more resilient overall
 
 ### Sybils
@@ -115,22 +115,38 @@ The more that people attempt to launder mints for rewards, the greater the mint 
 
 Minters can already sell their cysFLR for access to any financial opportunity globally, including simply buying and parking stables on Aave for \~10% APY. At some point it should make the most financial sense to either directly buy cysFLR for the most rewards, or to seek other opportunities with minted cysFLR.
 
-Unless/until there's some strong evidence that mint laundering is damaging the intent of the incentives (i.e. not just a handful of minor isolated cases), we're not going to attempt to track or punish anyone, or over complicate the incentives.
+#### Bounties
+
+If you provide clear evidence that someone is mint laundering then we will:
+
+- Give you 10% of the current month's rewards that would have gone to the launderer
+- Redistribute the remaining 90% back to the reward pool for cysFLR buyers
+- Permaban the reported accounts from the rewards program
+
+This adds overhead and risk to effective laundering, further skewing the economically optimal choice (as far as rFLR rewards go) towards simply buying and holding cysFLR.
+
+Send reports to https://forms.gle/VU9DU5bS7xJNU23b7
+
+We do require a clear summary document providing evidence and explaining your methodology. If we can't repeat your process and independently agree with your conclusion then your report will not be accepted and you won't receive a bounty, even if that address is later flagged due to better evidence.
+
+Bounties are paid to the first verifiable (we accept your evidence) reporter per address.
+
+If you publicly disclose details of your report, such as the addresses being reported and/or your evidence/methodology we MAY NOT pay you a bounty. This is because giving information away to launderers makes it easier for them to reshuffle their stack, and makes life harder for bounty hunters collectively.
 
 ## Tracking Your Rewards
 
 The Cyclo website provides tools to help you monitor your potential rewards and understand your current position. Visit the Rewards page to track:
 
-- Your complete transfer history (both eligible and non-eligible)  
-- Current net transfers in from approved sources  
-- Running calculation of your share of the total eligible supply  
+- Your complete transfer history (both eligible and non-eligible)
+- Current net transfers in from approved sources
+- Running calculation of your share of the total eligible supply
 - Estimated monthly rewards based on current holdings
 
 ### Understanding the Numbers
 
 These tracking tools are provided to help you understand your current position, but it's important to note that they are indicative only. Your final rewards will be determined by:
 
-1. Your average eligible balance across both random monthly snapshots  
+1. Your average eligible balance across both random monthly snapshots
 2. Your pro-rata share of the total eligible supply (the sum of all users' snapshot averages)
 
 For example, if you hold 1000 cysFLR of eligible balance today, but then sell half before one of the snapshots, your average holding would be 750 cysFLR. Similarly, if the total eligible supply changes between snapshots, this will affect everyone's pro-rata share because the total rFLR distribution size is fixed.
@@ -139,15 +155,15 @@ For example, if you hold 1000 cysFLR of eligible balance today, but then sell ha
 
 The rewards tracker shows:
 
-- Each transfer in, clearly marked if from an approved source  
-- Each transfer out and its impact on your eligible balance  
-- Your current net eligible position  
+- Each transfer in, clearly marked if from an approved source
+- Each transfer out and its impact on your eligible balance
+- Your current net eligible position
 - An indicative share of the reward pool based on current data
 
 Remember that these numbers will fluctuate as:
 
-- Other users trade in and out of eligible positions  
-- Market activity affects the total eligible supply  
+- Other users trade in and out of eligible positions
+- Market activity affects the total eligible supply
 - Your own trading activity changes your average position
 
 Your final monthly rewards will be calculated using the average of your eligible balance at both snapshot times divided by the average total eligible supply at those same snapshots, multiplied by the monthly reward pool of 1M rFLR.
@@ -158,10 +174,10 @@ All distributions are subject to third party review and approval by the Flare re
 
 The reward tracking system combines on-chain data with off-chain processing:
 
-- Two random monthly snapshots  
-- Off-chain indexing of approved source purchases  
-- Wallet transfer tracking  
-- Automated eligible balance calculations  
+- Two random monthly snapshots
+- Off-chain indexing of approved source purchases
+- Wallet transfer tracking
+- Automated eligible balance calculations
 - Distribution list generation
 
 This infrastructure ensures transparent and fair reward distribution while maintaining system efficiency.
