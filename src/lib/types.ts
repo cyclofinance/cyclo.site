@@ -1,3 +1,4 @@
+import type { Config } from '@wagmi/core';
 import { type Hex } from 'viem';
 
 export type Receipt = {
@@ -9,6 +10,7 @@ export type Receipt = {
 	readableTotalsFlr?: string;
 	readableFlrPerReceipt?: string;
 	totalsFlr?: bigint;
+	token?: string;
 };
 
 export type BlockScoutData = {
@@ -17,4 +19,19 @@ export type BlockScoutData = {
 	};
 	value: string;
 	id: string;
+};
+
+export interface CyToken {
+	name: string;
+	address: Hex;
+	underlyingAddress: Hex;
+	underlyingSymbol: string;
+	receiptAddress: Hex;
+}
+
+export type InitiateLockTransactionArgs = {
+	signerAddress: string;
+	config: Config;
+	selectedToken: CyToken;
+	assets: bigint;
 };

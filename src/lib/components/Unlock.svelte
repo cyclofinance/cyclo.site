@@ -1,33 +1,51 @@
 <script lang="ts">
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
-	import { getReceipts } from '$lib/queries/getReceipts';
+	import { refreshAllReceipts } from '$lib/queries/getReceipts';
 	import type { Receipt } from '$lib/types';
-	import { formatEther } from 'ethers';
+	import { formatEther, parseEther } from 'ethers';
 	import ReceiptsTable from '$lib/components/ReceiptsTable.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import balancesStore from '$lib/balancesStore';
 	import { fade } from 'svelte/transition';
-	import { erc1155Address } from '$lib/stores';
-
+	import { selectedCyToken, tokens } from '$lib/stores';
 	import { myReceipts } from '$lib/stores';
+	import type { Hex } from 'viem';
 
 	let loading = true;
+	const setLoading = (_loading: boolean) => {
+		loading = _loading;
+	};
 
 	$: if ($signerAddress) {
-		refreshReceipts();
+		refreshAllReceipts($signerAddress, $wagmiConfig, setLoading);
+		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 	}
 
-	const refreshReceipts = async (): Promise<Receipt[]> => {
-		if (!$signerAddress) return [];
-		const res = await getReceipts($signerAddress, $erc1155Address, $wagmiConfig);
-		if (res) {
-			loading = false;
-			return ($myReceipts = res);
-		} else {
-			return [];
+	export let amountToUnlock = '';
+
+	$: assets = BigInt(0);
+	$: insufficientFunds =
+		($balancesStore.balances[$selectedCyToken.name]?.signerBalance || 0n) < assets;
+
+	const checkBalance = () => {
+		if (amountToUnlock) {
+			try {
+				const bigNumValue = BigInt(parseEther(amountToUnlock.toString()).toString());
+				assets = bigNumValue;
+				insufficientFunds =
+					($balancesStore.balances[$selectedCyToken.name]?.signerBalance || 0n) < assets;
+			} catch (error) {
+				console.error('Error parsing amount:', error);
+				assets = BigInt(0);
+				insufficientFunds = true;
+			}
 		}
 	};
+
+	$: if ($signerAddress) {
+		checkBalance();
+	}
 </script>
 
 {#if !$signerAddress}
@@ -35,20 +53,42 @@
 		>CONNECT WALLET TO VIEW RECEIPTS</Button
 	>
 {:else}
-	{#key $myReceipts}
+	{#key [$myReceipts, $selectedCyToken]}
 		<Card size="lg">
 			<div
 				class=" flex w-full flex-col justify-between font-semibold text-white sm:flex-row sm:text-xl md:text-xl"
 			>
-				<span>BALANCE</span>
-				<div class="flex flex-row gap-4" data-testid="cysflr-balance">
-					{#key $balancesStore.cysFlrBalance}<span in:fade={{ duration: 700 }}
-							>{formatEther($balancesStore.cysFlrBalance)}</span
-						>{/key}
-					<span>cysFLR</span>
+				<span>BALANCES</span>
+				<div class="flex flex-col gap-4 sm:items-end">
+					{#each ['cysFLR', 'cyWETH'] as token}
+						<div class="flex flex-row gap-2" data-testid="{token.toLowerCase()}-balance">
+							{#key $balancesStore.balances[token]?.signerBalance}
+								<span in:fade={{ duration: 700 }}>
+									{formatEther($balancesStore.balances[token]?.signerBalance || 0n)}
+								</span>
+							{/key}
+							<span>{token}</span>
+						</div>
+					{/each}
 				</div>
 			</div>
 		</Card>
+
+		<!-- Tabs for different token receipts -->
+		<div class="flex gap-4 text-white">
+			{#each tokens as token}
+				<button
+					data-testid="{token.name}-button"
+					class="w-24 sm:w-32 {$selectedCyToken.name === token.name
+						? 'bg-white text-primary'
+						: 'border border-white'}"
+					on:click={() => ($selectedCyToken = token)}
+				>
+					{token.name}
+				</button>
+			{/each}
+		</div>
+
 		{#if loading}
 			<div
 				class=" flex w-full items-center justify-center text-center text-lg font-semibold text-white md:text-xl"
@@ -56,12 +96,15 @@
 				LOADING...
 			</div>
 		{:else if $myReceipts.length > 0}
-			<ReceiptsTable receipts={$myReceipts} />
+			<ReceiptsTable
+				token={$selectedCyToken}
+				receipts={$myReceipts.filter((receipt) => receipt.token === $selectedCyToken.name)}
+			/>
 		{:else if !$myReceipts.length}
 			<div
 				class=" flex w-full items-center justify-center text-center text-lg font-semibold text-white md:text-xl"
 			>
-				NO RECEIPTS FOUND...
+				NO {$selectedCyToken.name} RECEIPTS FOUND...
 			</div>
 		{/if}
 	{/key}

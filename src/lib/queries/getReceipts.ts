@@ -4,8 +4,14 @@ import { formatEther } from 'ethers';
 import { readErc1155BalanceOf } from '../../generated';
 import type { Config } from '@wagmi/core';
 import type { Hex } from 'viem';
+import { myReceipts } from '$lib/stores';
+import { tokens } from '$lib/stores';
 
-export const getReceipts = async (address: string, erc1155Address: string, config: Config) => {
+export const getSingleTokenReceipts = async (
+	address: string,
+	erc1155Address: string,
+	config: Config
+) => {
 	const query: string = `https://flare-explorer.flare.network/api/v2/addresses/${address}/nft?type=ERC-1155`;
 	const getBalance = async (tokenId: bigint) => {
 		const res = await readErc1155BalanceOf(config, {
@@ -41,4 +47,33 @@ export const getReceipts = async (address: string, erc1155Address: string, confi
 		console.error('error getting receipts', error);
 		return null;
 	}
+};
+
+export const refreshAllReceipts = async (
+	signerAddress: string,
+	config: Config,
+	setLoading: (loading: boolean) => void = () => {}
+): Promise<Receipt[]> => {
+	if (!signerAddress) return [];
+	// Get receipts for both tokens
+	const [cysFLRReceipts, cyWETHReceipts] = await Promise.all([
+		getSingleTokenReceipts(signerAddress, tokens[0].receiptAddress, config),
+		getSingleTokenReceipts(signerAddress, tokens[1].receiptAddress, config)
+	]);
+
+	if (!cysFLRReceipts && !cyWETHReceipts) {
+		setLoading(false);
+		myReceipts.set([]);
+		return [];
+	}
+
+	// Add token identifier to each receipt
+	const allReceipts = [
+		...(cysFLRReceipts?.map((r) => ({ ...r, token: 'cysFLR' })) || []),
+		...(cyWETHReceipts?.map((r) => ({ ...r, token: 'cyWETH' })) || [])
+	];
+
+	setLoading(false);
+	myReceipts.set(allReceipts);
+	return allReceipts;
 };

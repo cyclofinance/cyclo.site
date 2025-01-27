@@ -1,8 +1,7 @@
 <script lang="ts">
 	import balancesStore from '$lib/balancesStore';
-	import type { Receipt } from '$lib/types';
+	import type { CyToken, Receipt } from '$lib/types';
 	import { fade } from 'svelte/transition';
-	import { cysFlrAddress, erc1155Address, sFlrAddress } from '$lib/stores';
 	import transactionStore from '$lib/transactionStore';
 	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
 	import { formatEther, parseEther } from 'ethers';
@@ -11,13 +10,15 @@
 	import mobileBurnDia from '$lib/images/mobile-burn.svg';
 	import Input from './Input.svelte';
 	import Button from './Button.svelte';
+	import { selectedCyToken } from '$lib/stores';
 
+	export let receipt: Receipt;
+	export let token: CyToken;
 	enum ButtonStatus {
 		INSUFFICIENT_RECEIPTS = 'INSUFFICIENT RECEIPTS',
-		INSUFFICIENT_cysFLR = 'INSUFFICIENT cysFLR',
+		INSUFFICIENT_TOKEN = `INSUFFICIENT cyTOKEN`,
 		READY = 'UNLOCK'
 	}
-	export let receipt: Receipt;
 	let buttonStatus: ButtonStatus = ButtonStatus.READY;
 
 	let erc1155balance = BigInt(receipt.balance);
@@ -38,19 +39,21 @@
 	};
 
 	$: maxRedeemable =
-		($balancesStore.cysFlrBalance ?? 0n) < (erc1155balance ?? 0n)
-			? $balancesStore.cysFlrBalance ?? 0n
+		($balancesStore.balances[receipt.token || 'cysFLR']?.signerBalance ?? 0n) <
+		(erc1155balance ?? 0n)
+			? $balancesStore.balances[receipt.token || 'cysFLR']?.signerBalance ?? 0n
 			: erc1155balance ?? 0n;
 
 	$: insufficientReceipts = erc1155balance < amountToRedeem;
-	$: insufficientcysFlr = $balancesStore.cysFlrBalance < amountToRedeem;
+	$: insufficientcysFlr =
+		($balancesStore.balances[receipt.token || 'cysFLR']?.signerBalance ?? 0n) < amountToRedeem;
 
 	$: buttonStatus = !readableAmountToRedeem
 		? ButtonStatus.READY
 		: insufficientReceipts
 			? ButtonStatus.INSUFFICIENT_RECEIPTS
 			: insufficientcysFlr
-				? ButtonStatus.INSUFFICIENT_cysFLR
+				? ButtonStatus.INSUFFICIENT_TOKEN
 				: ButtonStatus.READY;
 
 	$: if (amountToRedeem > 0) {
@@ -67,7 +70,7 @@
 	data-testId="receipt-modal"
 >
 	<div class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row">
-		<span>TOTAL sFLR LOCKED</span>
+		<span>TOTAL {token.underlyingSymbol} LOCKED</span>
 		<div class="flex flex-row gap-4">
 			{#key readableBalance}{#if readableBalance}
 					<span in:fade={{ duration: 700 }}>{formatEther(receipt.totalsFlr ?? 0n)}</span>
@@ -75,7 +78,7 @@
 		</div>
 	</div>
 	<div class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row">
-		<span>TOTAL cysFLR MINTED</span>
+		<span>TOTAL {receipt.token} MINTED</span>
 		<div class="flex flex-row gap-4">
 			{#key readableBalance}{#if readableBalance}
 					<span in:fade={{ duration: 700 }} data-testid="balance">{Number(readableBalance)}</span>
@@ -84,7 +87,7 @@
 	</div>
 
 	<div class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row">
-		<span>cysFLR PER LOCKED sFLR</span>
+		<span>{receipt.token} PER LOCKED {token.underlyingSymbol}</span>
 		<div class="flex flex-row gap-4">
 			<span data-testid="lock-up-price">{Number(formatEther(tokenId))}</span>
 		</div>
@@ -96,7 +99,7 @@
 		<span>REDEEM AMOUNT</span>
 		<div class="flex flex-col">
 			<Input
-				unit="cysFLR"
+				unit={receipt.token}
 				bind:amount={readableAmountToRedeem}
 				on:input={(event) => {
 					readableAmountToRedeem = event.detail.value;
@@ -110,7 +113,9 @@
 				}}
 			/>
 			<p class="my-2 text-left text-xs font-light sm:text-right" data-testid="sflr-balance">
-				cysFLR Balance: {Number(formatEther($balancesStore.cysFlrBalance.toString()))}
+				{receipt.token} Balance: {Number(
+					formatEther(($balancesStore.balances[token.name]?.signerBalance || 0n).toString())
+				)}
 			</p>
 		</div>
 	</div>
@@ -121,14 +126,15 @@
 				>{!readableAmountToRedeem ? 0 : readableAmountToRedeem} RECEIPTS</span
 			>
 			<span class="w-1/2 text-center"
-				>{!readableAmountToRedeem ? 0 : readableAmountToRedeem} cysFLR</span
+				>{!readableAmountToRedeem ? 0 : readableAmountToRedeem} {receipt.token}</span
 			>
 		</div>
 		<img src={burnDia} alt="diagram" class="w-1/2 py-4" />
 
 		<div class="flex flex-row items-center gap-2 overflow-ellipsis">
 			<span class="flex overflow-ellipsis" data-testid="flr-to-receive">
-				{formatEther(sFlrToReceive)} sFLR
+				{formatEther(sFlrToReceive)}
+				{token.underlyingSymbol}
 			</span>
 		</div>
 	</div>
@@ -138,7 +144,7 @@
 	>
 		<div class="flex w-full flex-col items-center justify-center gap-1 text-right">
 			<span class="w-full text-center"
-				>{readableAmountToRedeem === null ? 0 : readableAmountToRedeem} cysFLR</span
+				>{readableAmountToRedeem === null ? 0 : readableAmountToRedeem} {receipt.token}</span
 			>
 			<img src={mobileBurnLine} alt="diagram" class="h-6" />
 			<span class="w-full text-center"
@@ -147,7 +153,8 @@
 			<img src={mobileBurnDia} alt="diagram" class="h-32" />
 			<div class="flex flex-row items-center gap-2 overflow-ellipsis">
 				<span class="flex overflow-ellipsis" data-testid="flr-to-receive-mobile">
-					{formatEther(sFlrToReceive)} sFLR
+					{formatEther(sFlrToReceive)}
+					{token.underlyingSymbol}
 				</span>
 			</div>
 		</div>
@@ -155,15 +162,14 @@
 
 	<Button
 		data-testid="unlock-button"
-		customClass="  w-full bg-white text-primary"
+		customClass="w-full bg-white text-primary"
 		disabled={buttonStatus !== ButtonStatus.READY || amountToRedeem === BigInt(0)}
 		on:click={() =>
 			transactionStore.handleUnlockTransaction({
 				signerAddress: $signerAddress,
 				config: $wagmiConfig,
-				cysFlrAddress: $cysFlrAddress,
-				sFlrAddress: $sFlrAddress,
-				erc1155Address: $erc1155Address,
+				selectedToken: token,
+				erc1155Address: $selectedCyToken.receiptAddress,
 				tokenId: receipt.tokenId,
 				assets: amountToRedeem
 			})}

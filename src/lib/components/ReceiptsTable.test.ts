@@ -2,14 +2,22 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import ReceiptsTable from './ReceiptsTable.svelte';
 import { describe, it, expect } from 'vitest';
 import { mockReceipt } from '$lib/mocks/mockReceipt';
-import type { Receipt } from '$lib/types';
+import type { CyToken, Receipt } from '$lib/types';
 import { formatEther } from 'ethers';
 
 const mockReceipts = [mockReceipt, mockReceipt];
 
 describe('ReceiptsTable Component', () => {
+	const selectedToken: CyToken = {
+		name: 'cysFLR',
+		address: '0xcdef1234abcdef5678',
+		underlyingAddress: '0xabcd1234',
+		underlyingSymbol: 'sFLR',
+		receiptAddress: '0xeeff5678'
+	};
+
 	it('renders the receipts table with correct headers and data', async () => {
-		render(ReceiptsTable, { receipts: mockReceipts as unknown as Receipt[] });
+		render(ReceiptsTable, { receipts: mockReceipts as unknown as Receipt[], token: selectedToken });
 
 		expect(screen.getByTestId('headers')).toBeInTheDocument();
 
@@ -20,14 +28,14 @@ describe('ReceiptsTable Component', () => {
 			expect(screen.getByTestId(`number-held-${i}`)).toHaveTextContent(
 				Number(formatEther(mockReceipts[i].balance)).toFixed(5)
 			);
-			expect(screen.getByTestId(`total-locked-sflr-${i}`)).toHaveTextContent(
+			expect(screen.getByTestId(`total-locked-${i}`)).toHaveTextContent(
 				Number(mockReceipts[i].readableTotalsFlr).toFixed(5)
 			);
 		}
 	});
 
 	it('opens a receipt modal when redeem button is clicked', async () => {
-		render(ReceiptsTable, { receipts: mockReceipts });
+		render(ReceiptsTable, { receipts: mockReceipts as unknown as Receipt[], token: selectedToken });
 
 		const redeemButton = screen.getByTestId('redeem-button-0');
 		await fireEvent.click(redeemButton);
