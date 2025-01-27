@@ -2,7 +2,6 @@
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
 	import { refreshAllReceipts } from '$lib/queries/getReceipts';
-	import type { Receipt } from '$lib/types';
 	import { formatEther, parseEther } from 'ethers';
 	import ReceiptsTable from '$lib/components/ReceiptsTable.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -25,6 +24,8 @@
 	export let amountToUnlock = '';
 
 	$: assets = BigInt(0);
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	$: insufficientFunds =
 		($balancesStore.balances[$selectedCyToken.name]?.signerBalance || 0n) < assets;
 
