@@ -1,43 +1,115 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
-import type { Receipt } from '$lib/types';
-import { mockConnectedStore, mockSignerAddressStore } from '$lib/mocks/mockStores';
+import {
+	mockConnectedStore,
+	mockSignerAddressStore,
+	mockMyReceipts,
+	mockSelectedCyToken
+} from '$lib/mocks/mockStores';
+import { refreshAllReceipts } from '$lib/queries/getReceipts';
+import userEvent from '@testing-library/user-event';
+import type { CyToken, Receipt } from '$lib/types';
+import { writable } from 'svelte/store';
 
 const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 vi.mock('$lib/queries/getReceipts', () => ({
-	getReceipts: vi.fn()
+	getSingleTokenReceipts: vi.fn(),
+	refreshAllReceipts: vi.fn()
 }));
 
 vi.mock('$lib/balancesStore', async () => {
 	return {
-		default: mockBalancesStore
+		default: {
+			...mockBalancesStore,
+			refreshSwapQuote: vi.fn(),
+			refreshBalances: vi.fn(),
+			refreshPrices: vi.fn(),
+			refreshDepositPreviewSwapValue: vi.fn()
+		}
 	};
 });
 
-const mockReceipts: Receipt[] = [
+const selectedCyToken: CyToken = {
+	name: 'cysFLR',
+	address: '0xcdef1234abcdef5678',
+	underlyingAddress: '0xabcd1234',
+	underlyingSymbol: 'sFLR',
+	receiptAddress: '0xeeff5678'
+};
+
+const receipts: Receipt[] = [
 	{
+		balance: 36928000000000000n,
 		chainId: '14',
-		balance: BigInt(1000000000000000000),
-		tokenId: '1'
+		readableFlrPerReceipt: '43.32756',
+		readableTokenId: '0.02308',
+		readableTotalsFlr: '1.60000',
+		tokenAddress: '0x6D6111ab02800aC64f66456874add77F44529a90',
+		tokenId: '23080000000000000',
+		token: 'cysFLR',
+		totalsFlr: 536928000000000000n
+	},
+	{
+		balance: 36928000000000000n,
+		chainId: '14',
+		readableFlrPerReceipt: '43.32756',
+		readableTokenId: '0.02308',
+		readableTotalsFlr: '1.60000',
+		tokenAddress: '0x5D6111ab02800aC64f66456874add77F44529a90',
+		tokenId: '23080000000000000',
+		token: 'cyWETH',
+		totalsFlr: 536928000000000000n
 	}
-] as unknown as Receipt[];
+];
+
+vi.mock('$lib/store', async () => {
+	return {
+		default: {
+			myReceipts: writable(receipts),
+			selectedCyToken: writable(selectedCyToken)
+		}
+	};
+});
 
 describe('Unlock Component', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.mocked(refreshAllReceipts).mockResolvedValue([]);
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(1000000000000000000),
-			BigInt(1000000000000000000),
 			'Ready',
-			BigInt(1),
-			BigInt(1),
-			BigInt(1),
-			BigInt(1000000),
-			BigInt(1000),
-			BigInt(0),
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1),
+					price: BigInt(0),
+					supply: BigInt(1),
+					underlyingTvl: BigInt(1),
+					usdTvl: BigInt(1000000)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(1000000000000000000),
+					signerUnderlyingBalance: BigInt(1000000000000000000)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 	});
 
@@ -57,15 +129,12 @@ describe('Unlock Component', () => {
 		await waitFor(() => {
 			const balanceText = screen.getByTestId('cysflr-balance');
 			expect(balanceText).toBeInTheDocument();
-			expect(screen.getByText('cysFLR')).toBeInTheDocument();
 			expect(balanceText).toHaveTextContent('1.0');
 		});
 	});
 
 	it('should show loading state while fetching receipts', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockImplementation(() => new Promise(() => {}));
-
+		vi.mocked(refreshAllReceipts).mockImplementation(() => new Promise(() => {}));
 		render(Unlock);
 
 		await waitFor(() => {
@@ -74,46 +143,51 @@ describe('Unlock Component', () => {
 	});
 
 	it('should display receipts table when receipts are available', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockResolvedValue(mockReceipts);
+		const { refreshAllReceipts } = await import('$lib/queries/getReceipts');
+
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+			setLoading(false);
+			return Promise.resolve(receipts);
+		});
+
+		mockMyReceipts.mockSetSubscribeValue(receipts);
+		mockSelectedCyToken.mockSetSubscribeValue(selectedCyToken);
 
 		render(Unlock);
 
 		await waitFor(() => {
-			expect(screen.queryByText('NO RECEIPTS FOUND...')).not.toBeInTheDocument();
+			expect(screen.queryByText('NO cysFLR RECEIPTS FOUND...')).not.toBeInTheDocument();
 			expect(screen.queryByText('LOADING...')).not.toBeInTheDocument();
 		});
 	});
 
 	it('should show "NO RECEIPTS FOUND" message when no receipts are available', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockResolvedValue([]);
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+			setLoading(false);
+			return Promise.resolve([]);
+		});
 
 		render(Unlock);
 
 		await waitFor(() => {
-			expect(screen.getByText('NO RECEIPTS FOUND...')).toBeInTheDocument();
+			expect(screen.getByText('NO cysFLR RECEIPTS FOUND...')).toBeInTheDocument();
 		});
 	});
 
-	it('should refresh receipts when wallet address changes', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		const getReceiptsSpy = vi.mocked(getReceipts);
-
-		render(Unlock);
-
-		await waitFor(() => {
-			expect(getReceiptsSpy).toHaveBeenCalled();
+	it('should display correct token name when a different token is selected', async () => {
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+			setLoading(false);
+			return Promise.resolve([]);
 		});
-	});
 
-	it('should handle case when getReceipts returns empty', async () => {
-		const { getReceipts } = await import('$lib/queries/getReceipts');
-		vi.mocked(getReceipts).mockResolvedValue([]);
 		render(Unlock);
 
+		// Simulate selecting a different token
+		const newTokenButton = screen.getByTestId('cyWETH-button');
+		await userEvent.click(newTokenButton);
+
 		await waitFor(() => {
-			expect(screen.getByText('NO RECEIPTS FOUND...')).toBeInTheDocument();
+			expect(screen.queryByText('NO cyWETH RECEIPTS FOUND...')).toBeInTheDocument();
 		});
 	});
 });
