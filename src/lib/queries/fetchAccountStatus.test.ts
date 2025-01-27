@@ -15,7 +15,7 @@ describe('fetchAccountStatus', () => {
 		vi.clearAllMocks();
 	});
 
-	it('fetches fetchAccountStatus correctly', async () => {
+	it('fetches AccountStatus correctly', async () => {
 		const account = '0x123';
 		const mockData = {
 			data: {
