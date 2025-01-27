@@ -1,12 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
-import {
-	mockConnectedStore,
-	mockSignerAddressStore,
-	mockMyReceipts,
-	mockSelectedCyToken
-} from '$lib/mocks/mockStores';
+import { mockConnectedStore, mockSignerAddressStore } from '$lib/mocks/mockStores';
 import { refreshAllReceipts } from '$lib/queries/getReceipts';
 import userEvent from '@testing-library/user-event';
 import type { CyToken, Receipt } from '$lib/types';
@@ -74,8 +69,10 @@ vi.mock('$lib/store', async () => {
 });
 
 describe('Unlock Component', () => {
-	beforeEach(() => {
+	beforeEach(async () => {
 		vi.clearAllMocks();
+		const store = await import('$lib/stores');
+		store.myReceipts.set([]);
 		vi.mocked(refreshAllReceipts).mockResolvedValue([]);
 		mockBalancesStore.mockSetSubscribeValue(
 			'Ready',
@@ -143,27 +140,29 @@ describe('Unlock Component', () => {
 	});
 
 	it('should display receipts table when receipts are available', async () => {
+		mockSignerAddressStore.mockSetSubscribeValue('0xmockAddress');
+		mockConnectedStore.mockSetSubscribeValue(true);
+
 		const { refreshAllReceipts } = await import('$lib/queries/getReceipts');
-
-		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
-			setLoading(false);
-			return Promise.resolve(receipts);
+		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, config, setLoading) => {
+			const store = await import('$lib/stores');
+			store.myReceipts.set(receipts);
+			if (setLoading) setLoading(false);
+			return receipts;
 		});
-
-		mockMyReceipts.mockSetSubscribeValue(receipts);
-		mockSelectedCyToken.mockSetSubscribeValue(selectedCyToken);
 
 		render(Unlock);
 
 		await waitFor(() => {
 			expect(screen.queryByText('NO cysFLR RECEIPTS FOUND...')).not.toBeInTheDocument();
 			expect(screen.queryByText('LOADING...')).not.toBeInTheDocument();
+			expect(screen.getByText('1.60000')).toBeInTheDocument();
 		});
 	});
 
 	it('should show "NO RECEIPTS FOUND" message when no receipts are available', async () => {
 		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
-			setLoading(false);
+			if (setLoading) setLoading(false);
 			return Promise.resolve([]);
 		});
 
@@ -176,7 +175,7 @@ describe('Unlock Component', () => {
 
 	it('should display correct token name when a different token is selected', async () => {
 		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
-			setLoading(false);
+			if (setLoading) setLoading(false);
 			return Promise.resolve([]);
 		});
 
