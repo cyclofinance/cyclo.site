@@ -8,9 +8,7 @@ import {
 } from '../generated';
 import balancesStore from './balancesStore';
 import { getBlock, type Config } from '@wagmi/core';
-import { waitFor } from '@testing-library/svelte';
 import type { CyToken } from '$lib/types';
-const { mockErc1155AddressStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 const { mockWagmiConfigStore } = await vi.hoisted(() => import('./mocks/mockStores'));
 
@@ -27,10 +25,6 @@ vi.mock('@wagmi/core', () => ({
 
 describe('balancesStore', () => {
 	const mockSignerAddress = '0x1234567890abcdef';
-	const mocksFlrAddress = '0xabcdef1234567890';
-	const mockCysFlrAddress = '0xabcdefabcdef1234';
-	const mockQuoterAddress = '0x1234567890abcdef';
-	const mockCusdxAddress = '0xabcdef1234567890';
 
 	const { reset, refreshBalances, refreshPrices } = balancesStore;
 

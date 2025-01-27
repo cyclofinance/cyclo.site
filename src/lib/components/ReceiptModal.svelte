@@ -10,7 +10,6 @@
 	import mobileBurnDia from '$lib/images/mobile-burn.svg';
 	import Input from './Input.svelte';
 	import Button from './Button.svelte';
-	import { selectedCyToken } from '$lib/stores';
 
 	export let receipt: Receipt;
 	export let token: CyToken;
