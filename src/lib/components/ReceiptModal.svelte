@@ -169,7 +169,6 @@
 				signerAddress: $signerAddress,
 				config: $wagmiConfig,
 				selectedToken: token,
-				erc1155Address: $selectedCyToken.receiptAddress,
 				tokenId: receipt.tokenId,
 				assets: amountToRedeem
 			})}
