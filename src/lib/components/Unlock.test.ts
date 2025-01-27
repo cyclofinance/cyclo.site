@@ -5,15 +5,22 @@ import { vi, describe, beforeEach, it, expect } from 'vitest';
 import {
 	mockConnectedStore,
 	mockSignerAddressStore,
-	mockMyReceipts,
 	mockSelectedCyToken
 } from '$lib/mocks/mockStores';
 import { refreshAllReceipts } from '$lib/queries/getReceipts';
 import userEvent from '@testing-library/user-event';
-import type { CyToken, Receipt } from '$lib/types';
+import type { BlockScoutData, CyToken, Receipt } from '$lib/types';
 import { writable } from 'svelte/store';
+import { readErc1155BalanceOf } from '../../generated';
+import axios from 'axios';
+import type { Hex } from 'viem';
 
-const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
+const { mockBalancesStore, mockMyReceipts } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
+
+vi.mock('axios');
+vi.mock('../../generated', () => ({
+	readErc1155BalanceOf: vi.fn()
+}));
 
 vi.mock('$lib/queries/getReceipts', () => ({
 	getSingleTokenReceipts: vi.fn(),
@@ -144,6 +151,10 @@ describe('Unlock Component', () => {
 	});
 
 	it('should display receipts table when receipts are available', async () => {
+		mockSignerAddressStore.mockSetSubscribeValue('0x1234567890123456789012345678901234567890');
+		mockMyReceipts.mockSetSubscribeValue(receipts);
+		mockSelectedCyToken.mockSetSubscribeValue(selectedCyToken);
+
 		const { refreshAllReceipts } = await import('$lib/queries/getReceipts');
 
 		vi.mocked(refreshAllReceipts).mockImplementation(
@@ -152,9 +163,6 @@ describe('Unlock Component', () => {
 				return Promise.resolve(receipts);
 			}
 		);
-
-		mockMyReceipts.mockSetSubscribeValue(receipts);
-		mockSelectedCyToken.mockSetSubscribeValue(selectedCyToken);
 
 		render(Unlock);
 
