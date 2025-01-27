@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
+import { type Config } from '@wagmi/core';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import {
@@ -145,10 +146,12 @@ describe('Unlock Component', () => {
 	it('should display receipts table when receipts are available', async () => {
 		const { refreshAllReceipts } = await import('$lib/queries/getReceipts');
 
-		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
-			setLoading(false);
-			return Promise.resolve(receipts);
-		});
+		vi.mocked(refreshAllReceipts).mockImplementation(
+			(signerAddress: string, config: Config, setLoading: (loading: boolean) => void = () => {}) => {
+				setLoading(false);
+				return Promise.resolve(receipts);
+			}
+		);
 
 		mockMyReceipts.mockSetSubscribeValue(receipts);
 		mockSelectedCyToken.mockSetSubscribeValue(selectedCyToken);
@@ -162,10 +165,12 @@ describe('Unlock Component', () => {
 	});
 
 	it('should show "NO RECEIPTS FOUND" message when no receipts are available', async () => {
-		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
-			setLoading(false);
-			return Promise.resolve([]);
-		});
+		vi.mocked(refreshAllReceipts).mockImplementation(
+			(signerAddress: string, config: Config, setLoading: (loading: boolean) => void = () => {}) => {
+				setLoading(false);
+				return Promise.resolve([]);
+			}
+		);
 
 		render(Unlock);
 
@@ -175,10 +180,12 @@ describe('Unlock Component', () => {
 	});
 
 	it('should display correct token name when a different token is selected', async () => {
-		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
-			setLoading(false);
-			return Promise.resolve([]);
-		});
+		vi.mocked(refreshAllReceipts).mockImplementation(
+			(signerAddress: string, config: Config, setLoading: (loading: boolean) => void = () => {}) => {
+				setLoading(false);
+				return Promise.resolve([]);
+			}
+		);
 
 		render(Unlock);
 
