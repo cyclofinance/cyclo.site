@@ -15,7 +15,10 @@ import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 import balancesStore from './balancesStore';
 
 vi.mock('$lib/queries/getReceipts', () => ({
-	getReceipts: vi.fn(),
+	getReceipts: vi.fn()
+}));
+
+vi.mock('$lib/queries/refreshAllReceipts', () => ({
 	refreshAllReceipts: vi.fn()
 }));
 
@@ -239,8 +242,11 @@ describe('transactionStore', () => {
 
 	it('should handle successful unlock transaction', async () => {
 		(writeErc20PriceOracleReceiptVaultRedeem as Mock).mockResolvedValue('mockRedeemHash');
-		(waitForTransactionReceipt as Mock).mockResolvedValue(true);
-
+		(waitForTransactionReceipt as Mock).mockResolvedValue({
+			status: 'success',
+			transactionHash: 'mockDepositHash',
+			chainId: 1
+		});
 		await handleUnlockTransaction({
 			signerAddress: mockSignerAddress,
 			config: mockWagmiConfigStore as unknown as Config,

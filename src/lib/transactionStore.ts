@@ -10,7 +10,7 @@ import {
 } from '../generated';
 import balancesStore from './balancesStore';
 import { myReceipts } from './stores';
-import { refreshAllReceipts } from './queries/getReceipts';
+import { refreshAllReceipts } from './queries/refreshAllReceipts';
 import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from './types';
 
