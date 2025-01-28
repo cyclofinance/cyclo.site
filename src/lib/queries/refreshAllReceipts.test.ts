@@ -10,6 +10,7 @@ vi.mock('$lib/queries/getReceipts', () => ({
 	getSingleTokenReceipts: vi.fn()
 }));
 
+// eslint-disable-next-line
 let loading = true;
 const setLoading = (_loading: boolean) => {
 	loading = _loading;

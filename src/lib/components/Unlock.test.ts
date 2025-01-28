@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import { mockConnectedStore, mockSignerAddressStore } from '$lib/mocks/mockStores';
-import { refreshAllReceipts } from '$lib/queries/getReceipts';
+import { refreshAllReceipts } from '$lib/queries/refreshAllReceipts';
 import userEvent from '@testing-library/user-event';
 import type { CyToken, Receipt } from '$lib/types';
 import { writable } from 'svelte/store';
@@ -11,6 +11,9 @@ const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStor
 
 vi.mock('$lib/queries/getReceipts', () => ({
 	getSingleTokenReceipts: vi.fn(),
+}));
+
+vi.mock('$lib/queries/refreshAllReceipts', () => ({
 	refreshAllReceipts: vi.fn()
 }));
 
@@ -143,7 +146,7 @@ describe('Unlock Component', () => {
 		mockSignerAddressStore.mockSetSubscribeValue('0xmockAddress');
 		mockConnectedStore.mockSetSubscribeValue(true);
 
-		const { refreshAllReceipts } = await import('$lib/queries/getReceipts');
+		const { refreshAllReceipts } = await import('$lib/queries/refreshAllReceipts');
 		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, config, setLoading) => {
 			const store = await import('$lib/stores');
 			store.myReceipts.set(receipts);
