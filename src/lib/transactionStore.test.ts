@@ -15,7 +15,7 @@ import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 import balancesStore from './balancesStore';
 
 vi.mock('$lib/queries/getReceipts', () => ({
-	getReceipts: vi.fn(),
+	getReceipts: vi.fn()
 }));
 
 vi.mock('$lib/queries/refreshAllReceipts', () => ({

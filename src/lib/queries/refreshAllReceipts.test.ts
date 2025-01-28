@@ -27,5 +27,4 @@ describe('getSingleTokenReceipts', () => {
 		const result = await refreshAllReceipts('', config, setLoading);
 		expect(result).toEqual([]);
 	});
-
 });

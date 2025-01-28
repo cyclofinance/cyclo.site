@@ -10,7 +10,7 @@ import { writable } from 'svelte/store';
 const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
 vi.mock('$lib/queries/getReceipts', () => ({
-	getSingleTokenReceipts: vi.fn(),
+	getSingleTokenReceipts: vi.fn()
 }));
 
 vi.mock('$lib/queries/refreshAllReceipts', () => ({
