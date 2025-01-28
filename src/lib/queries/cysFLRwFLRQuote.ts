@@ -1,4 +1,10 @@
-import { cusdxAddress, cysFlrAddress, quoterAddress, usdcAddress, wFLRAddress } from '$lib/stores';
+import {
+	cusdxAddress,
+	quoterAddress,
+	usdcAddress,
+	wFLRAddress,
+	selectedCyToken
+} from '$lib/stores';
 import { createConfig, http, simulateContract } from '@wagmi/core';
 import { get } from 'svelte/store';
 import { quoterAbi } from '../../generated';
@@ -20,7 +26,7 @@ export const getcysFLRwFLRPrice = async () => {
 			functionName: 'quoteExactInputSingle',
 			args: [
 				{
-					tokenIn: get(cysFlrAddress),
+					tokenIn: get(selectedCyToken).address,
 					tokenOut: get(cusdxAddress),
 					amountIn: BigInt(1e18),
 					fee: 3000,

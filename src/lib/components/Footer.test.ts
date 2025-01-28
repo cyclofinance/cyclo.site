@@ -20,16 +20,38 @@ vi.mock('$lib/balancesStore', async () => {
 describe('Footer.svelte', () => {
 	beforeEach(() => {
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(100), //
-			BigInt(100),
 			'Ready',
-			BigInt(1e18),
-			BigInt(1e18),
-			BigInt(1e18),
-			BigInt(1e18), // cysFlrSupply
-			BigInt(3000),
-			BigInt(3000), // TVLsFlr
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(3000)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1e18),
+					price: BigInt(0),
+					supply: BigInt(1e18),
+					underlyingTvl: BigInt(3000),
+					usdTvl: BigInt(3000)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(200),
+					signerUnderlyingBalance: BigInt(200)
+				},
+				cysFLR: {
+					signerBalance: BigInt(100),
+					signerUnderlyingBalance: BigInt(100)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 	});
 
@@ -37,7 +59,7 @@ describe('Footer.svelte', () => {
 		render(Footer);
 
 		await waitFor(() => {
-			expect(screen.getByTestId('cysFlr-supply')).toBeInTheDocument();
+			expect(screen.getByTestId('supply')).toBeInTheDocument();
 		});
 	});
 
@@ -45,23 +67,45 @@ describe('Footer.svelte', () => {
 		render(Footer);
 
 		await waitFor(() => {
-			expect(screen.getByTestId('TVL')).toBeInTheDocument();
-			expect(screen.getByText('3000 sFLR / $ 3000.00')).toBeInTheDocument();
+			expect(screen.getByTestId('tvl')).toBeInTheDocument();
+			expect(screen.getByText('3000 sFLR / $ 3000')).toBeInTheDocument();
 		});
 	});
 
 	it('should not display supply if fetch fails', async () => {
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(0),
-			BigInt(0),
-			'Error',
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0), // cysFlrSupply
-			BigInt(0), // TVL
-			BigInt(0),
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 
 		render(Footer);
@@ -74,22 +118,44 @@ describe('Footer.svelte', () => {
 
 	it('should display market cap correctly', async () => {
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(0),
-			BigInt(0),
-			'Error',
-			BigInt(0),
-			BigInt(1e18),
-			BigInt(1e18),
-			BigInt(1), // cysFlrSupply
-			BigInt(0), // TVL
-			BigInt(0),
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) }
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(1e18),
+					supply: BigInt(1),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 		render(Footer);
 
 		await waitFor(() => {
-			expect(screen.getByTestId('market-cap')).toBeInTheDocument();
-			expect(screen.getByText('$ 1000000000000.00')).toBeInTheDocument();
+			expect(screen.getByTestId('market-cap-cysFLR')).toBeInTheDocument();
+			expect(screen.getByText('$ 1000000000000')).toBeInTheDocument();
 		});
 	});
 });

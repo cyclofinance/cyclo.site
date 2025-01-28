@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getReceipts } from './getReceipts';
+import { getSingleTokenReceipts } from './getReceipts';
 import axios from 'axios';
 import { readErc1155BalanceOf } from '../../generated';
 import type { BlockScoutData } from '$lib/types';
@@ -12,7 +12,7 @@ vi.mock('../../generated', () => ({
 	readErc1155BalanceOf: vi.fn()
 }));
 
-describe('getReceipts', () => {
+describe('getSingleTokenReceipts', () => {
 	const mockAddress = '0xMockAddress' as Hex;
 	const mockErc1155Address = '0xMockERC1155Address' as Hex;
 	const mockConfig = {} as Config;
@@ -43,7 +43,7 @@ describe('getReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValueOnce(BigInt(1));
 
-		const result = await getReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
 
 		expect(axios.get).toHaveBeenCalledWith(
 			`https://flare-explorer.flare.network/api/v2/addresses/${mockAddress}/nft?type=ERC-1155`
@@ -70,7 +70,7 @@ describe('getReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(0));
 
-		const result = await getReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
 		expect(result).toEqual([]);
 	});
 
@@ -79,7 +79,7 @@ describe('getReceipts', () => {
 
 		vi.mocked(axios.get).mockRejectedValue(new Error('Network error'));
 
-		const result = await getReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
 
 		expect(result).toBeNull();
 		expect(consoleErrorSpy).toHaveBeenCalled();

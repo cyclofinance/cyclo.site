@@ -3,13 +3,7 @@
 	import transactionStore from '$lib/transactionStore';
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
-	import {
-		cusdxAddress,
-		cysFlrAddress,
-		erc1155Address,
-		quoterAddress,
-		sFlrAddress
-	} from '$lib/stores';
+	import { cusdxAddress, selectedCyToken } from '$lib/stores';
 	import { base } from '$app/paths';
 	import mintDia from '$lib/images/mint-dia.svg';
 	import mintMobile from '$lib/images/mint-mobile.svg';
@@ -20,6 +14,9 @@
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import { fade } from 'svelte/transition';
 	import { formatEther, formatUnits, parseEther } from 'ethers';
+	import Select from './Select.svelte';
+	import { tokens } from '$lib/stores';
+	import type { Hex } from 'viem';
 
 	export let amountToLock = '';
 	let disclaimerAcknowledged = false;
@@ -31,11 +28,12 @@
 	}
 
 	$: assets = BigInt(0);
-	$: insufficientFunds = $balancesStore.sFlrBalance < assets;
+	$: insufficientFunds =
+		($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n) < assets;
 	$: buttonStatus = !amountToLock
 		? ButtonStatus.READY
 		: insufficientFunds
-			? ButtonStatus.INSUFFICIENT_sFLR
+			? `INSUFFICIENT ${$selectedCyToken.underlyingSymbol}`
 			: ButtonStatus.READY;
 
 	$: if ($signerAddress) {
@@ -46,7 +44,8 @@
 		if (amountToLock) {
 			const bigNumValue = BigInt(parseEther(amountToLock.toString()).toString());
 			assets = bigNumValue;
-			insufficientFunds = $balancesStore.sFlrBalance < assets;
+			insufficientFunds =
+				($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n) < assets;
 		}
 	};
 
@@ -62,35 +61,52 @@
 		transactionStore.handleLockTransaction({
 			signerAddress: $signerAddress,
 			config: $wagmiConfig,
-			cysFlrAddress: $cysFlrAddress,
-			sFlrAddress: $sFlrAddress,
-			erc1155Address: $erc1155Address,
+			selectedToken: $selectedCyToken,
 			assets: assets
 		});
 	};
 
 	$: if (assets || amountToLock) {
-		balancesStore.refreshSwapQuote(
+		balancesStore.refreshDepositPreviewSwapValue(
 			$wagmiConfig,
-			$cysFlrAddress,
+			$selectedCyToken,
 			$cusdxAddress,
-			assets,
-			$quoterAddress
+			assets
 		);
+	}
+	// Also refresh prices when selected token changes
+	$: if ($selectedCyToken && $selectedCyToken.address) {
+		if ($signerAddress) {
+			balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
+		}
+		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
 	}
 </script>
 
 <Card size="lg">
 	<div class="flex w-full flex-col items-center justify-center gap-10" data-testid="lock-container">
+		<div
+			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
+		>
+			<span>SELECT TOKEN</span>
+			<Select
+				options={tokens}
+				bind:selected={$selectedCyToken}
+				getOptionLabel={(option) => option.name}
+			/>
+		</div>
+
 		{#if $signerAddress}
 			<div
 				class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
 			>
-				<span>sFLR BALANCE</span>
+				<span>{$selectedCyToken.underlyingSymbol} BALANCE</span>
 
 				<div class="flex flex-row gap-4">
 					<span data-testid="your-balance">
-						{formatEther($balancesStore.sFlrBalance)}
+						{formatEther(
+							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
+						)}
 					</span>
 				</div>
 			</div>
@@ -100,7 +116,7 @@
 			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
 		>
 			<div class="flex flex-col gap-0">
-				<span>sFLR/USD PRICE</span>
+				<span>cy{$selectedCyToken.underlyingSymbol} PER {$selectedCyToken.underlyingSymbol}</span>
 				<a
 					href={base + '/docs/why-flare'}
 					class="cursor-pointer text-xs font-light hover:underline"
@@ -108,14 +124,16 @@
 					data-testid="price-ratio-link">How does Cyclo use the FTSO?</a
 				>
 			</div>
-			{#if $balancesStore.lockPrice}
+			{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
 				<div in:fade>
-					{#key $balancesStore.lockPrice}
+					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 						<span
 							in:fade={{ duration: 700 }}
 							class="flex flex-row items-center gap-2"
 							data-testid="price-ratio"
-							>{Number(formatEther($balancesStore.lockPrice)).toString()}
+							>{Number(
+								formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)
+							).toString()}
 
 							<svg width="20" height="20" viewBox="0 0 100 100">
 								<circle cx="50" cy="50" r="45" stroke="none" stroke-width="10" fill="none" />
@@ -148,16 +166,23 @@
 						checkBalance();
 					}}
 					on:setValueToMax={() => {
-						assets = $balancesStore.sFlrBalance;
-						amountToLock = Number(formatEther($balancesStore.sFlrBalance)).toString();
+						const balance =
+							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n;
+						assets = balance;
+						amountToLock = Number(formatEther(balance)).toString();
 					}}
 					bind:amount={amountToLock}
-					maxValue={$balancesStore.sFlrBalance}
-					unit={'sFLR'}
+					maxValue={$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n}
+					unit={$selectedCyToken.underlyingSymbol}
 				/>
 				{#if $signerAddress}
-					<p class="my-2 text-left text-xs font-light sm:text-right" data-testid="sflr-balance">
-						sFLR Balance: {formatEther($balancesStore.sFlrBalance)}
+					<p
+						class="my-2 text-left text-xs font-light sm:text-right"
+						data-testid="underlying-balance"
+					>
+						{$selectedCyToken.underlyingSymbol} Balance: {formatEther(
+							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
+						)}
 					</p>
 				{:else}
 					<!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -167,7 +192,7 @@
 						class="my-2 cursor-pointer text-right text-xs font-light hover:underline"
 						data-testid="connect-message"
 					>
-						Connect a wallet to see sFLR balance
+						Connect a wallet to see {$selectedCyToken.underlyingSymbol} balance
 					</div>
 				{/if}
 			</div>
@@ -180,7 +205,7 @@
 			>
 				<span>{amountToLock || '0'}</span>
 
-				<span>sFLR</span>
+				<span>{$selectedCyToken.underlyingSymbol}</span>
 			</div>
 
 			<div class="flex w-full">
@@ -188,8 +213,8 @@
 					class="flex w-1/4 flex-col items-center justify-center pb-12 pl-6 pr-2 text-center text-white"
 				>
 					<img src={ftso} alt="ftso" class="w-1/2" />
-					{#key $balancesStore.lockPrice}
-						{formatEther($balancesStore.lockPrice)}
+					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
+						{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}
 					{/key}
 				</div>
 				<img src={mintDia} alt="diagram" class="w-1/2" />
@@ -199,12 +224,12 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				{#key $balancesStore.lockPrice}
+				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 					<span data-testid="calculated-cysflr"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cysFlrOutput)}</span
+						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
 					>
 				{/key}
-				<span>cysFLR</span>
+				<span>{$selectedCyToken.name}</span>
 			</div>
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
@@ -224,34 +249,32 @@
 			>
 				<span>{amountToLock || '0'}</span>
 
-				<span>sFLR</span>
+				<span>{$selectedCyToken.underlyingSymbol}</span>
 			</div>
 			<img src={mintMobileSquiggle} alt="diagram" class="h-12" />
 			<div class="flex w-1/4 flex-col items-center justify-center text-center text-white">
 				<img src={ftso} alt="ftso" class="" />
-				{Number(formatEther($balancesStore.lockPrice.toString()))}
+				{Number(formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString()))}
 			</div>
 			<img src={mintMobile} alt="diagram" class="h-60" />
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white md:text-2xl"
 			>
-				{#key $balancesStore.lockPrice}
+				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 					<span data-testid="calculated-cysflr-mobile"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cysFlrOutput)}</span
+						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
 					>
 				{/key}
-				<span>cysFLR</span>
+				<span>{$selectedCyToken.name}</span>
 			</div>
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				{#key $balancesStore.lockPrice}
-					<span class="text-sm" data-testid="calculated-cysflr-usd-mobile"
-						>Current market value ~$ {amountToLock
-							? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
-							: '0'}
-					</span>
-				{/key}
+				<span class="text-sm" data-testid="calculated-cysflr-usd-mobile"
+					>Current market value ~$ {amountToLock
+						? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
+						: '0'}</span
+				>
 			</div>
 		</div>
 
@@ -281,7 +304,8 @@
 	<div class="p-1 text-center sm:p-4">
 		<h2 class="mb-4 text-lg font-semibold text-red-600">Wait!</h2>
 		<p class="mb-4 text-sm text-gray-700 dark:text-gray-300">
-			Before you lock your sFLR, make sure you understand the following:
+			Before you lock your {$selectedCyToken.underlyingSymbol}, make sure you understand the
+			following:
 		</p>
 		<ul
 			class="mb-4 flex flex-col gap-1 pl-1 text-left text-xs text-gray-700 dark:text-gray-300 sm:pl-4"
@@ -309,16 +333,16 @@
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
-				Cyclo relies on oracles to determine the FLR/USD price and the sFLR/FLR exchange rate. These
-				are maintained by Flare Networks and Sceptre respectively.
+				Cyclo relies on oracles to determine the ${$selectedCyToken.underlyingSymbol}/USD price.
+				These are maintained by Flare Networks (and Sceptre in the case of sFLR).
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
-				You must keep your receipt tokens safe to unlock your sFLR.
+				You must keep your receipt tokens safe to unlock your ${$selectedCyToken.underlyingSymbol}.
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
-				The value of cysFLR is determined solely by market forces.
+				The value of ${$selectedCyToken.name} is determined solely by market forces.
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>

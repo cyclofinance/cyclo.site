@@ -5,7 +5,11 @@ import { readErc1155BalanceOf } from '../../generated';
 import type { Config } from '@wagmi/core';
 import type { Hex } from 'viem';
 
-export const getReceipts = async (address: string, erc1155Address: string, config: Config) => {
+export const getSingleTokenReceipts = async (
+	address: string,
+	erc1155Address: string,
+	config: Config
+) => {
 	const query: string = `https://flare-explorer.flare.network/api/v2/addresses/${address}/nft?type=ERC-1155`;
 	const getBalance = async (tokenId: bigint) => {
 		const res = await readErc1155BalanceOf(config, {

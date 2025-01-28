@@ -19,7 +19,13 @@ vi.mock('../../generated', async (importOriginal) => {
 
 vi.mock('$lib/balancesStore', async () => {
 	return {
-		default: { ...mockBalancesStore, refreshSwapQuote: vi.fn() }
+		default: {
+			...mockBalancesStore,
+			refreshSwapQuote: vi.fn(),
+			refreshBalances: vi.fn(),
+			refreshPrices: vi.fn(),
+			refreshDepositPreviewSwapValue: vi.fn()
+		}
 	};
 });
 
@@ -36,16 +42,38 @@ describe('Lock Component', () => {
 	beforeEach(() => {
 		initiateLockTransactionSpy.mockClear();
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(1234000000000000000), // sFlrBalance
-			BigInt(9876000000000000000), // cysFlrBalance
-			'Ready', // status
-			BigInt(1), // lockPrice
-			BigInt(0), // cysFlrSupply
-			BigInt(0), // TVL
-			BigInt(0), // TVLUsd
-			BigInt(0), // cysFlrUsdPrice
-			BigInt(0), // swapQuotes
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) } // swapQuotes
+			'Ready',
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1),
+					price: BigInt(1234000000000000000n),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(9876000000000000000n),
+					signerUnderlyingBalance: BigInt(9876000000000000000n)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 	});
 
@@ -53,27 +81,48 @@ describe('Lock Component', () => {
 		mockSignerAddressStore.mockSetSubscribeValue('0x1234567890123456789012345678901234567890');
 		render(Lock);
 		await waitFor(() => {
-			expect(screen.getByTestId('sflr-balance')).toBeInTheDocument();
+			expect(screen.getByTestId('underlying-balance')).toBeInTheDocument();
 
-			expect(screen.getByTestId('sflr-balance')).toHaveTextContent('9.876');
+			expect(screen.getByTestId('underlying-balance')).toHaveTextContent('9.876');
 			expect(screen.getByTestId('price-ratio')).toBeInTheDocument();
 		});
 	});
 
 	it('should calculate the correct cysFLR amount based on input', async () => {
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(0),
-			BigInt(0),
 			'Ready',
-			BigInt(parseEther('1')),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			{ cysFlrOutput: BigInt(1234e18), cusdxOutput: BigInt(0) } // swapQuotes
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(parseEther('1')),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(1234e18)
+			}
 		);
-
 		render(Lock);
 
 		const input = screen.getByTestId('lock-input');
@@ -103,16 +152,38 @@ describe('Lock Component', () => {
 
 	it('should disable the lock button if SFLR balance is insufficient', async () => {
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(0),
-			BigInt(0),
 			'Ready',
-			BigInt(1),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) } // swapQuotes
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 		render(Lock);
 		const input = screen.getByTestId('lock-input');
@@ -124,16 +195,38 @@ describe('Lock Component', () => {
 
 	it('should disable the lock button if no value had been entered', async () => {
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt(0),
-			BigInt(0),
 			'Ready',
-			BigInt(1),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			BigInt(0),
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt(0) } // swapQuotes
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(0),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 		render(Lock);
 		const lockButton = screen.getByTestId('lock-button');
@@ -161,16 +254,38 @@ describe('Lock Component', () => {
 
 	it('should display correct USD value', async () => {
 		mockBalancesStore.mockSetSubscribeValue(
-			BigInt('1000000000000000000'), // sFlrBalance (1 sFLR)
-			BigInt('1000000000000000000'), // cysFlrBalance (1 cysFLR)
 			'Ready',
-			BigInt('1000000000000000000'), // lockPrice (1 USD, 18 decimals)
-			BigInt('2000000'), // cysFlrUsdPrice (2 USD, 6 decimals)
-			BigInt('1000000'), // sFlrUsdPrice (1 USD, 6 decimals)
-			BigInt('1000000000000000000'), // cysFlrSupply
-			BigInt('1000000000000000000'), // TVLsFlr
-			BigInt('1000000000000000000'), // TVLUsd
-			{ cysFlrOutput: BigInt(0), cusdxOutput: BigInt('3000000000000000000') } // swapQuotes
+			false,
+			{
+				cyWETH: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				cysFLR: {
+					lockPrice: BigInt(1000000000000000000),
+					price: BigInt(1000000000000000000),
+					supply: BigInt(1000000000000000000),
+					underlyingTvl: BigInt(1000000000000000000),
+					usdTvl: BigInt(1000000000000000000)
+				}
+			},
+			{
+				cyWETH: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cysFLR: {
+					signerBalance: BigInt(1000000000000000000),
+					signerUnderlyingBalance: BigInt(0)
+				}
+			},
+			{
+				cusdxOutput: BigInt(3000000000000000000),
+				cyTokenOutput: BigInt(0)
+			}
 		);
 
 		render(Lock);
