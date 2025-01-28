@@ -245,6 +245,7 @@ describe('transactionStore', () => {
 			signerAddress: mockSignerAddress,
 			config: mockWagmiConfigStore as unknown as Config,
 			selectedToken: mockSelectedToken,
+			erc1155Address: mockSelectedToken.receiptAddress,
 			tokenId: mockTokenId,
 			assets: BigInt(100)
 		});
@@ -282,6 +283,7 @@ describe('transactionStore', () => {
 			signerAddress: mockSignerAddress,
 			config: mockWagmiConfigStore as unknown as Config,
 			selectedToken: mockSelectedToken,
+			erc1155Address: mockSelectedToken.receiptAddress,
 			tokenId: mockTokenId,
 			assets: BigInt(100)
 		});
@@ -303,6 +305,7 @@ describe('transactionStore', () => {
 			signerAddress: mockSignerAddress,
 			config: mockWagmiConfigStore as unknown as Config,
 			selectedToken: mockSelectedToken,
+			erc1155Address: mockSelectedToken.receiptAddress,
 			tokenId: mockTokenId,
 			assets: BigInt(100)
 		});
