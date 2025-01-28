@@ -38,7 +38,7 @@ export type initiateLockTransactionArgs = {
 export type InitiateUnlockTransactionArgs = {
 	signerAddress: string | null;
 	selectedToken: CyToken;
-	erc1155Address: Hex;
+	erc1155Address: string;
 	assets: bigint;
 	config: Config;
 	tokenId: string;
