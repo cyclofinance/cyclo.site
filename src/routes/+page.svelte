@@ -19,7 +19,7 @@
 					LEVERAGE WITHOUT FEAR_
 				</h1>
 				<p class="mb-4 text-xl">
-					Access the power of leverage while keeping your sFLR position completely safe from
+					Access the power of leverage while keeping your collateral completely safe from
 					liquidations.
 				</p>
 			</div>
@@ -93,7 +93,9 @@
 				<ul class="space-y-4">
 					<li class="flex items-start gap-3">
 						<span class="text-xl text-green-400">►</span>
-						<span>Keep earning staking rewards while accessing leverage</span>
+						<span
+							>Keep earning staking rewards on supported collateral while accessing leverage</span
+						>
 					</li>
 					<li class="flex items-start gap-3">
 						<span class="text-xl text-green-300">►</span>
@@ -121,15 +123,15 @@
 				<ul class="space-y-4">
 					<li class="flex items-start gap-3">
 						<LockOutline size="lg" class="mt-1 text-green-300" />
-						<span>Lock your sFLR to mint cysFLR tokens</span>
+						<span>Lock your collateral (sFLR or WETH) to mint cy* tokens</span>
 					</li>
 					<li class="flex items-start gap-3">
 						<ArrowsRepeatCountOutline size="lg" class="mt-1 text-green-300" />
-						<span>Trade cysFLR for any asset you want</span>
+						<span>Trade cy* tokens for any asset you want</span>
 					</li>
 					<li class="flex items-start gap-3">
 						<LockOpenOutline size="lg" class="mt-1 text-green-300" />
-						<span>When ready, buy cysFLR and burn to unlock your sFLR</span>
+						<span>When ready, buy cy* tokens and burn to unlock your collateral</span>
 					</li>
 				</ul>
 			</div>
@@ -138,7 +140,7 @@
 					class="group mx-auto mb-8 w-full max-w-4xl border-2 border-white bg-primary p-4 transition-colors hover:bg-blue-700 sm:p-12"
 				>
 					<h2 class="mb-8 flex items-center gap-2 text-2xl">
-						[ INTRODUCING cysFLR ] <span class="text-xs opacity-70 group-hover:opacity-100"
+						[ INTRODUCING cy* TOKENS ] <span class="text-xs opacity-70 group-hover:opacity-100"
 							>installing{loadingDots}</span
 						>
 					</h2>
@@ -146,7 +148,7 @@
 						<div class="space-y-4">
 							<p class="flex items-start gap-3">
 								<span class="text-xl text-green-400">►</span>
-								<span>A new token backed by locked sFLR collateral</span>
+								<span>New tokens backed by locked collateral</span>
 							</p>
 							<p class="flex items-start gap-3">
 								<span class="text-xl text-green-400">►</span>
@@ -164,7 +166,7 @@
 							</p>
 							<p class="flex items-start gap-3">
 								<span class="text-xl text-green-400">►</span>
-								<span>Backed by real sFLR value, not algorithmic</span>
+								<span>Backed by real collateral value, not algorithmic</span>
 							</p>
 						</div>
 					</div>

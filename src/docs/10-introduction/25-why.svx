@@ -5,13 +5,13 @@ published: true
 
 Cyclo enables market-driven leverage without relying on interest rates, governance decisions, or liquidations. Unlike protocols that use DAOs to maintain pegs or capital pools that match lenders and borrowers, Cyclo simply provides the primitive that allows participants to interact through the market. 
 
-## Why Lock sFLR and Mint cysFLR?
-Cyclo offers leverage without liquidation risk - a significant advantage in volatile crypto markets. By locking sFLR, you can obtain leverage while continuing to earn staking rewards. There's no forced exit price, no maintenance requirements, and no liquidation risk to monitor. The protocol allows you to build leveraged positions with the freedom to manage them on your own timeline.
+## Why Lock Collateral and Mint cy* Tokens?
+Cyclo offers leverage without liquidation risk - a significant advantage in volatile crypto markets. By locking your collateral, you can obtain leverage while maintaining the benefits of your underlying assets (like staking rewards for sFLR). There's no forced exit price, no maintenance requirements, and no liquidation risk to monitor. The protocol allows you to build leveraged positions with the freedom to manage them on your own timeline.
 
-## Why Buy or Hold cysFLR?
-cysFLR offers unique market characteristics: it trades between $0 and $1, backed by real sFLR collateral, with no counterparty risk. This creates opportunities for range-bound trading and speculation on leverage demand in the ecosystem. It can also serve as an alternative to traditional stablecoins, offering known bounds without relying on complex stability mechanisms.
+## Why Buy or Hold cy* Tokens?
+cy* tokens offer unique market characteristics: they trade between $0 and $1, backed by real collateral value, with no counterparty risk. This creates opportunities for range-bound trading and speculation on leverage demand in the ecosystem. They can also serve as alternatives to traditional stablecoins, offering known bounds without relying on complex stability mechanisms.
 
 ## Why Provide Liquidity?
-Market makers benefit from cysFLR's bounded price range, which limits impermanent loss compared to unbounded pairs. The natural market cycles of leverage demand create trading volume and fee opportunities. Unlike many DeFi protocols, this volume comes from organic usage rather than artificial incentives.
+Market makers benefit from cy* tokens' bounded price range, which limits impermanent loss compared to unbounded pairs. The natural market cycles of leverage demand create trading volume and fee opportunities. Unlike many DeFi protocols, this volume comes from organic usage rather than artificial incentives.
 
 See [Ecosystem Roles](/docs/ecosystem-roles) documentation for detailed examples of how different participants use these features in practice.

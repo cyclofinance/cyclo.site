@@ -3,21 +3,22 @@ title: Technical Architecture
 published: true
 ---
 
-### cysFLR Contract
-The core smart contract that:
-- Handles deposits of sFLR tokens
-- Mints cysFLR (ERC-20) tokens based on USD value of deposits
-- Issues receipt tokens (ERC-1155) to track individual deposits
-- Manages the redemption process
-- Interacts with FTSO and sFLR staking contract for pricing
+### cy* Token Contracts
+The core smart contracts that:
+- Handle deposits of collateral tokens
+- Mint cy* tokens (ERC-20) based on USD value of deposits
+- Issue receipt tokens (ERC-1155) to track individual deposits
+- Manage the redemption process
+- Interact with FTSO for pricing
 
 ### Receipt Tokens (ERC-1155)
-These tokens act as a proof of the locked sFLR and its USD value at the deposit time. The token ID corresponds to the sFLR-USD price, ensuring uniqueness and traceability.
+These tokens act as proof of the locked collateral and its USD value at the deposit time. The token ID corresponds to the USD price at lock time, ensuring uniqueness and traceability.
 
 ### External Protocol Integration
 
 #### Flare Time Series Oracle (FTSO)
-Provides a reliable FLR-USD price feed to the cysFLR contract, ensuring accurate valuation of deposited sFLR.
+Provides reliable USD price feeds for supported collateral types, ensuring accurate valuation of deposits.
 
-#### sFLR staking contract
-Provides the exchange rate for FLR-sFLR, enabling the cysFLR contract to calculate the USD value of the locked sFLR.
+#### Special Integrations
+Some collateral types require additional integrations:
+- **sFLR**: Requires the sFLR staking contract to provide the FLR-sFLR exchange rate, as FTSO only provides FLR-USD prices

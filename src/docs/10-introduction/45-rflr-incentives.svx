@@ -7,7 +7,7 @@ published: true
 
 ## Overview
 
-The Cyclo rewards program distributes 1M rFLR monthly to cysFLR holders who acquire tokens through approved purchase methods. The first rewards period begins January 2, 2025 at 00:00 UTC and ends February 1, 2025 at 00:00 UTC.
+The Cyclo rewards program distributes 1M rFLR monthly to cy* token holders who acquire tokens through approved purchase methods. The first rewards period begins January 2, 2025 at 00:00 UTC and ends February 1, 2025 at 00:00 UTC.
 
 This program is designed to incentivize genuine market activity and strengthen the protocol's core mechanics through thoughtful reward distribution.
 
@@ -15,13 +15,13 @@ The program will be reviewed each month for integrity and utility, against inten
 
 ## How Rewards Work
 
-The reward distribution is based on two random snapshots taken each month, with rewards allocated pro-rata based on eligible cysFLR holdings. The monthly reward pool of 1M rFLR is distributed according to these snapshots, with timing intentionally not announced to encourage consistent holding behavior.
+The reward distribution is based on two random snapshots taken each month, with rewards allocated pro-rata based on eligible cy* token holdings. The monthly reward pool of 1M rFLR is distributed according to these snapshots, with timing intentionally not announced to encourage consistent holding behavior.
 
-Note that while snapshots are taken during the specified period, your eligible balance is calculated based on all transfers since the cysFLR token deployment - there is no "start date" for transfer tracking. This means if you already hold eligible cysFLR (acquired through approved sources), these holdings count towards the first rewards period.
+Note that while snapshots are taken during the specified period, your eligible balance is calculated based on all transfers since each cy* token's deployment - there is no "start date" for transfer tracking. This means if you already hold eligible cy* tokens (acquired through approved sources), these holdings count towards the first rewards period.
 
 ### Eligible Sources
 
-cysFLR must be acquired through approved sources:
+cy* tokens must be acquired through approved sources:
 
 - Raindex withdrawals (including direct trades)
 - SparkDEX pool swaps
@@ -37,13 +37,13 @@ Net eligible balance = Total transfers in from approved sources - Total transfer
 
 Key points about balance calculation:
 
-- Tracking starts from the cysFLR token deployment, not from the beginning of the period
+- Tracking starts from each cy* token's deployment, not from the beginning of the period
 - All transfers out are counted against your balance
 - Transfers out are counted even if they occur before transfers in
 - Most wallets may show negative net balances, which is expected
-- Using a dedicated wallet for cysFLR rewards is recommended
+- Using a dedicated wallet for cy* token rewards is recommended
 
-This is intended to be the simplest possible calculation that will remove all noise from minting, interwallet transfers, etc. It also means that if you have a lot of unrelated transfers out of your wallet you won't be eligible for rewards, hence the dedicated wallet recommendation. You can use the wallet for other non-Cyclo related things of course, and that won't impact the calculations, we're only tracking cysFLR token transfers.
+This is intended to be the simplest possible calculation that will remove all noise from minting, interwallet transfers, etc. It also means that if you have a lot of unrelated transfers out of your wallet you won't be eligible for rewards, hence the dedicated wallet recommendation. You can use the wallet for other non-Cyclo related things of course, and that won't impact the calculations, we're only tracking cy* token transfers.
 
 ## Maximizing Your Rewards
 
@@ -53,20 +53,20 @@ The program rewards consistent holding throughout each month. Since snapshot tim
 - Minimizing unnecessary transfers that could miss snapshots
 - Using a dedicated wallet to avoid accidental balance reductions
 
-There are no arbitrary restrictions \- no maximum holding period, no minimum requirement, and no cap on rewards per wallet. The system's APY naturally adjusts based on participation levels (dilutes as more eligible cysFLR is purchased).
+There are no arbitrary restrictions \- no maximum holding period, no minimum requirement, and no cap on rewards per wallet. The system's APY naturally adjusts based on participation levels (dilutes as more eligible cy* tokens is purchased).
 
 ## Why This Model Works
 
-The reward structure is carefully designed around the unique properties of cysFLR and its role in the protocol.
+The reward structure is carefully designed around the unique properties of cy* tokens and its role in the protocol.
 
-### Why Not Reward Minting cysFLR?
+### Why Not Reward Minting cy* Tokens?
 
-Cyclo as a system only grows when people sell their minted cysFLR in order to leverage their assets, which creates a natural requirement to buyback when they deleverage in the future. If we rewarded minting itself, users would simply mint cysFLR into their wallets and never sell it, creating artificial supply without supporting the critical secondary market activity that drives the protocol's growth.
+Cyclo as a system only grows when people sell their minted cy* tokens in order to leverage their assets, which creates a natural requirement to buyback when they deleverage in the future. If we rewarded minting itself, users would simply mint cy* tokens into their wallets and never sell them, creating artificial supply without supporting the critical secondary market activity that drives the protocol's growth.
 
 The core mechanism requires the cycle of:
 
-- Users minting cysFLR
-- Selling it to actually achieve leverage
+- Users minting cy* tokens
+- Selling them to actually achieve leverage
 - Eventually buying back to deleverage and reclaim their collateral
 
 ### Why Not LP Rewards?
@@ -74,14 +74,14 @@ The core mechanism requires the cycle of:
 Liquidity provision already benefits from:
 
 - High natural trading volume relative to pool size
-- Inherent impermanent loss resistance in cysFLR/stable pairs
+- Inherent impermanent loss resistance in cy* tokens/stable pairs
 - Strong organic incentives through pool fees
 
-Additionally, Raindex already provides trading automation for buying and selling cysFLR that can move thousands of cysFLR through the AMM pools without moving the market significantly.
+Additionally, Raindex already provides trading automation for buying and selling cy* tokens that can move thousands of cy* tokens through the AMM pools without moving the market significantly.
 
-At the time of writing 19% of all cysFLR is already held by a single SparkDEX pool. There's currently no mechanical reason to further incentivise LPs relative to the current size and maturity of the market.
+At the time of writing 19% of all cy* tokens is already held by a single SparkDEX pool. There's currently no mechanical reason to further incentivise LPs relative to the current size and maturity of the market.
 
-We expect to see cysFLR purchases leading to increased leveraging, then cysFLR holding eventually leading to increased deleveraging and releveraging over time. This will indirectly bring more native DEX fees through the AMM pools anyway, without needing to directly send rFLR to LPs.
+We expect to see cy* tokens purchases leading to increased leveraging, then cy* tokens holding eventually leading to increased deleveraging and releveraging over time. This will indirectly bring more native DEX fees through the AMM pools anyway, without needing to directly send rFLR to LPs.
 
 Further, by not rewarding LPs for specific pools we avoid being "kingmaker". We don't want to push everyone to pair against cUSDX (currently the largest pool) vs. other potentially equally valid pairs such as USDC.e if that's what they'd rather do.
 
@@ -89,7 +89,7 @@ Further, by not rewarding LPs for specific pools we avoid being "kingmaker". We 
 
 By incentivizing buying and holding, we create several positive effects:
 
-1. Force deleveraging through new market participants (new cysFLR mints)
+1. Force deleveraging through new market participants (new cy* tokens mints)
 2. Improve price discovery mechanisms
 3. Generate natural pool volume
 4. Strengthen protocol TVL organically
@@ -103,27 +103,25 @@ As rewards are pro-rata according to token balance instantaneous snapshots, crea
 
 ### Laundering mints
 
-A user could deposit sFLR into the Cyclo contract, mint some cysFLR then sell it on DEX then immediately re-buy it from some other wallet.
+A user could deposit collateral into the Cyclo contract, mint cy* tokens then sell them on DEX then immediately re-buy them from some other wallet.
 
-This would make them eligible for rewards on that cysFLR, so appears to defeat the intent of the rewards program.
+This would make them eligible for rewards on those cy* tokens, so appears to defeat the intent of the rewards program.
 
-However, at the time of writing cysFLR is trading at $0.231
-
-If we assume the rewards APY dilutes down to say \~10%, then every $1 spent buying cysFLR directly and holding will earn \~10% APY while each $1 deposited to mint and launder cysFLR for rewards will only earn \~2.31% APY on the deposit.
+However, at current market prices, if we assume the rewards APY dilutes down to say ~10%, then every $1 spent buying cy* tokens directly and holding will earn ~10% APY while each $1 deposited to mint and launder cy* tokens for rewards will only earn a fraction of that APY on the deposit.
 
 The more that people attempt to launder mints for rewards, the greater the mint vs. buy discrepancy will become, further increasing the gap between rewards on direct purchases and those for minting.
 
-Minters can already sell their cysFLR for access to any financial opportunity globally, including simply buying and parking stables on Aave for \~10% APY. At some point it should make the most financial sense to either directly buy cysFLR for the most rewards, or to seek other opportunities with minted cysFLR.
+Minters can already sell their cy* tokens for access to any financial opportunity globally, including simply buying and parking stables on Aave for ~10% APY. At some point it should make the most financial sense to either directly buy cy* tokens for the most rewards, or to seek other opportunities with minted cy* tokens.
 
 #### Bounties
 
 If you provide clear evidence that someone is mint laundering then we will:
 
 - Give you 10% of the current month's rewards that would have gone to the launderer
-- Redistribute the remaining 90% back to the reward pool for cysFLR buyers
+- Redistribute the remaining 90% back to the reward pool for cy* token buyers
 - Permaban the reported accounts from the rewards program
 
-This adds overhead and risk to effective laundering, further skewing the economically optimal choice (as far as rFLR rewards go) towards simply buying and holding cysFLR.
+This adds overhead and risk to effective laundering, further skewing the economically optimal choice (as far as rFLR rewards go) towards simply buying and holding cy* tokens.
 
 Send reports to https://forms.gle/VU9DU5bS7xJNU23b7
 
@@ -149,7 +147,7 @@ These tracking tools are provided to help you understand your current position, 
 1. Your average eligible balance across both random monthly snapshots
 2. Your pro-rata share of the total eligible supply (the sum of all users' snapshot averages)
 
-For example, if you hold 1000 cysFLR of eligible balance today, but then sell half before one of the snapshots, your average holding would be 750 cysFLR. Similarly, if the total eligible supply changes between snapshots, this will affect everyone's pro-rata share because the total rFLR distribution size is fixed.
+For example, if you hold 1000 cy* tokens of eligible balance today, but then sell half before one of the snapshots, your average holding would be 750 cy* tokens. Similarly, if the total eligible supply changes between snapshots, this will affect everyone's pro-rata share because the total rFLR distribution size is fixed.
 
 ### Monitoring Your Position
 
