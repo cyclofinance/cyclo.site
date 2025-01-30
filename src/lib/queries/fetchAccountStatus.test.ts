@@ -8,7 +8,6 @@ vi.mock('$lib/constants', () => ({
 }));
 
 global.fetch = vi.fn();
-const TOTAL_REWARD = 1_000_000; // 1M rFLR
 
 describe('fetchAccountStatus', () => {
 	beforeEach(() => {
@@ -19,15 +18,39 @@ describe('fetchAccountStatus', () => {
 		const account = '0x123';
 		const mockData = {
 			data: {
-				trackingPeriods: [
-					{ totalApprovedTransfersIn: '1000000000000000000000', period: 'ALL_TIMES' }
-				],
-				trackingPeriodForAccounts: [{ netApprovedTransfersIn: '100000000000000000000' }],
-				sentTransfers: [
-					{ id: '1', blockTimestamp: '10', amount: '500000000000000000' },
-					{ id: '2', blockTimestamp: '15', amount: '300000000000000000' }
-				],
-				receivedTransfers: [{ id: '3', blockTimestamp: '12', amount: '200000000000000000' }]
+				eligibleTotals: {
+					totalEligibleCyWETH: '1000000000000000000000',
+					totalEligibleCysFLR: '2000000000000000000000',
+					totalEligibleSum: '3000000000000000000000'
+				},
+				account: {
+					cysFLRBalance: '100000000000000000000',
+					cyWETHBalance: '200000000000000000000',
+					totalCyBalance: '300000000000000000000',
+					eligibleShare: '0.1',
+					transfersIn: [
+						{
+							fromIsApprovedSource: true,
+							transactionHash: 'hash1',
+							blockTimestamp: '1000',
+							tokenAddress: '0xtoken1',
+							from: { id: '0x123' },
+							to: { id: '0x456' },
+							value: '100000000000000000000'
+						}
+					],
+					transfersOut: [
+						{
+							fromIsApprovedSource: false,
+							transactionHash: 'hash2',
+							blockTimestamp: '2000',
+							tokenAddress: '0xtoken2',
+							from: { id: '0x456' },
+							to: { id: '0x123' },
+							value: '200000000000000000000'
+						}
+					]
+				}
 			}
 		};
 
@@ -37,21 +60,18 @@ describe('fetchAccountStatus', () => {
 
 		const result = await fetchAccountStatus(account);
 
-		expect(result.periodStats).toEqual([
-			{
-				period: 'ALL_TIMES',
-				totalNet: '1000000000000000000000',
-				accountNet: '100000000000000000000',
-				percentage: 10,
-				proRataReward: TOTAL_REWARD * 0.1
+		expect(result).toEqual({
+			netTransfers: {
+				cysFLR: '100.0',
+				cyWETH: '200.0'
+			},
+			percentage: 10,
+			proRataReward: 100000,
+			transfers: {
+				in: mockData.data.account.transfersIn,
+				out: mockData.data.account.transfersOut
 			}
-		]);
-
-		expect(result.transfers).toEqual([
-			{ id: '3', blockTimestamp: '12', amount: '200000000000000000' },
-			{ id: '1', blockTimestamp: '10', amount: '500000000000000000' },
-			{ id: '2', blockTimestamp: '15', amount: '300000000000000000' }
-		]);
+		});
 
 		expect(fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
 			method: 'POST',
@@ -64,18 +84,57 @@ describe('fetchAccountStatus', () => {
 		const account = '0x123';
 		const mockData = {
 			data: {
-				trackingPeriods: [
-					{ totalApprovedTransfersIn: '1000000000000000000000', period: 'ALL_TIMES' }
-				],
-				trackingPeriodForAccounts: [{ netApprovedTransfersIn: '100000000000000000000' }],
-				sentTransfers: [
-					{ id: '1', blockTimestamp: '10', amount: '500000000000000000' },
-					{ id: '2', blockTimestamp: '20', amount: '300000000000000000' }
-				],
-				receivedTransfers: [
-					{ id: '3', blockTimestamp: '15', amount: '200000000000000000' },
-					{ id: '4', blockTimestamp: '25', amount: '100000000000000000' }
-				]
+				eligibleTotals: {
+					totalEligibleCyWETH: '1000000000000000000000',
+					totalEligibleCysFLR: '2000000000000000000000',
+					totalEligibleSum: '3000000000000000000000'
+				},
+				account: {
+					cysFLRBalance: '100000000000000000000',
+					cyWETHBalance: '200000000000000000000',
+					totalCyBalance: '300000000000000000000',
+					eligibleShare: '0.1',
+					transfersIn: [
+						{
+							fromIsApprovedSource: true,
+							transactionHash: 'hash3',
+							blockTimestamp: '15',
+							tokenAddress: '0xtoken1',
+							from: { id: '0x789' },
+							to: { id: '0x123' },
+							value: '200000000000000000'
+						},
+						{
+							fromIsApprovedSource: true,
+							transactionHash: 'hash4',
+							blockTimestamp: '25',
+							tokenAddress: '0xtoken1',
+							from: { id: '0x789' },
+							to: { id: '0x123' },
+							value: '100000000000000000'
+						}
+					],
+					transfersOut: [
+						{
+							fromIsApprovedSource: false,
+							transactionHash: 'hash1',
+							blockTimestamp: '10',
+							tokenAddress: '0xtoken1',
+							from: { id: '0x123' },
+							to: { id: '0x456' },
+							value: '500000000000000000'
+						},
+						{
+							fromIsApprovedSource: false,
+							transactionHash: 'hash2',
+							blockTimestamp: '20',
+							tokenAddress: '0xtoken1',
+							from: { id: '0x123' },
+							to: { id: '0x456' },
+							value: '300000000000000000'
+						}
+					]
+				}
 			}
 		};
 
@@ -85,11 +144,9 @@ describe('fetchAccountStatus', () => {
 
 		const result = await fetchAccountStatus(account);
 
-		expect(result.transfers).toEqual([
-			{ id: '3', blockTimestamp: '15', amount: '200000000000000000' },
-			{ id: '4', blockTimestamp: '25', amount: '100000000000000000' },
-			{ id: '1', blockTimestamp: '10', amount: '500000000000000000' },
-			{ id: '2', blockTimestamp: '20', amount: '300000000000000000' }
-		]);
+		expect(result.transfers).toEqual({
+			in: mockData.data.account.transfersIn,
+			out: mockData.data.account.transfersOut
+		});
 	});
 });

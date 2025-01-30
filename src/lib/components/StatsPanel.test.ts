@@ -3,16 +3,19 @@ import { vi, describe, beforeEach, it, expect } from 'vitest';
 import StatsPanel from './StatsPanel.svelte';
 import { type GlobalStats } from '$lib/queries/fetchStats';
 
-const globalStats: GlobalStats = {
-	eligibleHolders: 96,
-	totalEligibleHoldings: BigInt(173689146516658495317091n),
-	monthlyRewards: BigInt(1000000000000000000000000n),
-	currentApy: BigInt(291724135736581994400n)
-};
-
 vi.mock('$lib/queries/fetchStats', () => ({
 	fetchStats: vi.fn()
 }));
+
+const mockStats: GlobalStats = {
+	eligibleHolders: 100,
+	totalEligibleCysFLR: 1000000000000000000000n,
+	totalEligibleCyWETH: 2000000000000000000000n,
+	totalEligibleSum: 3000000000000000000000n,
+	monthlyRewards: 1000000000000000000000000n,
+	cysFLRApy: 500000000000000000n, // 50%
+	cyWETHApy: 750000000000000000n // 75%
+};
 
 describe('StatsPanel Component', () => {
 	beforeEach(() => {
@@ -30,27 +33,33 @@ describe('StatsPanel Component', () => {
 		});
 	});
 
-	it('should show error when fetching stats fail', async () => {
+	it('should display StatsPanel when data is available', async () => {
 		const { fetchStats } = await import('$lib/queries/fetchStats');
-		vi.mocked(fetchStats).mockRejectedValue(new Error('Async error'));
+		vi.mocked(fetchStats).mockResolvedValue(mockStats);
+
+		render(StatsPanel);
+
+		await waitFor(() => {
+			expect(screen.getByTestId('stats-panel')).toBeInTheDocument();
+			expect(screen.getByText('~0.5000%')).toBeInTheDocument(); // cysFLR APY
+			expect(screen.getByText('~0.7500%')).toBeInTheDocument(); // cyWETH APY
+			expect(screen.getByText('100')).toBeInTheDocument(); // eligible holders
+			expect(screen.getByText('$3000.00')).toBeInTheDocument(); // total eligible
+			expect(screen.getByText('cysFLR: 1000.00')).toBeInTheDocument(); // cysFLR total
+			expect(screen.getByText('cyWETH: 2000.00')).toBeInTheDocument(); // cyWETH total
+			expect(screen.getByText('1,000,000')).toBeInTheDocument(); // monthly rewards
+		});
+	});
+
+	it('should display error message when fetch fails', async () => {
+		const { fetchStats } = await import('$lib/queries/fetchStats');
+		vi.mocked(fetchStats).mockRejectedValue(new Error('Failed to fetch stats'));
 
 		render(StatsPanel);
 
 		await waitFor(() => {
 			expect(screen.getByTestId('error')).toBeInTheDocument();
-		});
-	});
-
-	it('should display StatsPanel when data is available', async () => {
-		const { fetchStats } = await import('$lib/queries/fetchStats');
-		vi.mocked(fetchStats).mockResolvedValue(globalStats);
-
-		render(StatsPanel);
-
-		await waitFor(() => {
-			expect(screen.getByText('96')).toBeInTheDocument();
-			expect(screen.getByText('173689.14651666')).toBeInTheDocument();
-			expect(screen.getByText('1,000,000')).toBeInTheDocument();
+			expect(screen.getByText('Failed to fetch stats')).toBeInTheDocument();
 		});
 	});
 });

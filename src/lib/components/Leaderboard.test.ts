@@ -2,26 +2,43 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import Leaderboard from './Leaderboard.svelte';
 import { type LeaderboardEntry } from '$lib/queries/fetchTopRewards';
+import { goto } from '$app/navigation';
+
+vi.mock('$app/navigation', () => ({
+	goto: vi.fn()
+}));
+
+vi.mock('svelte-wagmi', () => ({
+	signerAddress: {
+		subscribe: vi.fn((fn) => {
+			fn('0x1234567890123456789012345678901234567890');
+			return () => {};
+		})
+	}
+}));
 
 vi.mock('$lib/queries/fetchTopRewards', () => ({
 	fetchTopRewards: vi.fn()
 }));
 
-const mockLeader: LeaderboardEntry[] = [
+const mockLeaderboard: LeaderboardEntry[] = [
 	{
-		account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4',
-		netTransfers: '20261529360304309332079',
+		account: '0x1234567890123456789012345678901234567890',
+		netTransfers: {
+			cysFLR: '1000.0',
+			cyWETH: '2000.0'
+		},
 		percentage: 10,
-		proRataReward: 10
+		proRataReward: 100000
 	}
-] as unknown as LeaderboardEntry[];
+];
 
 describe('Leaderboard Component', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it('should show loading state while fetching topRewards', async () => {
+	it('should show loading state while fetching leaderboard', async () => {
 		const { fetchTopRewards } = await import('$lib/queries/fetchTopRewards');
 		vi.mocked(fetchTopRewards).mockImplementation(() => new Promise(() => {}));
 
@@ -34,14 +51,28 @@ describe('Leaderboard Component', () => {
 
 	it('should display leaderBoard table when data is available', async () => {
 		const { fetchTopRewards } = await import('$lib/queries/fetchTopRewards');
-		vi.mocked(fetchTopRewards).mockResolvedValue(mockLeader);
+		vi.mocked(fetchTopRewards).mockResolvedValue(mockLeaderboard);
 
 		render(Leaderboard);
 
 		await waitFor(() => {
-			expect(screen.getByText('20261.529360304309332079')).toBeInTheDocument();
-			expect(screen.getByText('10%')).toBeInTheDocument();
-			expect(screen.getByText('10')).toBeInTheDocument();
+			expect(screen.getByText('1000.0')).toBeInTheDocument(); // cysFLR value
+			expect(screen.getByText('2000.0')).toBeInTheDocument(); // cyWETH value
+			expect(screen.getByText('10.0000%')).toBeInTheDocument(); // percentage
+			expect(screen.getByText('100000.00')).toBeInTheDocument(); // proRataReward
+		});
+	});
+
+	it('should navigate to account page when clicking on a row', async () => {
+		const { fetchTopRewards } = await import('$lib/queries/fetchTopRewards');
+		vi.mocked(fetchTopRewards).mockResolvedValue(mockLeaderboard);
+
+		render(Leaderboard);
+
+		await waitFor(() => {
+			const accountRow = screen.getByRole('button');
+			accountRow.click();
+			expect(goto).toHaveBeenCalledWith('/rewards/0x1234567890123456789012345678901234567890');
 		});
 	});
 });

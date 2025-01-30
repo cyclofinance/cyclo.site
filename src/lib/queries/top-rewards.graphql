@@ -1,16 +1,23 @@
-query TopRewards {
-	trackingPeriods(where: { period: ALL_TIME }) {
-		period
-		totalApprovedTransfersIn
+query TopAccounts {
+	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 50) {
+		id
+		cysFLRBalance
+		cyWETHBalance
+		totalCyBalance
+		eligibleShare
 	}
-	trackingPeriodForAccounts(
-		where: { period: ALL_TIME }
-		orderBy: netApprovedTransfersIn
-		orderDirection: desc
-	) {
-		account {
-			id
-		}
-		netApprovedTransfersIn
+	accountsByCyWeth: accounts(orderBy: cyWETHBalance, orderDirection: desc, first: 50) {
+		id
+		cysFLRBalance
+		cyWETHBalance
+		totalCyBalance
+		eligibleShare
+	}
+	accountsByCysFlr: accounts(orderBy: cysFLRBalance, orderDirection: desc, first: 50) {
+		id
+		cysFLRBalance
+		cyWETHBalance
+		totalCyBalance
+		eligibleShare
 	}
 }

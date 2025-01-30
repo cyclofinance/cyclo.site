@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fetchTopRewards, type LeaderboardEntry } from '$lib/queries/fetchTopRewards';
-	import { formatEther } from 'ethers';
 	import Card from './Card.svelte';
 	import { goto } from '$app/navigation';
 	import { signerAddress } from 'svelte-wagmi';
@@ -29,7 +28,7 @@
 		$signerAddress?.toLowerCase() === account.toLowerCase();
 </script>
 
-<Card customClass="items-stretch">
+<Card>
 	<div class="space-y-6">
 		<h2 class="text-xl font-semibold text-white">Top 50 Accounts</h2>
 
@@ -43,16 +42,17 @@
 			</div>
 		{:else}
 			<div class="space-y-2">
-				<div class="grid grid-cols-4 gap-8 text-sm text-gray-300">
+				<div class="grid grid-cols-5 gap-8 text-sm text-gray-300">
 					<div>Account</div>
-					<div>Net Transfers</div>
+					<div>Net cysFLR</div>
+					<div>Net cyWETH</div>
 					<div>Share</div>
 					<div>Estimated rFLR</div>
 				</div>
 				{#if leaderboard?.length > 0}
 					{#each leaderboard as entry, i}
 						<button
-							class="grid w-full grid-cols-4 gap-8 rounded py-4 text-left {isConnectedWallet(
+							class="grid w-full grid-cols-5 gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
 								entry.account
 							)
 								? 'bg-white/10 hover:bg-white/20'
@@ -63,9 +63,10 @@
 								#{i + 1}
 								{entry.account.slice(0, 6)}...{entry.account.slice(-4)}
 							</div>
-							<div class="truncate font-medium text-white">{formatEther(entry.netTransfers)}</div>
-							<div class="truncate font-medium text-white">{entry.percentage}%</div>
-							<div class="truncate font-medium text-white">{entry.proRataReward}</div>
+							<div class="truncate font-medium text-white">{entry.netTransfers.cysFLR}</div>
+							<div class="truncate font-medium text-white">{entry.netTransfers.cyWETH}</div>
+							<div class="truncate font-medium text-white">{entry.percentage.toFixed(4)}%</div>
+							<div class="truncate font-medium text-white">{entry.proRataReward.toFixed(2)}</div>
 						</button>
 					{/each}
 				{/if}

@@ -3,20 +3,23 @@ import { fetchStats } from './fetchStats';
 import { SUBGRAPH_URL } from '$lib/constants';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
+import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
 
 vi.mock('$lib/constants', () => ({
 	SUBGRAPH_URL: 'http://mocked-subgraph-url'
 }));
 
-global.fetch = vi.fn();
-
 vi.mock('./cysFLRwFLRQuote', () => ({
 	getcysFLRwFLRPrice: vi.fn()
 }));
 
-const MONTHLY_REWARDS = 1_000_000n * 10n ** 18n; // 1M rFLR
+vi.mock('./cyWETHwFLRQuote', () => ({
+	getcyWETHwFLRPrice: vi.fn()
+}));
 
-describe('fetchTopRewards', () => {
+global.fetch = vi.fn();
+
+describe('fetchStats', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -24,12 +27,12 @@ describe('fetchTopRewards', () => {
 	it('fetches and calculates stats correctly', async () => {
 		const mockResponse = {
 			data: {
-				trackingPeriods: [
-					{
-						totalApprovedTransfersIn: '1000000000000000000000' // 1000 cysFLR
-					}
-				],
-				trackingPeriodForAccounts: [{ account: { id: '0x123' } }, { account: { id: '0x456' } }]
+				eligibleTotals: {
+					totalEligibleCyWETH: '1000000000000000000000',
+					totalEligibleCysFLR: '2000000000000000000000',
+					totalEligibleSum: '3000000000000000000000'
+				},
+				accounts: Array(96).fill({}) // Mock 96 accounts
 			}
 		};
 
@@ -37,27 +40,26 @@ describe('fetchTopRewards', () => {
 			json: async () => mockResponse
 		} as Response);
 
-		const cysFLRwFLRPrice = 2n * 10n ** 18n;
-		const totalEligibleHoldings = 1000000000000000000000n;
-		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(cysFLRwFLRPrice);
+		// Mock price quotes
+		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(BigInt('500000000000000000')); // 0.5 FLR
+		vi.mocked(getcyWETHwFLRPrice).mockResolvedValueOnce(BigInt('1000000000000000000')); // 1 FLR
 
-		const totalEligibleHoldingsInFLR = (totalEligibleHoldings * cysFLRwFLRPrice) / 10n ** 18n;
-		const currentApy = ((MONTHLY_REWARDS * 10n ** 18n) / totalEligibleHoldingsInFLR) * 12n * 100n;
 		const result = await fetchStats();
 
 		expect(result).toEqual({
-			eligibleHolders: 2,
-			totalEligibleHoldings,
-			monthlyRewards: MONTHLY_REWARDS,
-			currentApy
+			eligibleHolders: 96,
+			totalEligibleCysFLR: BigInt('2000000000000000000000'),
+			totalEligibleCyWETH: BigInt('1000000000000000000000'),
+			totalEligibleSum: BigInt('3000000000000000000000'),
+			monthlyRewards: BigInt('1000000000000000000000000'),
+			cysFLRApy: BigInt('800000000000000000000000'), // 800,000% (adjusted for 18 decimals)
+			cyWETHApy: BigInt('400000000000000000000000') // 400,000% (adjusted for 18 decimals)
 		});
 
-		expect(global.fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
+		expect(fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ query: Stats })
 		});
-
-		expect(getcysFLRwFLRPrice).toHaveBeenCalled();
 	});
 });

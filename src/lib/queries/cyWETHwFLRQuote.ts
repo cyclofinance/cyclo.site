@@ -5,25 +5,26 @@ import { quoterAbi } from '../../generated';
 import { flare } from '@wagmi/core/chains';
 import { createClient } from 'viem';
 
-export const getcysFLRwFLRPrice = async () => {
+export const getcyWETHwFLRPrice = async () => {
 	const config = createConfig({
 		chains: [flare],
 		client({ chain }) {
 			return createClient({ chain, transport: http() });
 		}
 	});
-	// first get the cUSDX per cysFLR price
-	const cysFLRcUSDXPrice = (
+
+	// First get the USDC per cyWETH price
+	const cyWETHUSDCPrice = (
 		await simulateContract(config, {
 			address: get(quoterAddress),
 			abi: quoterAbi,
 			functionName: 'quoteExactInputSingle',
 			args: [
 				{
-					tokenIn: tokens[0].address,
+					tokenIn: tokens[1].address,
 					tokenOut: get(cusdxAddress),
 					amountIn: BigInt(1e18),
-					fee: 3000,
+					fee: 10000,
 					sqrtPriceLimitX96: BigInt(0)
 				}
 			],
@@ -31,8 +32,8 @@ export const getcysFLRwFLRPrice = async () => {
 		})
 	).result[0];
 
-	// then get the usdc per wFLR price
-	const wFLRcUSDCPrice = (
+	// Then get the USDC per wFLR price
+	const wFLRUSDCPrice = (
 		await simulateContract(config, {
 			address: get(quoterAddress),
 			abi: quoterAbi,
@@ -50,7 +51,7 @@ export const getcysFLRwFLRPrice = async () => {
 		})
 	).result[0];
 
-	// finally calculate the wFLR per cysFLR price
-	const wFLRcysFLRPrice = (cysFLRcUSDXPrice * 10n ** 18n) / wFLRcUSDCPrice;
-	return wFLRcysFLRPrice;
+	// Calculate wFLR per cyWETH price
+	const wFLRcyWETHPrice = (cyWETHUSDCPrice * 10n ** 18n) / wFLRUSDCPrice;
+	return wFLRcyWETHPrice;
 };

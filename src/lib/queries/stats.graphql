@@ -1,11 +1,10 @@
 query Stats {
-	trackingPeriods(where: { period: ALL_TIME }) {
-		totalApprovedTransfersIn
+	eligibleTotals(id: "SINGLETON") {
+		totalEligibleSum
+		totalEligibleCysFLR
+		totalEligibleCyWETH
 	}
-	trackingPeriodForAccounts(
-		where: { netApprovedTransfersIn_gt: "0", period: ALL_TIME }
-		first: 1000
-	) {
+	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
 		id
 	}
 }

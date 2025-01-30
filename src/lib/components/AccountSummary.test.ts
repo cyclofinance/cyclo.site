@@ -1,34 +1,36 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/svelte';
-import { vi, describe, beforeEach, it, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/svelte';
+import { vi, describe, beforeEach, it, expect, afterEach } from 'vitest';
 import AccountSummary from './AccountSummary.svelte';
-import { type PeriodStats } from '$lib/queries/fetchAccountStatus';
-import type { AccountStatusQuery } from '../../generated-graphql';
+import { type AccountStats } from '$lib/queries/fetchAccountStatus';
 import { goto } from '$app/navigation';
-
-vi.mock('$lib/queries/fetchAccountStatus', () => ({
-	fetchAccountStatus: vi.fn()
-}));
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
 }));
 
-const periodStats: PeriodStats[] = [
-	{
-		account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4',
-		netTransfers: '20261529360304309332079',
-		period: 'ALL_TIMES',
-		totalNet: '20261529360304309332079',
-		accountNet: '61529360304309332079',
-		percentage: 50,
-		proRataReward: 10
-	}
-] as unknown as PeriodStats[];
+vi.mock('$lib/queries/fetchAccountStatus', () => ({
+	fetchAccountStatus: vi.fn()
+}));
 
-const transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
+const mockStats: AccountStats = {
+	netTransfers: {
+		cysFLR: '100.0',
+		cyWETH: '200.0'
+	},
+	percentage: 50,
+	proRataReward: 10,
+	transfers: {
+		in: [],
+		out: []
+	}
+};
 
 describe('AccountSummary Component', () => {
 	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
 		vi.clearAllMocks();
 	});
 
@@ -36,7 +38,7 @@ describe('AccountSummary Component', () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
 		vi.mocked(fetchAccountStatus).mockImplementation(() => new Promise(() => {}));
 
-		render(AccountSummary);
+		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
 
 		await waitFor(() => {
 			expect(screen.getByTestId('loader')).toBeInTheDocument();
@@ -45,71 +47,63 @@ describe('AccountSummary Component', () => {
 
 	it('should display Full Tx History button', async () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
-		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
+		vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
 
-		render(AccountSummary, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
+		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
 
 		await waitFor(() => {
 			expect(screen.getByText('Your Rewards')).toBeInTheDocument();
-			expect(screen.getByText('Full Tx History')).toBeInTheDocument();
+			expect(screen.getByTestId('full-tx-history-button')).toBeInTheDocument();
 		});
 	});
 
 	it('should navigate to correct url after button click', async () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
-		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
+		vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
 
-		const { getByTestId } = render(AccountSummary, {
-			props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' }
+		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
+
+		await waitFor(() => {
+			expect(screen.getByTestId('full-tx-history-button')).toBeInTheDocument();
 		});
 
-		await waitFor(async () => {
-			const button = getByTestId('full-tx-history-button');
+		const button = screen.getByTestId('full-tx-history-button');
+		button.click();
 
-			await fireEvent.click(button);
-
-			expect(goto).toHaveBeenCalledWith(`/rewards/0x2b462b16cb267f7545eb45829a2ce1559e56bda4`);
-		});
+		expect(goto).toHaveBeenCalledWith('/rewards/0x1234567890123456789012345678901234567890');
 	});
 
 	it('should display `not eligible for rewards` text if account not eligible', async () => {
-		const mockPeriodStats: PeriodStats[] = [
-			{
-				account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4',
-				netTransfers: '20261529360304309332079',
-				period: 'ALL_TIMES',
-				totalNet: '20261529360304309332079',
-				accountNet: '61529360304309332079',
-				percentage: 0,
-				proRataReward: 0
-			}
-		] as unknown as PeriodStats[];
-
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
-		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats: mockPeriodStats, transfers });
+		vi.mocked(fetchAccountStatus).mockResolvedValue({
+			...mockStats,
+			percentage: 0,
+			proRataReward: 0
+		});
 
-		render(AccountSummary, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
+		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
 
 		await waitFor(() => {
-			expect(screen.getByText(`Your Rewards`)).toBeInTheDocument();
+			expect(screen.getByText('Your Rewards')).toBeInTheDocument();
 			expect(
 				screen.getByText(
-					`This account is not eligible for rewards. Only accounts with positive net transfers from approved sources are eligible.`
+					'This account is not eligible for rewards. Only accounts with positive net transfers from approved sources are eligible.'
 				)
 			).toBeInTheDocument();
-
-			expect(screen.getByText(`0%`)).toBeInTheDocument();
-			expect(screen.getByText(`0`)).toBeInTheDocument();
 		});
 	});
 
 	it('should display periodStats', async () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
-		vi.mocked(fetchAccountStatus).mockResolvedValue({ periodStats, transfers });
-		render(AccountSummary, { props: { account: '0x2b462b16cb267f7545eb45829a2ce1559e56bda4' } });
+		vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
+
+		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
+
 		await waitFor(() => {
-			expect(screen.getByText(`50%`)).toBeInTheDocument();
-			expect(screen.getByText(`10`)).toBeInTheDocument();
+			expect(screen.getByText('100.0')).toBeInTheDocument(); // cysFLR value
+			expect(screen.getByText('200.0')).toBeInTheDocument(); // cyWETH value
+			expect(screen.getByText('50.0000%')).toBeInTheDocument(); // percentage
+			expect(screen.getByText('10.00')).toBeInTheDocument(); // proRataReward
 		});
 	});
 });

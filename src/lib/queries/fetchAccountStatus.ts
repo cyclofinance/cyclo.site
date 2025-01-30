@@ -2,21 +2,40 @@ import { type AccountStatusQuery } from '../../generated-graphql';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
 import { formatEther } from 'ethers';
 import { SUBGRAPH_URL } from '$lib/constants';
+import { type Hex } from 'viem';
 
-export type PeriodStats = {
-	period: string;
-	totalNet: string;
-	accountNet: string;
+export type AccountStats = {
+	netTransfers: {
+		cysFLR: string;
+		cyWETH: string;
+	};
 	percentage: number;
 	proRataReward: number;
+	transfers: {
+		in: Array<{
+			fromIsApprovedSource: boolean;
+			transactionHash: string;
+			from: { id: string };
+			to: { id: string };
+			value: string;
+			blockTimestamp: string;
+			tokenAddress: Hex;
+		}>;
+		out: Array<{
+			fromIsApprovedSource: boolean;
+			transactionHash: string;
+			from: { id: string };
+			to: { id: string };
+			value: string;
+			blockTimestamp: string;
+			tokenAddress: Hex;
+		}>;
+	};
 };
 
 const TOTAL_REWARD = 1_000_000; // 1M rFLR
 
-export async function fetchAccountStatus(account: string): Promise<{
-	periodStats: PeriodStats[];
-	transfers: NonNullable<AccountStatusQuery['sentTransfers']>;
-}> {
+export async function fetchAccountStatus(account: string): Promise<AccountStats> {
 	const response = await fetch(SUBGRAPH_URL, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -27,40 +46,18 @@ export async function fetchAccountStatus(account: string): Promise<{
 	});
 	const data: AccountStatusQuery = (await response.json()).data;
 
-	// Calculate period stats
-	const totalNet = data.trackingPeriods[0]?.totalApprovedTransfersIn ?? '0';
-	const accountNet = data.trackingPeriodForAccounts[0]?.netApprovedTransfersIn ?? '0';
-	const percentage = (Number(formatEther(accountNet)) / Number(formatEther(totalNet))) * 100;
-	const proRataReward = percentage * (TOTAL_REWARD / 100);
-
-	const periodStats = [
-		{
-			period: data.trackingPeriods[0]?.period ?? '',
-			totalNet,
-			accountNet,
-			percentage,
-			proRataReward
-		}
-	];
-
-	// Merge and sort transfers
-	const sent = data.sentTransfers ?? [];
-	const received = data.receivedTransfers ?? [];
-
-	let i = 0,
-		j = 0;
-	const transfers = [];
-
-	while (i < sent.length && j < received.length) {
-		if (BigInt(sent[i].blockTimestamp) >= BigInt(received[j].blockTimestamp)) {
-			transfers.push(sent[i++]);
-		} else {
-			transfers.push(received[j++]);
-		}
-	}
+	const percentage = Number(data.account?.eligibleShare ?? 0) * 100;
 
 	return {
-		periodStats,
-		transfers: transfers.concat(sent.slice(i)).concat(received.slice(j))
+		netTransfers: {
+			cysFLR: formatEther(data.account?.cysFLRBalance ?? 0),
+			cyWETH: formatEther(data.account?.cyWETHBalance ?? 0)
+		},
+		percentage,
+		proRataReward: percentage * (TOTAL_REWARD / 100),
+		transfers: {
+			in: data.account?.transfersIn ?? [],
+			out: data.account?.transfersOut ?? []
+		}
 	};
 }
