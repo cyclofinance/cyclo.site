@@ -7,6 +7,11 @@
 	function calculateMarketCap(price: bigint, supply: bigint): bigint {
 		return (price * supply) / BigInt(1e6);
 	}
+
+	$: globalTvl =
+		$balancesStore.stats.cysFLR?.usdTvl && $balancesStore.stats.cyWETH?.usdTvl
+			? $balancesStore.stats.cysFLR.usdTvl + $balancesStore.stats.cyWETH.usdTvl
+			: 0n;
 </script>
 
 <footer
@@ -18,6 +23,15 @@
 		</div>
 	{:else}
 		<div class="flex w-full max-w-2xl flex-col justify-between gap-4 self-center sm:gap-0">
+			<div class="border-b border-white/20 pb-2">
+				<div
+					class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
+					data-testId="global-tvl"
+				>
+					<span>Global TVL</span>
+					<span>$ {Number(formatUnits(globalTvl, 18))}</span>
+				</div>
+			</div>
 			{#each ['cysFLR', 'cyWETH'] as token}
 				<div class="flex flex-col gap-2 border-b border-white/20 pb-2 last:border-0">
 					<div class="font-bold">{token}</div>

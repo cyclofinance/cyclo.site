@@ -116,19 +116,41 @@ const getCyTokenUsdPrice = async (
 	cusdxAddress: Hex,
 	selectedToken: CyToken
 ) => {
-	const data = await simulateQuoterQuoteExactOutputSingle(config, {
-		address: quoterAddress,
-		args: [
-			{
-				tokenIn: cusdxAddress,
-				tokenOut: selectedToken.address,
-				amount: BigInt(1e18),
-				fee: 3000,
-				sqrtPriceLimitX96: BigInt(0)
-			}
-		]
-	});
-	return data.result[0] || 0n;
+	try {
+		const data = await simulateQuoterQuoteExactOutputSingle(config, {
+			address: quoterAddress,
+			args: [
+				{
+					tokenIn: cusdxAddress,
+					tokenOut: selectedToken.address,
+					amount: BigInt(1e18),
+					fee: 3000,
+					sqrtPriceLimitX96: BigInt(0)
+				}
+			]
+		});
+		return data.result[0] || 0n;
+	} catch {
+		try {
+			// try 10000 as the fee
+			const data = await simulateQuoterQuoteExactOutputSingle(config, {
+				address: quoterAddress,
+				args: [
+					{
+						tokenIn: cusdxAddress,
+						tokenOut: selectedToken.address,
+						amount: BigInt(1e18),
+						fee: 10000,
+						sqrtPriceLimitX96: BigInt(0)
+					}
+				]
+			});
+			return data.result[0] || 0n;
+		} catch (error) {
+			console.error('Error getting cyTokenUsdPrice:', error);
+			return 0n;
+		}
+	}
 };
 
 const getLockPrice = async (config: Config, selectedToken: CyToken) => {
