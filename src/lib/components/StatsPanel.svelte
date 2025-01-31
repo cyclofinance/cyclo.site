@@ -62,7 +62,7 @@
 			<div class="space-y-4">
 				<div class="text-sm text-gray-300">Total Eligible cy* Tokens</div>
 				<div class="font-mono text-3xl font-bold text-white">
-					${Number(formatEther(stats.totalEligibleSum)).toFixed(2).toLocaleString()}
+					{Number(formatEther(stats.totalEligibleSum)).toFixed(2).toLocaleString()}
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					<div>cysFLR: {Number(formatEther(stats.totalEligibleCysFLR)).toFixed(2)}</div>
