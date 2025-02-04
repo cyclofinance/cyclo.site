@@ -66,6 +66,7 @@
 
 {#if $wagmiConfig}
 	<div class="flex min-h-screen flex-col">
+		<a href="flare-fair.com"><img src="/flare-fair-banner.jpg" alt="Flare Fair" /></a>
 		<Header launched={PUBLIC_LAUNCHED === 'true'} />
 		<main class="flex-grow bg-[#1C02B8]">
 			<slot />
