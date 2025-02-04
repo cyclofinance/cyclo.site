@@ -127,7 +127,8 @@ const getCyTokenUsdPrice = async (
 					fee: 3000,
 					sqrtPriceLimitX96: BigInt(0)
 				}
-			]
+			],
+			account: ZeroAddress as `0x${string}`
 		});
 		return data.result[0] || 0n;
 	} catch {
@@ -143,7 +144,8 @@ const getCyTokenUsdPrice = async (
 						fee: 10000,
 						sqrtPriceLimitX96: BigInt(0)
 					}
-				]
+				],
+				account: ZeroAddress as `0x${string}`
 			});
 			return data.result[0] || 0n;
 		} catch (error) {
