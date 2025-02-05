@@ -1,44 +1,40 @@
-query AccountStatus($account: String!) {
-	trackingPeriods(where: { period: ALL_TIME }) {
-		period
-		totalApprovedTransfersIn
+query AccountStatus($account: ID!) {
+	eligibleTotals(id: "SINGLETON") {
+		id
+		totalEligibleCyWETH
+		totalEligibleCysFLR
+		totalEligibleSum
 	}
-	trackingPeriodForAccounts(where: { account: $account, period: ALL_TIME }) {
-		netApprovedTransfersIn
-		period
-	}
-	sentTransfers: transfers(
-		where: { period: ALL_TIME, from: $account }
-		orderBy: blockTimestamp
-		orderDirection: desc
-		first: 1000
-	) {
-		fromIsApprovedSource
-		blockTimestamp
-		transactionHash
-		from {
-			id
+	account(id: $account) {
+		cysFLRBalance
+		cyWETHBalance
+		totalCyBalance
+		eligibleShare
+		transfersIn {
+			fromIsApprovedSource
+			transactionHash
+			blockTimestamp
+			tokenAddress
+			from {
+				id
+			}
+			to {
+				id
+			}
+			value
 		}
-		to {
-			id
+		transfersOut {
+			fromIsApprovedSource
+			transactionHash
+			blockTimestamp
+			tokenAddress
+			from {
+				id
+			}
+			to {
+				id
+			}
+			value
 		}
-		value
-	}
-	receivedTransfers: transfers(
-		where: { period: ALL_TIME, to: $account }
-		orderBy: blockTimestamp
-		orderDirection: desc
-		first: 1000
-	) {
-		fromIsApprovedSource
-		blockTimestamp
-		transactionHash
-		from {
-			id
-		}
-		to {
-			id
-		}
-		value
 	}
 }

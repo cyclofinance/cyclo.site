@@ -5,7 +5,7 @@ published: true
 
 ## Liquidations
 
-As every mint/burn is 1:1, the system is guaranteed to be fully collateralized at all times, eliminating the need for liquidations.
+As every mint/burn is 1:1 for each collateral type, the system is guaranteed to be fully collateralized at all times, eliminating the need for liquidations.
 
 DeFi products based on loans (e.g., MKR, AAVE, COMP, ALCX) are all over-collateralized. To enforce collateralization, these products actively auction off user assets if their value falls relative to the loan.
 
@@ -20,10 +20,10 @@ Liquidations introduce significant systemic risk when many users take out simila
 
 ### Can I Get Liquidated on Cyclo?
 
-No.
+No. Your collateral is always safe, regardless of market conditions or price movements.
 
-By avoiding the explicit goal of "stability" or "a peg," and removing all governance or external parameters, expectations, or price goals, there is no need to liquidate any FLR in the Cyclo ecosystem.
+By avoiding the explicit goal of "stability" or "a peg," and removing all governance or external parameters, expectations, or price goals, there is no need to liquidate any collateral in the Cyclo ecosystem.
 
-The ERC-1155 tokens minted and burned for every ERC-20 token minted and burned guarantee over-collateralization of the system as a whole, without liquidating any individual token holder. If everyone abandoned all their FLR, cysFLR would also become valueless. Conversely, a "reverse bank run" would increase cysFLR's value, incentivizing mints.
+The ERC-1155 tokens minted and burned for every cy* token minted and burned guarantee over-collateralization of the system as a whole, without liquidating any individual token holder. If everyone abandoned their collateral, the cy* tokens would also become valueless. Conversely, a "reverse bank run" would increase cy* token values, incentivizing mints.
 
-This requires long-term thinking and conviction in FLR itself, accepting short-term price volatility. However, users must believe in FLR's value to trust significant assets to a smart contract on the Flare network.
+This requires long-term thinking and conviction in the underlying assets themselves, accepting short-term price volatility. However, users must believe in the value of their collateral to trust significant assets to a smart contract on the Flare network.

@@ -9,11 +9,11 @@ Unlike traditional DeFi lending protocols, Cyclo has no counterparty risk becaus
 - Not borrowing from or lending to anyone
 - Not relying on any third party to maintain your position
 
-The protocol is simply a mechanism for splitting your sFLR into two complementary parts:
-1. cysFLR tokens representing the USD value
+The protocol is simply a mechanism for splitting your collateral into two complementary parts:
+1. cy* tokens representing the USD value
 2. Receipt tokens that:
-   - Prove ownership of the locked sFLR
-   - Establish your guaranteed unlock price in cysFLR
+   - Prove ownership of the locked collateral
+   - Establish your guaranteed unlock price in cy* tokens
 
 ## Protocol Design
 The protocol intentionally eliminates common DeFi risks by having:
@@ -28,21 +28,21 @@ The protocol intentionally eliminates common DeFi risks by having:
 ### Smart Contract Risk
 - The immutable smart contracts must operate as intended
 - The FTSO integration must function correctly
-- The sFLR staking contract integration must remain valid
+- Any additional integrations (like the sFLR staking contract) must remain valid
 
 Cyclo is audited by <a href="https://protofire.io" target="_blank">Protofire</a> and the audit can be found at <a href="https://github.com/cyclofinance/cyclo.sol/tree/main/audit" target="_blank">https://github.com/cyclofinance/cyclo.sol/tree/main/audit</a>
 
 ### Market Risk
-Market risk in Cyclo only exists when trading cysFLR. Holding both cysFLR and receipt tokens lets you unlock your original sFLR at any time - the protocol guarantees your unlock price through your receipt tokens.
+Market risk in Cyclo only exists when trading cy* tokens. Holding both cy* tokens and receipt tokens lets you unlock your original collateral at any time - the protocol guarantees your unlock price through your receipt tokens.
 
-If you sell cysFLR, you're exposed to its price movements between $0 and $1. To unlock your sFLR later, you'll need to repurchase cysFLR at market price. The protocol never forces trades or liquidations, so you always have the option to wait and recombine your tokens to recover your original position.
+If you sell cy* tokens, you're exposed to their price movements between $0 and $1. To unlock your collateral later, you'll need to repurchase cy* tokens at market price. The protocol never forces trades or liquidations, so you always have the option to wait and recombine your tokens to recover your original position.
 
 ### Regulatory Risk
-Changes in regulatory frameworks could affect protocol usage, hownever this is a common risk for all DeFi protocols
+Changes in regulatory frameworks could affect protocol usage, however this is a common risk for all DeFi protocols
 
 ## Risk Mitigation
 The best protection is understanding that Cyclo is fundamentally an accounting system that:
-- Splits your sFLR into two parts that can be recombined
-- Never puts your original sFLR at risk unless you choose to trade
+- Splits your collateral into two parts that can be recombined
+- Never puts your original collateral at risk unless you choose to trade
 - Keeps your position viable regardless of market conditions
 - Has no time limits or forced actions

@@ -1,11 +1,14 @@
-import { type TopRewardsQuery } from '../../generated-graphql';
-import TopRewards from '$lib/queries/top-rewards.graphql?raw';
+import { type TopAccountsQuery } from '../../generated-graphql';
+import TopAccounts from '$lib/queries/top-rewards.graphql?raw';
 import { formatEther } from 'ethers';
 import { SUBGRAPH_URL } from '$lib/constants';
 
 export type LeaderboardEntry = {
 	account: string;
-	netTransfers: string;
+	netTransfers: {
+		cysFLR: string;
+		cyWETH: string;
+	};
 	percentage: number;
 	proRataReward: number;
 };
@@ -17,23 +20,21 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
-			query: TopRewards
+			query: TopAccounts
 		})
 	});
-	const data: TopRewardsQuery = (await response.json()).data;
+	const data: TopAccountsQuery = (await response.json()).data;
 
-	const totalNet = data.trackingPeriods[0]?.totalApprovedTransfersIn ?? '0';
-
-	return (data.trackingPeriodForAccounts ?? []).slice(0, 50).map((entry) => {
-		const accountNet = Number(formatEther(entry.netApprovedTransfersIn));
-		const percentage = (accountNet / Number(formatEther(totalNet))) * 100;
-		const proRataReward = percentage * (TOTAL_REWARD / 100);
-
+	return (data.accountsByCyBalance ?? []).map((account) => {
+		const percentage = Number(account.eligibleShare ?? 0) * 100;
 		return {
-			account: entry.account.id,
-			netTransfers: entry.netApprovedTransfersIn,
+			account: account.id,
+			netTransfers: {
+				cysFLR: formatEther(account.cysFLRBalance),
+				cyWETH: formatEther(account.cyWETHBalance)
+			},
 			percentage,
-			proRataReward
+			proRataReward: percentage * (TOTAL_REWARD / 100)
 		};
 	});
 }

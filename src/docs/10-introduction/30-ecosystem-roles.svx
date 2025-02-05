@@ -1,4 +1,3 @@
-
 ---
 title: Ecosystem Roles
 published: true
@@ -30,42 +29,42 @@ The Leverager may use their capital for:
 
 ### Strategy
 
-1. Lock sFLR to mint cysFLR
-2. Sell cysFLR for other assets (like FLR or JOULE)
+1. Lock collateral to mint cy* tokens
+2. Sell cy* tokens for other assets
 3. Trade with the increased capital
-4. Use trading profits to buy back cysFLR
-5. Burn cysFLR to reclaim original sFLR
+4. Use trading profits to buy back cy* tokens
+5. Burn cy* tokens to reclaim original collateral
 
 ### Key Benefits
 
 - No liquidation risk
-- Continues earning staking rewards on locked sFLR
+- Continues earning benefits on locked collateral (e.g., staking rewards for sFLR)
 - Flexible timeframe for position management
-- Known maximum cost to unwind position ($1 per cysFLR)
+- Known maximum cost to unwind position ($1 per cy* token)
 
-## The Looper: Long-Term FLR Accumulator
+## The Looper: Long-Term Asset Accumulator
 
 <img src={theLooper} alt="The Looper" class="mx-auto max-w-lg" />
 
 ### Profile
 
-The Looper is bullish on FLR and wants to maximize their FLR exposure. They use Cyclo to create a leveraged long position, taking advantage of the protocol's no-liquidation feature.
+The Looper is bullish on their chosen asset and wants to maximize their exposure. They use Cyclo to create a leveraged long position, taking advantage of the protocol's no-liquidation feature.
 
 ### Strategy
 
-1. Lock initial sFLR to mint cysFLR
-2. Sell cysFLR for more sFLR
-3. Lock the new sFLR to mint more cysFLR
+1. Lock initial collateral to mint cy* tokens
+2. Sell cy* tokens for more of the same collateral type
+3. Lock the new collateral to mint more cy* tokens
 4. Repeat the process multiple times
-5. Hold position long-term, collecting staking rewards
+5. Hold position long-term, collecting any available yields
 
 ### Key Benefits
 
-- Maximizes FLR exposure
-- Earns staking rewards on all locked sFLR
+- Maximizes asset exposure
+- Earns any available yields on all locked collateral
 - Known maximum unwind cost
 - No forced liquidations
-- Ideal for long-term FLR bulls
+- Ideal for long-term bulls
 
 ## The Speculator: Price Range Trader
     
@@ -73,13 +72,13 @@ The Looper is bullish on FLR and wants to maximize their FLR exposure. They use 
 
 ### Profile
 
-The Speculator understands cysFLR's unique price dynamics and trades within its $0-$1 range. They profit from cyclical price movements without needing to mint or lock any sFLR themselves.
+The Speculator understands cy* tokens' unique price dynamics and trades within their $0-$1 range. They profit from cyclical price movements without needing to mint or lock any collateral themselves.
 
 ### Strategy
 
-1. Buy cysFLR when leverage demand is high (price low)
+1. Buy cy* tokens when leverage demand is high (price low)
 2. Hold until leveraged positions need to unwind
-3. Sell cysFLR when demand to unlock collateral increases
+3. Sell cy* tokens when demand to unlock collateral increases
 4. Repeat the cycle
 
 ### Key Benefits
@@ -99,7 +98,7 @@ The Market Maker provides essential liquidity to the ecosystem, enabling efficie
 
 ### Strategy
 
-1. Provide liquidity to cysFLR/FLR pairs
+1. Provide liquidity to cy*/collateral pairs
 2. Maintain balanced positions
 3. Earn trading fees from all ecosystem participants
 4. Adjust positions based on market dynamics

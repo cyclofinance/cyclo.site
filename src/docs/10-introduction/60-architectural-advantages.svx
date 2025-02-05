@@ -7,23 +7,23 @@ published: true
 
 Notably Cyclo avoids or mitigates the following problems found in various stablecoins, etc.:
 
-- **Liquidation**: Cyclo will never liquidate user's FLR assets for any reason
+- **Liquidation**: Cyclo will never liquidate users' collateral for any reason
 - **Centralisation**: There are no admin keys or risk parameters to be tuned, not even a DAO
-- **Under Collateralization**: There is a strict overcollateralization of all sFLR collateral and circulating cysFLR
-- **Tax complexity**: Minting cysFLR is technically akin to wrapping FLR to wFLR, not trading
-- **Gas costs**: Minting/burning cysFLR is cheaper than an AMM trade
-- **USD regulations**: cysFLR references the FTSO oracle price of FLR not the US dollar, there is no "issuer"
-- **Supply constraints**: cysFLR has an unbounded elastic supply
-- **Not time based**: Unlike an option, cysFLR never expires and can be held as normal tokens indefinitely
-- **Non-custodial**: Like wrapping wETH, all cysFLR is simply a deposit/withdraw to the smart contract
+- **Under Collateralization**: There is a strict overcollateralization of all collateral and circulating cy* tokens
+- **Tax complexity**: Minting cy* tokens is technically akin to wrapping tokens (like WETH), not trading
+- **Gas costs**: Minting/burning cy* tokens is cheaper than an AMM trade
+- **USD regulations**: cy* tokens reference FTSO oracle prices not the US dollar, there is no "issuer"
+- **Supply constraints**: cy* tokens have an unbounded elastic supply
+- **Not time based**: Unlike options, cy* tokens never expire and can be held as normal tokens indefinitely
+- **Non-custodial**: Like wrapping WETH, all cy* tokens are simply a deposit/withdraw to the smart contract
 - **Simplicity**: The entire contract is about 100 lines of code beyond Open Zeppelin standard contracts
-- **Leverage**: The protocol allows users who increase cysFLR supply to leverage FLR
-- **Collateral risk**: Only sFLR is allowed as collateral
+- **Leverage**: The protocol allows users who increase cy* token supply to leverage their collateral
+- **Collateral risk**: Only high-quality, liquid assets (sFLR and WETH) are allowed as collateral
 - **Front-running/MEV**: No trading or other intrablock hysteresis involved in locking/unlocking
-- **Opportunity cost**: An cysFLR mint is fully reversible at any time, unlike selling stables at a local bottom
+- **Opportunity cost**: A cy* token mint is fully reversible at any time, unlike selling stables at a local bottom
 - **No counterparty**: The smart contracts facilitate internal accounting for each user's own assets for themselves
 - **No KYC**: Users mint/burn tokens for themselves directly on-chain
 - **No fees**: There are no fees for mint or burn
 - **No rebase**: The supply is elastic based on supply/demand rather than algorithmic price targets
 - **Licensing**: Cyclo code is released as public domain using the unlicense
-- **No upgrades**: cysFLR can only be migrated to a hypothetical new contract by each user
+- **No upgrades**: cy* tokens can only be migrated to a hypothetical new contract by each user

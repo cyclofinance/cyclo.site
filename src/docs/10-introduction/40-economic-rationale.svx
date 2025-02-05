@@ -9,18 +9,18 @@ published: true
 
 The Cyclo ecosystem is designed to create a self-regulating economic model by leveraging competing incentives, resulting in cyclical price movements.
 
-- **Price Closer to $1:** When the cysFLR price is near $1, new mints are incentivized, increasing leverage by depositing FLR. This can further increase leverage by looping mints (selling minted cysFLR for more FLR and then depositing the new FLR to mint more cysFLR), applying downward pressure on cysFLR price.
-- **Price Approaching $0:** As cysFLR approaches $0, Receipt holders are incentivized to buy back cysFLR cheaply and burn it to unlock their originally deposited FLR.  At the same time, the leverage achieved by new mints decreases because of the lower cysFLR price, which means there is also less cysFLR being minted. Together these apply upward pressure on the price of cysFLR.
+- **Price Closer to $1:** When a cy* token's price is near $1, new mints are incentivized, increasing leverage by depositing collateral. This can further increase leverage by looping mints (selling minted cy* tokens for more collateral and then depositing the new collateral to mint more cy* tokens), applying downward pressure on the cy* token price.
+- **Price Approaching $0:** As cy* tokens approach $0, Receipt holders are incentivized to buy back cy* tokens cheaply and burn them to unlock their originally deposited collateral. At the same time, the leverage achieved by new mints decreases because of the lower cy* token price, which means there is also less being minted. Together these apply upward pressure on the price of cy* tokens.
 
 <img src={priceMovement} alt="Price Movement" class="mx-auto" />
 
-### Price Ceiling for cysFLR
-The cysFLR price is inherently capped at $1 due to the minting process. If the cysFLR price exceeds $1, arbitrage opportunities will drive the price back down to $1.
+### Price Ceiling for cy* Tokens
+The cy* token price is inherently capped at $1 due to the minting process. If a cy* token price exceeds $1, arbitrage opportunities will drive the price back down to $1.
 
-For example, if the cysFLR price were to ever exceed $1, anyone could immediately deposit X FLR to mint Y cysFLR and sell the minted cysFLR for more than X FLR, causing an economic infinite loop until the cysFLR price dropped back to $1.
+For example, if a cy* token price were to ever exceed $1, anyone could immediately deposit X amount of collateral to mint Y cy* tokens and sell the minted tokens for more than X worth of collateral, causing an economic infinite loop until the cy* token price dropped back to $1.
 
 ### Floor Price Mechanism
-While cysFLR's price could theoretically approach zero, a natural equilibrium above zero will emerge in practice. Users buying back cysFLR at lower prices to redeem their FLR will create demand and support its price.
+While cy* token prices could theoretically approach zero, a natural equilibrium above zero will emerge in practice. Users buying back cy* tokens at lower prices to redeem their collateral will create demand and support the price.
 
 ### Impact of Liquidity
-Higher liquidity in the cysFLR/FLR pair on exchanges allows for greater supply, as each mint/burn will have a smaller impact on the cysFLR price.
+Higher liquidity in the cy*/collateral pairs on exchanges allows for greater supply, as each mint/burn will have a smaller impact on the cy* token price.

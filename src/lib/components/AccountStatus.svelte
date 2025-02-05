@@ -1,22 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchAccountStatus, type PeriodStats } from '$lib/queries/fetchAccountStatus';
-	import type { AccountStatusQuery } from '../../generated-graphql';
+	import { fetchAccountStatus, type AccountStats } from '$lib/queries/fetchAccountStatus';
 	import { formatEther, getAddress } from 'ethers';
 	import Card from './Card.svelte';
+	import { tokens } from '$lib/stores';
+	import { isAddressEqual } from 'viem';
 
 	export let account: string;
 
 	let loading = true;
 	let error: string | null = null;
-	let periodStats: PeriodStats[] = [];
-	let transfers: NonNullable<AccountStatusQuery['sentTransfers']> = [];
+	let stats: AccountStats | null = null;
 
 	onMount(async () => {
 		try {
-			const data = await fetchAccountStatus(account);
-			periodStats = data.periodStats;
-			transfers = data.transfers;
+			stats = await fetchAccountStatus(account);
 			loading = false;
 		} catch (e) {
 			console.error(e);
@@ -25,7 +23,7 @@
 		}
 	});
 
-	$: isEligible = periodStats[0]?.percentage > 0;
+	$: isEligible = stats?.percentage && stats.percentage > 0;
 </script>
 
 {#if loading}
@@ -36,7 +34,7 @@
 	<div class="text-error bg-error/10 rounded-lg p-4">
 		{error}
 	</div>
-{:else}
+{:else if stats}
 	<div class="space-y-8">
 		<Card customClass="items-stretch">
 			<div class="space-y-6" data-testid="period-stats">
@@ -51,37 +49,24 @@
 					</div>
 				{/if}
 
-				{#each periodStats as stat}
-					<div class="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-8">
-						<div class="space-y-1">
-							<div class="text-sm text-gray-300">Period</div>
-							<div class="font-medium text-white">{stat.period}</div>
-						</div>
-						<div class="space-y-1">
-							<div class="text-sm text-gray-300">Net Transfers</div>
-							<div class="truncate font-medium text-white">{formatEther(stat.accountNet)}</div>
-						</div>
-						{#if isEligible}
-							<div class="space-y-1">
-								<div class="text-sm text-gray-300">Share</div>
-								<div class="font-medium text-white">{stat.percentage}%</div>
-							</div>
-							<div class="space-y-1">
-								<div class="text-sm text-gray-300">Estimated rFLR</div>
-								<div class="font-medium text-white">{stat.proRataReward}</div>
-							</div>
-						{:else}
-							<div class="space-y-1">
-								<div class="text-sm text-gray-300">Share</div>
-								<div class="font-medium text-white">0%</div>
-							</div>
-							<div class="space-y-1">
-								<div class="text-sm text-gray-300">Estimated rFLR</div>
-								<div class="font-medium text-white">0</div>
-							</div>
-						{/if}
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-8">
+					<div class="space-y-1">
+						<div class="text-sm text-gray-300">Net cysFLR</div>
+						<div class="font-mono text-white">{stats.netTransfers.cysFLR}</div>
 					</div>
-				{/each}
+					<div class="space-y-1">
+						<div class="text-sm text-gray-300">Net cyWETH</div>
+						<div class="font-mono text-white">{stats.netTransfers.cyWETH}</div>
+					</div>
+					<div class="space-y-1">
+						<div class="text-sm text-gray-300">Share</div>
+						<div class="font-mono text-white">{stats.percentage.toFixed(4)}%</div>
+					</div>
+					<div class="space-y-1">
+						<div class="text-sm text-gray-300">Estimated rFLR</div>
+						<div class="font-mono text-white">{stats.proRataReward.toFixed(2)}</div>
+					</div>
+				</div>
 			</div>
 		</Card>
 
@@ -89,7 +74,7 @@
 			<div class="space-y-6" data-testid="transfer-history">
 				<h2 class="text-xl font-semibold text-white">Transfer History</h2>
 				<div class="space-y-2">
-					{#each transfers as transfer}
+					{#each [...stats.transfers.in, ...stats.transfers.out].sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp)) as transfer}
 						<a
 							href={`https://flarescan.com/tx/${transfer.transactionHash}`}
 							target="_blank"
@@ -113,11 +98,18 @@
 									{/if}
 								</div>
 								<div class="text-xs text-gray-300">
-									{new Date(+transfer.blockTimestamp * 1000).toLocaleString()}
+									{new Date(Number(transfer.blockTimestamp) * 1000).toLocaleString()}
 								</div>
 							</div>
-							<div class="truncate pl-4 font-medium text-white">
-								{formatEther(transfer.value)}
+							<div class="flex items-center gap-2 truncate pl-4 font-mono text-white">
+								<span class="text-xs text-gray-300"
+									>{isAddressEqual(transfer.tokenAddress, tokens[0].address)
+										? 'cysFLR'
+										: isAddressEqual(transfer.tokenAddress, tokens[1].address)
+											? 'cyWETH'
+											: 'Unknown'}</span
+								>
+								<span>{formatEther(transfer.value)}</span>
 							</div>
 						</a>
 					{/each}

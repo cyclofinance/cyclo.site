@@ -10,37 +10,35 @@ import {
 } from '../generated';
 import balancesStore from './balancesStore';
 import { myReceipts } from './stores';
-import { getReceipts } from './queries/getReceipts';
+import { refreshAllReceipts } from './queries/refreshAllReceipts';
 import { TransactionErrorMessage } from './types/errors';
+import type { CyToken } from './types';
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 export const ONE = BigInt('1000000000000000000');
 
 export enum TransactionStatus {
 	IDLE = 'Idle',
-	CHECKING_ALLOWANCE = 'Checking your approved sFLR spend...',
+	CHECKING_ALLOWANCE = 'Checking your approved spend...',
 	PENDING_WALLET = 'Waiting for wallet confirmation...',
-	PENDING_APPROVAL = 'Approving sFLR spend...',
-	PENDING_LOCK = 'Locking sFLR...',
-	PENDING_UNLOCK = 'Unlocking sFLR...',
+	PENDING_APPROVAL = 'Approving spend...',
+	PENDING_LOCK = 'Locking...',
+	PENDING_UNLOCK = 'Unlocking...',
 	SUCCESS = 'Success! Transaction confirmed',
 	ERROR = 'Something went wrong'
 }
 
 export type initiateLockTransactionArgs = {
 	signerAddress: string | null;
-	sFlrAddress: Hex;
-	cysFlrAddress: Hex;
-	erc1155Address: Hex;
+	selectedToken: CyToken;
 	assets: bigint;
 	config: Config;
 };
 
 export type InitiateUnlockTransactionArgs = {
 	signerAddress: string | null;
-	cysFlrAddress: Hex;
-	sFlrAddress: Hex;
-	erc1155Address: Hex;
+	selectedToken: CyToken;
+	erc1155Address: string;
 	assets: bigint;
 	config: Config;
 	tokenId: string;
@@ -110,21 +108,20 @@ const transactionStore = () => {
 	const handleLockTransaction = async ({
 		signerAddress,
 		config,
-		cysFlrAddress,
-		sFlrAddress,
-		erc1155Address,
+		selectedToken,
 		assets
 	}: initiateLockTransactionArgs) => {
 		const writeLock = async () => {
 			let hash: Hex | undefined;
 			// GET WALLET CONFIRMATION
 			try {
-				awaitWalletConfirmation('Awaiting wallet confirmation to lock your SFLR...');
+				awaitWalletConfirmation('Awaiting wallet confirmation to lock...');
 				hash = await writeErc20PriceOracleReceiptVaultDeposit(config, {
-					address: cysFlrAddress,
+					address: selectedToken.address,
 					args: [assets, signerAddress as Hex, 0n, '0x']
 				});
-			} catch {
+			} catch (e) {
+				console.log(e);
 				return transactionError(TransactionErrorMessage.USER_REJECTED_LOCK);
 			}
 			awaitLockTx(hash);
@@ -136,13 +133,8 @@ const transactionStore = () => {
 			}
 			// UPDATE BALANCES AND RECEIPTS
 			try {
-				await balancesStore.refreshBalances(
-					config,
-					sFlrAddress,
-					cysFlrAddress,
-					signerAddress as string
-				);
-				const getReceiptsResult = await getReceipts(signerAddress as Hex, erc1155Address, config);
+				await balancesStore.refreshBalances(config, signerAddress as Hex);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}
@@ -152,25 +144,27 @@ const transactionStore = () => {
 			// SUCCESS
 			return transactionSuccess(
 				hash,
-				"Congrats! You've successfully locked your SFLR in return for cysFLR. You can burn your cysFLR and receipts to redeem your original FLR at any time, or trade your cysFLR on the Flare Network."
+				`Congrats! You've successfully locked your ${selectedToken.underlyingSymbol} in return for ${selectedToken.name}. You can burn your ${selectedToken.name} and receipts to redeem your original ${selectedToken.underlyingSymbol} at any time, or trade your ${selectedToken.name} on the Flare Network.`
 			);
 		};
 
 		checkingWalletAllowance();
 
 		const data = await readErc20Allowance(config, {
-			address: sFlrAddress,
-			args: [signerAddress as Hex, cysFlrAddress]
+			address: selectedToken.underlyingAddress,
+			args: [signerAddress as Hex, selectedToken.address]
 		});
 
 		if (data < assets) {
-			awaitWalletConfirmation('You need to approve the cysFLR contract to lock your SFLR...');
+			awaitWalletConfirmation(
+				`You need to approve the ${selectedToken.name} contract to lock your ${selectedToken.underlyingSymbol}...`
+			);
 			// GET WALLET CONFIRMATION FOR APPROVAL
 			let hash: Hex | undefined;
 			try {
 				hash = await writeErc20Approve(config, {
-					address: sFlrAddress,
-					args: [cysFlrAddress, assets]
+					address: selectedToken.underlyingAddress,
+					args: [selectedToken.address, assets]
 				});
 			} catch {
 				return transactionError(TransactionErrorMessage.USER_REJECTED_APPROVAL);
@@ -195,9 +189,7 @@ const transactionStore = () => {
 	const handleUnlockTransaction = async ({
 		signerAddress,
 		config,
-		cysFlrAddress,
-		sFlrAddress,
-		erc1155Address,
+		selectedToken,
 		tokenId,
 		assets
 	}: InitiateUnlockTransactionArgs) => {
@@ -205,9 +197,11 @@ const transactionStore = () => {
 			let hash: Hex | undefined;
 			// GET WALLET CONFIRMATION
 			try {
-				awaitWalletConfirmation('Awaiting wallet confirmation to unlock your SFLR...');
+				awaitWalletConfirmation(
+					`Awaiting wallet confirmation to unlock your ${selectedToken.underlyingSymbol} ...`
+				);
 				hash = await writeErc20PriceOracleReceiptVaultRedeem(config, {
-					address: cysFlrAddress,
+					address: selectedToken.address,
 					args: [assets, signerAddress as Hex, signerAddress as Hex, BigInt(tokenId), '0x']
 				});
 			} catch {
@@ -222,13 +216,8 @@ const transactionStore = () => {
 			}
 			// UPDATE BALANCES AND RECEIPTS
 			try {
-				await balancesStore.refreshBalances(
-					config,
-					sFlrAddress,
-					cysFlrAddress,
-					signerAddress as string
-				);
-				const getReceiptsResult = await getReceipts(signerAddress as Hex, erc1155Address, config);
+				await balancesStore.refreshBalances(config, signerAddress as Hex);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}

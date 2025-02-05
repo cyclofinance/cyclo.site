@@ -8,91 +8,99 @@ published: true
     import unlocking from '$lib/images/unlocking.svg'
 </script>
 
-### Locking sFLR
+### Locking Collateral
 
-Participants lock sFLR into a smart contract and receive two types of tokens:
-1. **cysFLR (ERC-20):** Based on the FLR-USD price and the FLR-sFLR exchange rate at the time of the transaction.
-2. **Receipt tokens (ERC-1155):** Each with an ID representing the price of sFLR, using the FLR-USD price and FLR-sFLR exchange rate at the time of the transaction.
+Participants lock their collateral into a smart contract and receive two types of tokens:
+1. **cy* Tokens (ERC-20):** Based on the USD value of the collateral at the time of the transaction.
+2. **Receipt tokens (ERC-1155):** Each with an ID representing the price of the collateral at the time of the transaction.
 
+#### General Calculation of cy* Tokens
 
-#### Calculation of cysFLR Tokens Minted and Receipt Tokens Issued
-
-The number of cysFLR tokens minted and ERC-1155 receipt tokens issued is determined by the USD value of the locked sFLR, obtained using the FLR-USD price from the Flare Time Series Oracle (FTSO) and multiplying it by the FLR-sFLR exchange rate.
-
-$$
-\text{cysFLR}_{\text{minted}} = \text{Receipts}_{\text{issued}} = \text{FLR}_{\text{locked}} \times \text{FLR-USD}_{\text{price}} \times \text{sFLR-FLR}_{\text{exchange rate}}
-$$
-
-Where:
-- $\text{cysFLR}_{\text{minted}}$ is the number of cysFLR tokens to be minted.
-- $\text{Receipts}_{\text{issued}}$ is the number of ERC-1155 receipt tokens issued.
-- $\text{FLR}_{\text{locked}}$ is the amount of FLR tokens locked into the smart contract.
-- $\text{FLR-USD}_{\text{price}}$ is the current USD price of FLR as provided by the Flare Time Series Oracle (FTSO).
-- $\text{FLR-sFLR}_{\text{exchange rate}}$ is the current exchange rate for FLR-sFLR, provided by the sFLR staking contract.
-
-<img src={locking} alt="locking flr" class="w-full mx-auto" />
-
-For example, if a user locks 100 FLR and the current sFLR-USD price is $0.03, the number of cysFLR tokens minted and receipt tokens issued would be:
+The number of cy* tokens minted and ERC-1155 receipt tokens issued is determined by the USD value of the locked collateral:
 
 $$
-\text{cysFLR}_{\text{minted}} = \text{Receipts}_{\text{issued}} = 100 \, \text{sFLR} \times 0.03 \, \text{sFLR-USD}_{\text{price}} = 3 \, \text{cysFLR}
-$$
-
-#### Calculation of sFLR Unlocked
-
-When a user wants to unlock sFLR tokens, they need to burn some amount of cysFLR and the same amount of some ERC-1155 receipt tokens.
-
-The amount of sFLR unlocked is based on the amount of cysFLR burned and their individual lock-up price represented by the receipt tokens.
-
-The equation for calculating the amount of sFLR tokens unlocked is:
-
-$$
-\text{sFLR}_{\text{unlocked}} = \frac{\text{cysFLR}_{\text{burned}}}{\text{Receipts}_{\text{price}}}
+\text{cy*}_{\text{minted}} = \text{Receipts}_{\text{issued}} = \text{Collateral}_{\text{locked}} \times \text{USD}_{\text{price}}
 $$
 
 Where:
-- $\text{sFLR}_{\text{unlocked}}$ is the amount of sFLR tokens to be unlocked.
-- $\text{Receipts}_{\text{price}}$ is the USD price of sFLR at the time of the initial lock-up, as recorded by the ERC-1155 receipt tokens.
-- $\text{cysFLR}_{\text{burned}}$ is the amount of cysFLR tokens burned by the user.
+- $\text{cy*}_{\text{minted}}$ is the number of cy* tokens to be minted
+- $\text{Receipts}_{\text{issued}}$ is the number of ERC-1155 receipt tokens issued
+- $\text{Collateral}_{\text{locked}}$ is the amount of tokens locked into the smart contract
+- $\text{USD}_{\text{price}}$ is the current USD price from the FTSO
 
-<img src={unlocking} alt="unlocking flr" class="w-full mx-auto" />
-
-For example, if a user wants to unlock 100 sFLR and the initial sFLR-USD price was $0.03, the amount of cysFLR tokens burned and sFLR unlocked would be:
-
-$$
-\text{sFLR}_{\text{unlocked}} = \frac{3 \, \text{cysFLR}}{0.03 \, \text{USD/sFLR}} = 100 \, \text{sFLR}
-$$
+For example, if a user locks 100 WETH and the current WETH-USD price is $2000, they would receive:
 
 $$
-\text{cysFLR}_{\text{burned}} = 100 \, \text{FLR} \times 0.03 \, \text{USD/sFLR} = 3 \, \text{cysFLR}
+\text{cyWETH}_{\text{minted}} = 100 \times 2000 = 200,000 \text{ cyWETH}
 $$
 
-### Token supply
+#### Special Case: sFLR
 
-The total supply of ERC-1155 receipt tokens, represented by the sum of all token IDs, is always equal to the total supply of cysFLR tokens. 
-
-$$
-\sum \text{Receipts}_{\text{IDs}} = \text{Total Supply of cysFLR}
-$$
-
-For example, if 300 cysFLR tokens are minted when the sFLR-USD price is 0.03, and 100 are minted when the sFLR-USD price is 0.031, in circulation there will be:
-- 300 ERC-1155 tokens with ID 0.03
-- 100 ERC-1155 tokens with ID 0.031
-- 400 cysFLR tokens
-
-### Full Collateralization
-
-The system ensures full collateralization through a 1:1 mint and burn mechanism. The amount of cysFLR minted corresponds to the sFLR-USD price at the time of minting, while the amount of cysFLR burned corresponds to the _original_ lock-up price represented by the receipt.
-
-Let $\text{sFLR-USD}_{\text{lock-up i}}$ be the USD price of sFLR at the time of the $i^{th}$ lock-up, and $\text{cysFLR}_{\text{issued i}}$ be the cysFLR tokens issued at that lock-up price. The total FLR locked in the smart contract is the sum of all these amounts:
+For sFLR collateral, an additional exchange rate is needed since the FTSO only provides FLR-USD prices. The calculation becomes:
 
 $$
-\text{Total sFLR Locked} = \sum_{i=1}^{n} \frac{\text{cysFLR}_{\text{issued i}}}{\text{sFLR-USD}_{\text{lock-up i}}}
+\text{cysFLR}_{\text{minted}} = \text{sFLR}_{\text{locked}} \times \text{FLR-USD}_{\text{price}} \times \text{sFLR-FLR}_{\text{exchange rate}}
 $$
 
 Where:
-- $\text{Total sFLR Locked}$ is the sum of all sFLR tokens locked in the smart contract.
-- $\text{cysFLR}_{\text{issued i}}$ is the amount of cysFLR tokens issued at the $i^{th}$ lock-up.
-- $\text{sFLR-USD}_{\text{lock-up i}}$ is the USD price of sFLR at the time of the $i^{th}$ lock-up, as determined by the Flare Time Series Oracle (FTSO) and sFLR exchange rate.
+- $\text{FLR-USD}_{\text{price}}$ comes from the FTSO
+- $\text{sFLR-FLR}_{\text{exchange rate}}$ comes from the sFLR staking contract
 
-This ensures that if all cysFLR tokens and their corresponding receipts were burned, the amount of sFLR locked would fully cover the redemption, maintaining full collateralization.
+For example, if a user locks 100 sFLR when:
+- FLR-USD price is $0.03
+- sFLR-FLR exchange rate is 1.1
+
+They would receive:
+
+$$
+\text{cysFLR}_{\text{minted}} = 100 \times 0.03 \times 1.1 = 3.3 \text{ cysFLR}
+$$
+
+<img src={locking} alt="locking collateral" class="w-full mx-auto" />
+
+### Unlocking Collateral
+
+When a user wants to unlock their collateral, they need to burn some amount of cy* tokens and the same amount of the corresponding ERC-1155 receipt tokens.
+
+The amount of collateral unlocked is based on the amount of cy* tokens burned and their individual lock-up price represented by the receipt tokens.
+
+The equation for calculating the amount of collateral tokens unlocked is:
+
+$$
+\text{Collateral}_{\text{unlocked}} = \frac{\text{cy*}_{\text{burned}}}{\text{Receipts}_{\text{price}}}
+$$
+
+Where:
+- $\text{Collateral}_{\text{unlocked}}$ is the amount of tokens to be unlocked
+- $\text{Receipts}_{\text{price}}$ is the USD price at the time of the initial lock-up, as recorded by the ERC-1155 receipt tokens
+- $\text{cy*}_{\text{burned}}$ is the amount of cy* tokens burned by the user
+
+<img src={unlocking} alt="unlocking collateral" class="w-full mx-auto" />
+
+### Token Supply and Collateralization
+
+The total supply of ERC-1155 receipt tokens, represented by the sum of all token IDs, is always equal to the total supply of cy* tokens for each collateral type. 
+
+$$
+\sum \text{Receipts}_{\text{IDs}} = \text{Total Supply of cy* tokens}
+$$
+
+For example, if 300 cyWETH tokens are minted when the WETH-USD price is $2000, and 100 are minted when the WETH-USD price is $2100, in circulation there will be:
+- 300 ERC-1155 tokens with ID 2000
+- 100 ERC-1155 tokens with ID 2100
+- 400 cyWETH tokens
+
+The system ensures full collateralization through a 1:1 mint and burn mechanism. The amount of cy* tokens minted corresponds to the USD price at the time of minting, while the amount burned corresponds to the _original_ lock-up price represented by the receipt.
+
+Let $\text{USD}_{\text{lock-up i}}$ be the USD price of the collateral at the time of the $i^{th}$ lock-up, and $\text{cy*}_{\text{issued i}}$ be the cy* tokens issued at that lock-up price. The total collateral locked in the smart contract is the sum of all these amounts:
+
+$$
+\text{Total Collateral Locked} = \sum_{i=1}^{n} \frac{\text{cy*}_{\text{issued i}}}{\text{USD}_{\text{lock-up i}}}
+$$
+
+Where:
+- $\text{Total Collateral Locked}$ is the sum of all tokens locked in the smart contract
+- $\text{cy*}_{\text{issued i}}$ is the amount of cy* tokens issued at the $i^{th}$ lock-up
+- $\text{USD}_{\text{lock-up i}}$ is the USD price at the time of the $i^{th}$ lock-up, as determined by the Flare Time Series Oracle (FTSO)
+
+This ensures that if all cy* tokens and their corresponding receipts were burned, the amount of collateral locked would fully cover the redemption, maintaining full collateralization.
