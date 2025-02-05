@@ -44,7 +44,7 @@ describe('StatsPanel Component', () => {
 			expect(screen.getByText('~0.5000%')).toBeInTheDocument(); // cysFLR APY
 			expect(screen.getByText('~0.7500%')).toBeInTheDocument(); // cyWETH APY
 			expect(screen.getByText('100')).toBeInTheDocument(); // eligible holders
-			expect(screen.getByText('$3000.00')).toBeInTheDocument(); // total eligible
+			expect(screen.getByText('3000.00')).toBeInTheDocument(); // total eligible
 			expect(screen.getByText('cysFLR: 1000.00')).toBeInTheDocument(); // cysFLR total
 			expect(screen.getByText('cyWETH: 2000.00')).toBeInTheDocument(); // cyWETH total
 			expect(screen.getByText('1,000,000')).toBeInTheDocument(); // monthly rewards
