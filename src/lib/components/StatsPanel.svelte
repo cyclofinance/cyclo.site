@@ -30,7 +30,7 @@
 			{error}
 		</div>
 	{:else if stats}
-		<div class="grid grid-cols-4 gap-8" data-testid="stats-panel">
+		<div class="grid w-full grid-cols-1 gap-8 md:grid-cols-4" data-testid="stats-panel">
 			<!-- Current APY -->
 			<div class="space-y-4">
 				<div class="text-sm text-gray-300">Current APY</div>
