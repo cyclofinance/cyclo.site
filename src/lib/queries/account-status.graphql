@@ -9,7 +9,6 @@ query AccountStatus($account: ID!) {
 		cysFLRBalance
 		cyWETHBalance
 		totalCyBalance
-		eligibleShare
 		transfersIn {
 			fromIsApprovedSource
 			transactionHash

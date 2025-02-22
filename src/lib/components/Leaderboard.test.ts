@@ -2,7 +2,6 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import Leaderboard from './Leaderboard.svelte';
 import { type LeaderboardEntry } from '$lib/queries/fetchTopRewards';
-import { goto } from '$app/navigation';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
@@ -69,10 +68,13 @@ describe('Leaderboard Component', () => {
 
 		render(Leaderboard);
 
-		await waitFor(() => {
-			const accountRow = screen.getByRole('button');
-			accountRow.click();
-			expect(goto).toHaveBeenCalledWith('/rewards/0x1234567890123456789012345678901234567890');
-		});
+		// Wait for component to load and get link
+		const accountLink = await screen.findByText('#1 0x1234...7890');
+
+		// Check the href attribute
+		expect(accountLink.closest('a')).toHaveAttribute(
+			'href',
+			'/rewards/0x1234567890123456789012345678901234567890'
+		);
 	});
 });

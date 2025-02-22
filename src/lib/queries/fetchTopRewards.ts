@@ -26,15 +26,15 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	const data: TopAccountsQuery = (await response.json()).data;
 
 	return (data.accountsByCyBalance ?? []).map((account) => {
-		const percentage = Number(account.eligibleShare ?? 0) * 100;
+		const sharePercentage = account.totalCyBalance / data.eligibleTotals?.totalEligibleSum;
 		return {
 			account: account.id,
 			netTransfers: {
 				cysFLR: formatEther(account.cysFLRBalance),
 				cyWETH: formatEther(account.cyWETHBalance)
 			},
-			percentage,
-			proRataReward: percentage * (TOTAL_REWARD / 100)
+			percentage: sharePercentage * 100,
+			proRataReward: sharePercentage * TOTAL_REWARD
 		};
 	});
 }
