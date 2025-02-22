@@ -1,12 +1,7 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/svelte';
+import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import NavButtons from './NavButtons.svelte';
-import { goto } from '$app/navigation';
 import { base } from '$app/paths';
-
-vi.mock('$app/navigation', () => ({
-	goto: vi.fn()
-}));
 
 describe('NavButtons Component', () => {
 	beforeEach(() => {
@@ -14,7 +9,9 @@ describe('NavButtons Component', () => {
 	});
 
 	it('should display Buttons', async () => {
-		render(NavButtons);
+		render(NavButtons, {
+			props: { launched: true }
+		});
 
 		await waitFor(() => {
 			expect(screen.getByTestId('docs-button')).toBeInTheDocument();
@@ -24,19 +21,13 @@ describe('NavButtons Component', () => {
 		});
 	});
 
-	it('should check app button is displayed and navigates to correct url', async () => {
+	it('should check app button is displayed and has correct href', async () => {
 		const { getByTestId } = render(NavButtons, {
 			props: { launched: true }
 		});
 
-		await waitFor(async () => {
-			expect(screen.getByTestId('app-button')).toBeInTheDocument();
-
-			const button = getByTestId('app-button');
-			await fireEvent.click(button);
-
-			expect(goto).toHaveBeenCalledWith(base + '/lock');
-		});
+		const button = getByTestId('app-button');
+		expect(button).toHaveAttribute('href', base + '/lock');
 	});
 
 	it('should check app button is not displayed', async () => {
@@ -49,21 +40,15 @@ describe('NavButtons Component', () => {
 		});
 	});
 
-	it('should check ', async () => {
+	it('should check navigation links have correct hrefs', async () => {
 		const { getByTestId } = render(NavButtons, {
 			props: { launched: true }
 		});
 
-		await waitFor(async () => {
-			const docsButton = getByTestId('docs-button');
-			await fireEvent.click(docsButton);
+		const docsButton = getByTestId('docs-button');
+		expect(docsButton).toHaveAttribute('href', base + '/docs');
 
-			expect(goto).toHaveBeenCalledWith(base + '/docs');
-
-			const rewardsButton = getByTestId('rewards-button');
-			await fireEvent.click(rewardsButton);
-
-			expect(goto).toHaveBeenCalledWith(base + '/rewards');
-		});
+		const rewardsButton = getByTestId('rewards-button');
+		expect(rewardsButton).toHaveAttribute('href', base + '/rewards');
 	});
 });

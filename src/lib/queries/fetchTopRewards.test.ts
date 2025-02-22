@@ -22,15 +22,18 @@ describe('fetchTopRewards', () => {
 						id: '0x123',
 						cysFLRBalance: '1000000000000000000000',
 						cyWETHBalance: '2000000000000000000000',
-						eligibleShare: '0.1'
+						totalCyBalance: '100000000000000000000'
 					},
 					{
 						id: '0x456',
 						cysFLRBalance: '500000000000000000000',
 						cyWETHBalance: '1000000000000000000000',
-						eligibleShare: '0.05'
+						totalCyBalance: '50000000000000000000'
 					}
-				]
+				],
+				eligibleTotals: {
+					totalEligibleSum: '1000000000000000000000'
+				}
 			}
 		};
 

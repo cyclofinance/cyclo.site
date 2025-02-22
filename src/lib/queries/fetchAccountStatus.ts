@@ -46,15 +46,16 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 	});
 	const data: AccountStatusQuery = (await response.json()).data;
 
-	const percentage = Number(data.account?.eligibleShare ?? 0) * 100;
+	const sharePercentage =
+		(data.account?.totalCyBalance / data.eligibleTotals?.totalEligibleSum) * 100;
 
 	return {
 		netTransfers: {
 			cysFLR: formatEther(data.account?.cysFLRBalance ?? 0),
 			cyWETH: formatEther(data.account?.cyWETHBalance ?? 0)
 		},
-		percentage,
-		proRataReward: percentage * (TOTAL_REWARD / 100),
+		percentage: sharePercentage,
+		proRataReward: sharePercentage * TOTAL_REWARD,
 		transfers: {
 			in: data.account?.transfersIn ?? [],
 			out: data.account?.transfersOut ?? []
