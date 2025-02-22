@@ -21,6 +21,8 @@ query AccountStatus($account: ID!) {
 				id
 			}
 			value
+			id
+			blockNumber
 		}
 		transfersOut {
 			fromIsApprovedSource
@@ -34,6 +36,8 @@ query AccountStatus($account: ID!) {
 				id
 			}
 			value
+			id
+			blockNumber
 		}
 	}
 }

@@ -1,39 +1,8 @@
 import { type AccountStatusQuery } from '../../generated-graphql';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
 import { formatEther } from 'ethers';
-import { SUBGRAPH_URL } from '$lib/constants';
-import { type Hex } from 'viem';
-
-export type AccountStats = {
-	netTransfers: {
-		cysFLR: string;
-		cyWETH: string;
-	};
-	percentage: number;
-	proRataReward: number;
-	transfers: {
-		in: Array<{
-			fromIsApprovedSource: boolean;
-			transactionHash: string;
-			from: { id: string };
-			to: { id: string };
-			value: string;
-			blockTimestamp: string;
-			tokenAddress: Hex;
-		}>;
-		out: Array<{
-			fromIsApprovedSource: boolean;
-			transactionHash: string;
-			from: { id: string };
-			to: { id: string };
-			value: string;
-			blockTimestamp: string;
-			tokenAddress: Hex;
-		}>;
-	};
-};
-
-const TOTAL_REWARD = 1_000_000; // 1M rFLR
+import { SUBGRAPH_URL, TOTAL_REWARD } from '$lib/constants';
+import type { AccountStats } from '$lib/types';
 
 export async function fetchAccountStatus(account: string): Promise<AccountStats> {
 	const response = await fetch(SUBGRAPH_URL, {

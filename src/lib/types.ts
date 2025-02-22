@@ -1,5 +1,6 @@
 import type { Config } from '@wagmi/core';
 import { type Hex } from 'viem';
+import type { AccountStatusQuery, Transfer } from '../generated-graphql';
 
 export type Receipt = {
 	chainId: string;
@@ -34,4 +35,26 @@ export type InitiateLockTransactionArgs = {
 	config: Config;
 	selectedToken: CyToken;
 	assets: bigint;
+};
+
+export type Share = {
+	percentageShare: bigint;
+	rewardsAmount: bigint;
+};
+
+export type Shares = {
+	cysFLR: Share;
+	cyWETH: Share;
+};
+
+export type AccountStats = {
+	netTransfers: {
+		cysFLR: string;
+		cyWETH: string;
+	};
+	shares: Shares;
+	transfers: {
+		in: NonNullable<AccountStatusQuery['account']>['transfersIn'];
+		out: NonNullable<AccountStatusQuery['account']>['transfersOut'];
+	};
 };

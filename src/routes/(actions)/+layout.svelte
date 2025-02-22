@@ -7,6 +7,7 @@
 	import type { Hex } from 'viem';
 	import { base } from '$app/paths';
 	import Footer from '$lib/components/Footer.svelte';
+	import HrefButton from '$lib/components/HrefButton.svelte';
 
 	$: if ($selectedCyToken && $signerAddress) {
 		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
@@ -16,12 +17,14 @@
 
 <div class="flex flex-grow flex-col items-center gap-6 bg-[#1C02B8] p-2 sm:p-6">
 	<div class="flex h-fit max-w-prose gap-6">
-		<a href={base + '/lock'} class="w-24 sm:w-32" class:inset={$page.url.pathname === '/lock'}
-			>LOCK</a
+		<HrefButton href={base + '/lock'} class="w-24 sm:w-32" inset={$page.url.pathname === '/lock'}
+			>LOCK</HrefButton
 		>
-		<a href={base + '/unlock'} class="w-24 sm:w-32" class:inset={$page.url.pathname === '/unlock'}>
-			UNLOCK
-		</a>
+		<HrefButton
+			href={base + '/unlock'}
+			class="w-24 sm:w-32"
+			inset={$page.url.pathname === '/unlock'}>UNLOCK</HrefButton
+		>
 	</div>
 	<slot />
 	<Footer />
