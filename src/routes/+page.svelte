@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import logo from '$lib/images/logo-white.svg';
 	import { ArrowsRepeatCountOutline, LockOpenOutline, LockOutline } from 'flowbite-svelte-icons';
-
+	import { base } from '$app/paths';
 	let loadingDots = '.';
 	function updateLoadingDots() {
 		loadingDots = loadingDots.length >= 3 ? '.' : loadingDots + '.';
@@ -27,15 +26,13 @@
 				<div class="inline-block border border-dashed border-white p-3 text-lg opacity-80">
 					<span class="text-green-400">&gt; EXECUTING</span> pure_defi_freedom.exe
 				</div>
-				<button
-					on:click={() => {
-						goto('/lock');
-					}}
+				<a
+					href={base + '/lock'}
 					class="border-outset group w-fit max-w-sm border-2 border-white bg-green-400 p-6 text-center text-xl font-bold tracking-wider transition-colors hover:bg-green-500"
 					data-testid="get-started-button"
 				>
 					GET STARTED_
-				</button>
+				</a>
 			</div>
 		</div>
 

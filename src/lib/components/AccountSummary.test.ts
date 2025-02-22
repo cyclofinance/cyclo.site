@@ -2,7 +2,6 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect, afterEach } from 'vitest';
 import AccountSummary from './AccountSummary.svelte';
 import { type AccountStats } from '$lib/queries/fetchAccountStatus';
-import { goto } from '$app/navigation';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
@@ -63,14 +62,11 @@ describe('AccountSummary Component', () => {
 
 		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
 
-		await waitFor(() => {
-			expect(screen.getByTestId('full-tx-history-button')).toBeInTheDocument();
-		});
+		// Wait for component to load and get button
+		const link = await screen.findByTestId('full-tx-history-button');
 
-		const button = screen.getByTestId('full-tx-history-button');
-		button.click();
-
-		expect(goto).toHaveBeenCalledWith('/rewards/0x1234567890123456789012345678901234567890');
+		// Check the href attribute
+		expect(link).toHaveAttribute('href', '/rewards/0x1234567890123456789012345678901234567890');
 	});
 
 	it('should display `not eligible for rewards` text if account not eligible', async () => {

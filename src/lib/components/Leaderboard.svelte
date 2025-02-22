@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { fetchTopRewards, type LeaderboardEntry } from '$lib/queries/fetchTopRewards';
 	import Card from './Card.svelte';
-	import { goto } from '$app/navigation';
 	import { signerAddress } from 'svelte-wagmi';
 
 	let loading = true;
@@ -19,10 +18,6 @@
 			loading = false;
 		}
 	});
-
-	function handleAccountClick(account: string) {
-		goto(`/rewards/${account}`);
-	}
 
 	$: isConnectedWallet = (account: string) =>
 		$signerAddress?.toLowerCase() === account.toLowerCase();
@@ -51,13 +46,13 @@
 				</div>
 				{#if leaderboard?.length > 0}
 					{#each leaderboard as entry, i}
-						<button
+						<a
+							href={`/rewards/${entry.account}`}
 							class="grid w-full grid-cols-5 gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
 								entry.account
 							)
 								? 'bg-white/10 hover:bg-white/20'
 								: 'bg-base-200 hover:bg-base-300'}"
-							on:click={() => handleAccountClick(entry.account)}
 						>
 							<div class="truncate font-medium text-white">
 								#{i + 1}
@@ -67,7 +62,7 @@
 							<div class="truncate font-medium text-white">{entry.netTransfers.cyWETH}</div>
 							<div class="truncate font-medium text-white">{entry.percentage.toFixed(4)}%</div>
 							<div class="truncate font-medium text-white">{entry.proRataReward.toFixed(2)}</div>
-						</button>
+						</a>
 					{/each}
 				{/if}
 			</div>

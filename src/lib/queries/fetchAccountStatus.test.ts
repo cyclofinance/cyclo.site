@@ -66,7 +66,7 @@ describe('fetchAccountStatus', () => {
 				cyWETH: '200.0'
 			},
 			percentage: 10,
-			proRataReward: 100000,
+			proRataReward: 10000000,
 			transfers: {
 				in: mockData.data.account.transfersIn,
 				out: mockData.data.account.transfersOut

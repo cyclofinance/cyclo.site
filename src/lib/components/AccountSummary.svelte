@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { fetchAccountStatus, type AccountStats } from '$lib/queries/fetchAccountStatus';
 	import Card from './Card.svelte';
-	import { goto } from '$app/navigation';
 
 	export let account: string;
 
@@ -37,10 +36,10 @@
 		<div class="space-y-6">
 			<div class="flex items-center justify-between">
 				<h2 class="text-xl font-semibold text-white">Your Rewards</h2>
-				<button
+				<a
+					href={`/rewards/${account}`}
 					data-testid="full-tx-history-button"
 					class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90"
-					on:click={() => goto(`/rewards/${account}`)}
 				>
 					Full Tx History
 					<svg
@@ -57,7 +56,7 @@
 						<path d="M5 12h14" />
 						<path d="m12 5 7 7-7 7" />
 					</svg>
-				</button>
+				</a>
 			</div>
 
 			{#if !isEligible}

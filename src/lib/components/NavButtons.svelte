@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { base } from '$app/paths';
 	export let launched: boolean;
@@ -7,58 +6,58 @@
 
 <div class="flex items-center justify-center gap-4 sm:hidden">
 	{#if launched}
-		<button
+		<a
+			href={base + '/lock'}
 			data-testid="app-button-mobile"
 			class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 			class:hidden={$page.url.pathname === '/lock' || $page.url.pathname === '/unlock'}
-			on:click={() => {
-				goto(base + '/lock');
-			}}>App</button
 		>
+			App
+		</a>
 	{/if}
-	<button
+	<a
+		href={base + '/docs'}
 		data-testid="docs-button-mobile"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:hidden={$page.url.pathname.startsWith('/docs') || $page.url.pathname === '/'}
-		on:click={() => {
-			goto(base + '/docs');
-		}}>Docs</button
 	>
-	<button
+		Docs
+	</a>
+	<a
+		href={base + '/rewards'}
 		data-testid="rewards-button-mobile"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:hidden={$page.url.pathname === '/rewards'}
-		on:click={() => {
-			goto(base + '/rewards');
-		}}>Rewards</button
 	>
+		Rewards
+	</a>
 </div>
 
 <div class="hidden items-center justify-center gap-4 sm:flex">
 	{#if launched}
-		<button
+		<a
+			href={base + '/lock'}
 			data-testid="app-button"
 			class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 			class:underline={$page.url.pathname === '/lock' || $page.url.pathname === '/unlock'}
-			on:click={() => {
-				goto(base + '/lock');
-			}}>App</button
 		>
+			App
+		</a>
 	{/if}
-	<button
+	<a
+		href={base + '/docs'}
 		data-testid="docs-button"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:underline={$page.url.pathname.startsWith('/docs')}
-		on:click={() => {
-			goto(base + '/docs');
-		}}>Docs</button
 	>
-	<button
+		Docs
+	</a>
+	<a
+		href={base + '/rewards'}
 		data-testid="rewards-button"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		class:underline={$page.url.pathname === '/rewards'}
-		on:click={() => {
-			goto(base + '/rewards');
-		}}>Rewards</button
 	>
+		Rewards
+	</a>
 </div>
