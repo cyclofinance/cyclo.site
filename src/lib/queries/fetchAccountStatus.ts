@@ -46,8 +46,7 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 	});
 	const data: AccountStatusQuery = (await response.json()).data;
 
-	const sharePercentage =
-		(data.account?.totalCyBalance / data.eligibleTotals?.totalEligibleSum) * 100;
+	const sharePercentage = data.account?.totalCyBalance / data.eligibleTotals?.totalEligibleSum;
 
 	return {
 		netTransfers: {
