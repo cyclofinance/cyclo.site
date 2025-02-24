@@ -53,8 +53,8 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 			cysFLR: formatEther(data.account?.cysFLRBalance ?? 0),
 			cyWETH: formatEther(data.account?.cyWETHBalance ?? 0)
 		},
-		percentage,
-		proRataReward: percentage * (TOTAL_REWARD / 100),
+		percentage: sharePercentage,
+		proRataReward: sharePercentage * TOTAL_REWARD,
 		transfers: {
 			in: data.account?.transfersIn ?? [],
 			out: data.account?.transfersOut ?? []
