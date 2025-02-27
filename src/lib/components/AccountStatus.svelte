@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchAccountStatus, type AccountStats } from '$lib/queries/fetchAccountStatus';
-	import { formatEther, getAddress } from 'ethers';
+	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
+	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
 	import { tokens } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
+	import type { AccountStats } from '$lib/types';
+	import { formatEther, formatUnits } from 'viem';
 
 	export let account: string;
 
@@ -23,7 +25,9 @@
 		}
 	});
 
-	$: isEligible = stats?.percentage && stats.percentage > 0;
+	$: isEligible =
+		stats?.eligibleBalances &&
+		(stats.eligibleBalances.cyWETH > 0 || stats.eligibleBalances.cysFLR > 0);
 </script>
 
 {#if loading}
@@ -49,22 +53,42 @@
 					</div>
 				{/if}
 
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-8">
+				<div class="grid grid-cols-1 gap-8 sm:grid-cols-5 sm:gap-8">
 					<div class="space-y-1">
 						<div class="text-sm text-gray-300">Net cysFLR</div>
-						<div class="font-mono text-white">{stats.netTransfers.cysFLR}</div>
+						<div class="break-words font-mono text-white">
+							{formatEther(stats.eligibleBalances.cysFLR)}
+						</div>
+					</div>
+					<div class="space-y-1">
+						<div class="text-sm text-gray-300">cysFLR rewards</div>
+						<div class="break-words font-mono text-white">
+							{formatEther(stats.shares.cysFLR.rewardsAmount)} ({formatUnits(
+								stats.shares.cysFLR.percentageShare,
+								16
+							)}%)
+						</div>
 					</div>
 					<div class="space-y-1">
 						<div class="text-sm text-gray-300">Net cyWETH</div>
-						<div class="font-mono text-white">{stats.netTransfers.cyWETH}</div>
+						<div class="break-words font-mono text-white">
+							{formatEther(stats.eligibleBalances.cyWETH)}
+						</div>
 					</div>
 					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Share</div>
-						<div class="font-mono text-white">{stats.percentage.toFixed(4)}%</div>
+						<div class="text-sm text-gray-300">cyWETH rewards</div>
+						<div class="break-words font-mono text-white">
+							{formatEther(stats.shares.cyWETH.rewardsAmount)} ({formatUnits(
+								stats.shares.cyWETH.percentageShare,
+								16
+							)}%)
+						</div>
 					</div>
 					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Estimated rFLR</div>
-						<div class="font-mono text-white">{stats.proRataReward.toFixed(2)}</div>
+						<div class="text-sm text-gray-300">Total Estimated rFLR</div>
+						<div class="break-words font-mono text-white">
+							{formatEther(stats.shares.totalRewards)}
+						</div>
 					</div>
 				</div>
 			</div>

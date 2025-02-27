@@ -1,17 +1,8 @@
 import { type TopAccountsQuery } from '../../generated-graphql';
 import TopAccounts from '$lib/queries/top-rewards.graphql?raw';
-import { formatEther } from 'ethers';
-import { SUBGRAPH_URL, TOTAL_REWARD } from '$lib/constants';
-
-export type LeaderboardEntry = {
-	account: string;
-	netTransfers: {
-		cysFLR: string;
-		cyWETH: string;
-	};
-	percentage: number;
-	proRataReward: number;
-};
+import { SUBGRAPH_URL } from '$lib/constants';
+import type { LeaderboardEntry } from '$lib/types';
+import { calculateShares } from './calculateShares';
 
 export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	const response = await fetch(SUBGRAPH_URL, {
@@ -23,16 +14,28 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	});
 	const data: TopAccountsQuery = (await response.json()).data;
 
-	return (data.accountsByCyBalance ?? []).map((account) => {
-		const sharePercentage = account.totalCyBalance / data.eligibleTotals?.totalEligibleSum;
+	const eligibleTotals = data.eligibleTotals;
+	if (!eligibleTotals) throw 'No eligible totals';
+
+	const accountsWithShares = (data.accountsByCyBalance ?? []).map((account) => {
+		const shares = calculateShares(account, eligibleTotals);
 		return {
 			account: account.id,
-			netTransfers: {
-				cysFLR: formatEther(account.cysFLRBalance),
-				cyWETH: formatEther(account.cyWETHBalance)
+			eligibleBalances: {
+				cysFLR: account.cysFLRBalance,
+				cyWETH: account.cyWETHBalance
 			},
-			percentage: sharePercentage * 100,
-			proRataReward: sharePercentage * TOTAL_REWARD
+			shares
 		};
 	});
+
+	const sorted = accountsWithShares.sort((a, b) =>
+		b.shares.totalRewards < a.shares.totalRewards
+			? -1
+			: b.shares.totalRewards == a.shares.totalRewards
+				? 0
+				: 1
+	);
+
+	return sorted.slice(0, 50);
 }

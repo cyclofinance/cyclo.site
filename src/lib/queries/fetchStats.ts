@@ -2,19 +2,9 @@ import { type StatsQuery } from '../../generated-graphql';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
-import { SUBGRAPH_URL } from '$lib/constants';
-
-export type GlobalStats = {
-	eligibleHolders: number;
-	totalEligibleCysFLR: bigint;
-	totalEligibleCyWETH: bigint;
-	totalEligibleSum: bigint;
-	monthlyRewards: bigint;
-	cysFLRApy: bigint;
-	cyWETHApy: bigint;
-};
-
-const MONTHLY_REWARDS = 1_000_000n * 10n ** 18n; // 1M rFLR
+import { ONE, SUBGRAPH_URL, TOTAL_REWARD } from '$lib/constants';
+import { calculateRewardsPools } from './calculateRewardsPools';
+import type { GlobalStats } from '$lib/types';
 
 export async function fetchStats(): Promise<GlobalStats> {
 	const response = await fetch(SUBGRAPH_URL, {
@@ -32,7 +22,7 @@ export async function fetchStats(): Promise<GlobalStats> {
 	const eligibleHolders = (data.accounts ?? []).length;
 
 	console.log('Total Eligible Sum:', totalEligibleSum.toString());
-	console.log('Monthly Rewards:', MONTHLY_REWARDS.toString());
+	console.log('Monthly Rewards:', TOTAL_REWARD.toString());
 
 	// Get prices in FLR terms
 	const cysFLRwFLRPrice = await getcysFLRwFLRPrice();
@@ -41,17 +31,19 @@ export async function fetchStats(): Promise<GlobalStats> {
 	console.log('cysFLR/wFLR Price:', cysFLRwFLRPrice.toString());
 	console.log('cyWETH/wFLR Price:', cyWETHwFLRPrice.toString());
 
+	if (!data.eligibleTotals) throw 'No eligible totals';
+
+	const rewardsPools = calculateRewardsPools(data.eligibleTotals);
+
 	// Calculate APY for cysFLR
-	const cysFLRNumerator = MONTHLY_REWARDS * 12n * 100n * 10n ** 18n;
-	const cysFLRDenominator = totalEligibleSum * cysFLRwFLRPrice;
-	const cysFLRApy =
-		cysFLRDenominator > 0n ? (cysFLRNumerator * 10n ** 18n) / cysFLRDenominator : 0n;
+	const cysFLRNumerator = rewardsPools.cysFlr * 12n * 100n * ONE * ONE;
+	const cysFLRDenominator = BigInt(data.eligibleTotals.totalEligibleCysFLR) * cysFLRwFLRPrice;
+	const cysFLRApy = cysFLRDenominator > 0n ? cysFLRNumerator / cysFLRDenominator : 0n;
 
 	// Calculate APY for cyWETH
-	const cyWETHNumerator = MONTHLY_REWARDS * 12n * 100n * 10n ** 18n;
-	const cyWETHDenominator = totalEligibleSum * cyWETHwFLRPrice;
-	const cyWETHApy =
-		cyWETHDenominator > 0n ? (cyWETHNumerator * 10n ** 18n) / cyWETHDenominator : 0n;
+	const cyWETHNumerator = rewardsPools.cyWeth * 12n * 100n * ONE * ONE;
+	const cyWETHDenominator = BigInt(data.eligibleTotals.totalEligibleCyWETH) * cyWETHwFLRPrice;
+	const cyWETHApy = cyWETHDenominator > 0n ? cyWETHNumerator / cyWETHDenominator : 0n;
 
 	console.log('Final APYs:');
 	console.log('cysFLR:', cysFLRApy.toString());
@@ -62,7 +54,7 @@ export async function fetchStats(): Promise<GlobalStats> {
 		totalEligibleCysFLR,
 		totalEligibleCyWETH,
 		totalEligibleSum,
-		monthlyRewards: MONTHLY_REWARDS,
+		rewardsPools,
 		cysFLRApy,
 		cyWETHApy
 	};

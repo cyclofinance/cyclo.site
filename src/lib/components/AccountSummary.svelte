@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchAccountStatus, type AccountStats } from '$lib/queries/fetchAccountStatus';
+	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
 	import Card from './Card.svelte';
+	import type { AccountStats } from '$lib/types';
 
 	export let account: string;
 
@@ -20,7 +21,9 @@
 		}
 	});
 
-	$: isEligible = stats?.percentage && stats.percentage > 0;
+	$: isEligible =
+		stats?.eligibleBalances &&
+		(stats.eligibleBalances.cyWETH > 0 || stats.eligibleBalances.cysFLR > 0);
 </script>
 
 <Card>
@@ -60,28 +63,32 @@
 			</div>
 
 			{#if !isEligible}
-				<div class="bg-error/10 rounded p-4 text-gray-200">
+				<div class="bg-error/10 rounded py-4 text-gray-200">
 					This account is not eligible for rewards. Only accounts with positive net transfers from
 					approved sources are eligible.
 				</div>
 			{/if}
 
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-8">
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-5 sm:gap-8">
 				<div class="space-y-1">
 					<div class="text-sm text-gray-300">Net cysFLR</div>
-					<div class="font-mono text-white">{stats.netTransfers.cysFLR}</div>
+					<div class="font-mono text-white">{stats.eligibleBalances.cysFLR}</div>
+				</div>
+				<div class="space-y-1">
+					<div class="text-sm text-gray-300">cysFLR Share</div>
+					<div class="font-mono text-white">{stats.shares.cysFLR.percentageShare}%</div>
 				</div>
 				<div class="space-y-1">
 					<div class="text-sm text-gray-300">Net cyWETH</div>
-					<div class="font-mono text-white">{stats.netTransfers.cyWETH}</div>
+					<div class="font-mono text-white">{stats.eligibleBalances.cyWETH}</div>
 				</div>
 				<div class="space-y-1">
-					<div class="text-sm text-gray-300">Share</div>
-					<div class="font-mono text-white">{stats.percentage.toFixed(4)}%</div>
+					<div class="text-sm text-gray-300">cyWETH Share</div>
+					<div class="font-mono text-white">{stats.shares.cyWETH.percentageShare}%</div>
 				</div>
 				<div class="space-y-1">
-					<div class="text-sm text-gray-300">Estimated rFLR</div>
-					<div class="font-mono text-white">{stats.proRataReward.toFixed(2)}</div>
+					<div class="text-sm text-gray-300">Total Estimated rFLR</div>
+					<div class="font-mono text-white">{stats.shares.totalRewards}</div>
 				</div>
 			</div>
 		</div>

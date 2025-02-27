@@ -1,6 +1,6 @@
 import type { Config } from '@wagmi/core';
 import { type Hex } from 'viem';
-import type { AccountStatusQuery, Transfer } from '../generated-graphql';
+import type { AccountStatusQuery } from '../generated-graphql';
 
 export type Receipt = {
 	chainId: string;
@@ -37,6 +37,11 @@ export type InitiateLockTransactionArgs = {
 	assets: bigint;
 };
 
+export type RewardsPools = {
+	cysFlr: bigint;
+	cyWeth: bigint;
+};
+
 export type Share = {
 	percentageShare: bigint;
 	rewardsAmount: bigint;
@@ -45,16 +50,30 @@ export type Share = {
 export type Shares = {
 	cysFLR: Share;
 	cyWETH: Share;
+	totalRewards: bigint;
 };
 
 export type AccountStats = {
-	netTransfers: {
-		cysFLR: string;
-		cyWETH: string;
+	account: Hex;
+	eligibleBalances: {
+		cysFLR: bigint;
+		cyWETH: bigint;
 	};
 	shares: Shares;
 	transfers: {
 		in: NonNullable<AccountStatusQuery['account']>['transfersIn'];
 		out: NonNullable<AccountStatusQuery['account']>['transfersOut'];
 	};
+};
+
+export type LeaderboardEntry = Omit<AccountStats, 'transfers'>;
+
+export type GlobalStats = {
+	eligibleHolders: number;
+	totalEligibleCysFLR: bigint;
+	totalEligibleCyWETH: bigint;
+	totalEligibleSum: bigint;
+	rewardsPools: RewardsPools;
+	cysFLRApy: bigint;
+	cyWETHApy: bigint;
 };
