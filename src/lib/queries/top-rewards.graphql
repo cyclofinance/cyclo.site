@@ -1,22 +1,11 @@
 query TopAccounts {
 	eligibleTotals(id: "SINGLETON") {
+		id
 		totalEligibleSum
 		totalEligibleCysFLR
 		totalEligibleCyWETH
 	}
-	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 50) {
-		id
-		cysFLRBalance
-		cyWETHBalance
-		totalCyBalance
-	}
-	accountsByCyWeth: accounts(orderBy: cyWETHBalance, orderDirection: desc, first: 50) {
-		id
-		cysFLRBalance
-		cyWETHBalance
-		totalCyBalance
-	}
-	accountsByCysFlr: accounts(orderBy: cysFLRBalance, orderDirection: desc, first: 50) {
+	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 1000) {
 		id
 		cysFLRBalance
 		cyWETHBalance

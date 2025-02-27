@@ -1,41 +1,13 @@
 import { type AccountStatusQuery } from '../../generated-graphql';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
-import { formatEther } from 'ethers';
 import { SUBGRAPH_URL } from '$lib/constants';
-import { type Hex } from 'viem';
-
-export type AccountStats = {
-	netTransfers: {
-		cysFLR: string;
-		cyWETH: string;
-	};
-	percentage: number;
-	proRataReward: number;
-	transfers: {
-		in: Array<{
-			fromIsApprovedSource: boolean;
-			transactionHash: string;
-			from: { id: string };
-			to: { id: string };
-			value: string;
-			blockTimestamp: string;
-			tokenAddress: Hex;
-		}>;
-		out: Array<{
-			fromIsApprovedSource: boolean;
-			transactionHash: string;
-			from: { id: string };
-			to: { id: string };
-			value: string;
-			blockTimestamp: string;
-			tokenAddress: Hex;
-		}>;
-	};
-};
-
-const TOTAL_REWARD = 1_000_000; // 1M rFLR
+import type { AccountStats } from '$lib/types';
+import { calculateShares } from './calculateShares';
+import { isHex } from 'viem';
 
 export async function fetchAccountStatus(account: string): Promise<AccountStats> {
+	if (!isHex(account)) throw 'Invalid account';
+
 	const response = await fetch(SUBGRAPH_URL, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
@@ -46,18 +18,24 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 	});
 	const data: AccountStatusQuery = (await response.json()).data;
 
-	const sharePercentage = data.account?.totalCyBalance / data.eligibleTotals?.totalEligibleSum;
+	const accountData = data.account;
+	if (!accountData) throw 'No account';
+
+	const eligibleTotals = data.eligibleTotals;
+	if (!eligibleTotals) throw 'No eligible totals';
+
+	const shares = calculateShares(accountData, eligibleTotals);
 
 	return {
-		netTransfers: {
-			cysFLR: formatEther(data.account?.cysFLRBalance ?? 0),
-			cyWETH: formatEther(data.account?.cyWETHBalance ?? 0)
+		account,
+		eligibleBalances: {
+			cysFLR: BigInt(accountData.cysFLRBalance),
+			cyWETH: BigInt(accountData.cyWETHBalance)
 		},
-		percentage: sharePercentage,
-		proRataReward: sharePercentage * TOTAL_REWARD,
+		shares,
 		transfers: {
-			in: data.account?.transfersIn ?? [],
-			out: data.account?.transfersOut ?? []
+			in: accountData.transfersIn,
+			out: accountData.transfersOut
 		}
 	};
 }

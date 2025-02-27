@@ -1,23 +1,35 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import AccountStatus from './AccountStatus.svelte';
-import { type AccountStats } from '$lib/queries/fetchAccountStatus';
 import { tokens } from '$lib/stores';
+import type { AccountStats } from '$lib/types';
 
 vi.mock('$lib/queries/fetchAccountStatus', () => ({
 	fetchAccountStatus: vi.fn()
 }));
 
 const mockStats: AccountStats = {
-	netTransfers: {
-		cysFLR: '100.0',
-		cyWETH: '200.0'
+	account: '0x1234567890123456789012345678901234567890',
+	eligibleBalances: {
+		cysFLR: BigInt(100),
+		cyWETH: BigInt(200)
 	},
-	percentage: 50,
-	proRataReward: 10,
+	shares: {
+		cysFLR: {
+			percentageShare: BigInt(50),
+			rewardsAmount: BigInt(10)
+		},
+		cyWETH: {
+			percentageShare: BigInt(50),
+			rewardsAmount: BigInt(10)
+		},
+		totalRewards: BigInt(20)
+	},
 	transfers: {
 		in: [
 			{
+				id: '1',
+				blockNumber: 1,
 				fromIsApprovedSource: true,
 				transactionHash: 'hash1',
 				blockTimestamp: '1000',
@@ -29,6 +41,8 @@ const mockStats: AccountStats = {
 		],
 		out: [
 			{
+				id: '2',
+				blockNumber: 2,
 				fromIsApprovedSource: false,
 				transactionHash: 'hash2',
 				blockTimestamp: '2000',
@@ -73,8 +87,10 @@ describe('AccountStatus Component', () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
 		vi.mocked(fetchAccountStatus).mockResolvedValue({
 			...mockStats,
-			percentage: 0,
-			proRataReward: 0
+			eligibleBalances: {
+				cysFLR: BigInt(0),
+				cyWETH: BigInt(0)
+			}
 		});
 
 		render(AccountStatus, { props: { account: '0x1234567890123456789012345678901234567890' } });

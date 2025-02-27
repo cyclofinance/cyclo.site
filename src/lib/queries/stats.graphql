@@ -1,5 +1,6 @@
 query Stats {
 	eligibleTotals(id: "SINGLETON") {
+		id
 		totalEligibleSum
 		totalEligibleCysFLR
 		totalEligibleCyWETH

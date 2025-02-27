@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import Leaderboard from './Leaderboard.svelte';
-import { type LeaderboardEntry } from '$lib/queries/fetchTopRewards';
+import type { LeaderboardEntry } from '$lib/types';
+import { ONE } from '$lib/constants';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
@@ -23,12 +24,21 @@ vi.mock('$lib/queries/fetchTopRewards', () => ({
 const mockLeaderboard: LeaderboardEntry[] = [
 	{
 		account: '0x1234567890123456789012345678901234567890',
-		netTransfers: {
-			cysFLR: '1000.0',
-			cyWETH: '2000.0'
+		eligibleBalances: {
+			cysFLR: BigInt(100) * ONE,
+			cyWETH: BigInt(200) * ONE
 		},
-		percentage: 10,
-		proRataReward: 100000
+		shares: {
+			cysFLR: {
+				percentageShare: ONE / 10n,
+				rewardsAmount: ONE / 10n
+			},
+			cyWETH: {
+				percentageShare: ONE / 10n,
+				rewardsAmount: ONE / 10n
+			},
+			totalRewards: 20n * ONE
+		}
 	}
 ];
 
@@ -55,10 +65,10 @@ describe('Leaderboard Component', () => {
 		render(Leaderboard);
 
 		await waitFor(() => {
-			expect(screen.getByText('1000.0')).toBeInTheDocument(); // cysFLR value
-			expect(screen.getByText('2000.0')).toBeInTheDocument(); // cyWETH value
-			expect(screen.getByText('10.0000%')).toBeInTheDocument(); // percentage
-			expect(screen.getByText('100000.00')).toBeInTheDocument(); // proRataReward
+			expect(screen.getByText('100.0000')).toBeInTheDocument(); // cysFLR value
+			expect(screen.getByText('200.0000')).toBeInTheDocument(); // cyWETH value
+			expect(screen.getAllByText('(10.0000%)')).toHaveLength(2); // percentage
+			expect(screen.getByTestId('total-rewards')).toHaveTextContent('20.0000'); // proRataReward
 		});
 	});
 
