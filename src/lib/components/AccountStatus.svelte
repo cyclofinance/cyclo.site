@@ -6,7 +6,8 @@
 	import { tokens } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
-	import { formatEther, formatUnits } from 'viem';
+	import { formatEther } from 'viem';
+	import AccountStatsComponent from './AccountStats.svelte';
 
 	export let account: string;
 
@@ -24,10 +25,6 @@
 			loading = false;
 		}
 	});
-
-	$: isEligible =
-		stats?.eligibleBalances &&
-		(stats.eligibleBalances.cyWETH > 0 || stats.eligibleBalances.cysFLR > 0);
 </script>
 
 {#if loading}
@@ -46,51 +43,7 @@
 					Estimated Rewards for {account.slice(0, 6)}...{account.slice(-4)}
 				</h2>
 
-				{#if !isEligible}
-					<div class="bg-error/10 rounded py-4 text-gray-200">
-						This account is not eligible for rewards. Only accounts with positive net transfers from
-						approved sources are eligible.
-					</div>
-				{/if}
-
-				<div class="grid grid-cols-1 gap-8 sm:grid-cols-5 sm:gap-8">
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Net cysFLR</div>
-						<div class="break-words font-mono text-white">
-							{formatEther(stats.eligibleBalances.cysFLR)}
-						</div>
-					</div>
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">cysFLR rewards</div>
-						<div class="break-words font-mono text-white">
-							{formatEther(stats.shares.cysFLR.rewardsAmount)} ({formatUnits(
-								stats.shares.cysFLR.percentageShare,
-								16
-							)}%)
-						</div>
-					</div>
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Net cyWETH</div>
-						<div class="break-words font-mono text-white">
-							{formatEther(stats.eligibleBalances.cyWETH)}
-						</div>
-					</div>
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">cyWETH rewards</div>
-						<div class="break-words font-mono text-white">
-							{formatEther(stats.shares.cyWETH.rewardsAmount)} ({formatUnits(
-								stats.shares.cyWETH.percentageShare,
-								16
-							)}%)
-						</div>
-					</div>
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Total Estimated rFLR</div>
-						<div class="break-words font-mono text-white">
-							{formatEther(stats.shares.totalRewards)}
-						</div>
-					</div>
-				</div>
+				<AccountStatsComponent {stats} />
 			</div>
 		</Card>
 

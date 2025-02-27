@@ -3,6 +3,7 @@
 	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
 	import Card from './Card.svelte';
 	import type { AccountStats } from '$lib/types';
+	import AccountStatsComponent from './AccountStats.svelte';
 
 	export let account: string;
 
@@ -20,10 +21,6 @@
 			loading = false;
 		}
 	});
-
-	$: isEligible =
-		stats?.eligibleBalances &&
-		(stats.eligibleBalances.cyWETH > 0 || stats.eligibleBalances.cysFLR > 0);
 </script>
 
 <Card>
@@ -62,35 +59,7 @@
 				</a>
 			</div>
 
-			{#if !isEligible}
-				<div class="bg-error/10 rounded py-4 text-gray-200">
-					This account is not eligible for rewards. Only accounts with positive net transfers from
-					approved sources are eligible.
-				</div>
-			{/if}
-
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-5 sm:gap-8">
-				<div class="space-y-1">
-					<div class="text-sm text-gray-300">Net cysFLR</div>
-					<div class="font-mono text-white">{stats.eligibleBalances.cysFLR}</div>
-				</div>
-				<div class="space-y-1">
-					<div class="text-sm text-gray-300">cysFLR Share</div>
-					<div class="font-mono text-white">{stats.shares.cysFLR.percentageShare}%</div>
-				</div>
-				<div class="space-y-1">
-					<div class="text-sm text-gray-300">Net cyWETH</div>
-					<div class="font-mono text-white">{stats.eligibleBalances.cyWETH}</div>
-				</div>
-				<div class="space-y-1">
-					<div class="text-sm text-gray-300">cyWETH Share</div>
-					<div class="font-mono text-white">{stats.shares.cyWETH.percentageShare}%</div>
-				</div>
-				<div class="space-y-1">
-					<div class="text-sm text-gray-300">Total Estimated rFLR</div>
-					<div class="font-mono text-white">{stats.shares.totalRewards}</div>
-				</div>
-			</div>
+			<AccountStatsComponent {stats} />
 		</div>
 	{/if}
 </Card>

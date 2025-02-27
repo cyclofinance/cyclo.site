@@ -79,7 +79,7 @@
 									({(+formatUnits(entry.shares.cyWETH.percentageShare, 16)).toFixed(4)}%)
 								</span>
 							</div>
-							<div class=" font-medium text-white">
+							<div data-testid="total-rewards" class="font-medium text-white">
 								{(+formatEther(entry.shares.totalRewards)).toFixed(4)}
 							</div>
 						</a>

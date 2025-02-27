@@ -37,7 +37,7 @@ const mockLeaderboard: LeaderboardEntry[] = [
 				percentageShare: ONE / 10n,
 				rewardsAmount: ONE / 10n
 			},
-			totalRewards: ONE / 10n
+			totalRewards: 20n * ONE
 		}
 	}
 ];
@@ -65,10 +65,10 @@ describe('Leaderboard Component', () => {
 		render(Leaderboard);
 
 		await waitFor(() => {
-			expect(screen.getByText('1000.0')).toBeInTheDocument(); // cysFLR value
-			expect(screen.getByText('2000.0')).toBeInTheDocument(); // cyWETH value
-			expect(screen.getByText('10.0000%')).toBeInTheDocument(); // percentage
-			expect(screen.getByText('100000.00')).toBeInTheDocument(); // proRataReward
+			expect(screen.getByText('100.0000')).toBeInTheDocument(); // cysFLR value
+			expect(screen.getByText('200.0000')).toBeInTheDocument(); // cyWETH value
+			expect(screen.getAllByText('(10.0000%)')).toHaveLength(2); // percentage
+			expect(screen.getByTestId('total-rewards')).toHaveTextContent('20.0000'); // proRataReward
 		});
 	});
 

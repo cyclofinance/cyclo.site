@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchStats } from './fetchStats';
-import { SUBGRAPH_URL } from '$lib/constants';
+import { calculateApy, fetchStats } from './fetchStats';
+import { ONE, SUBGRAPH_URL } from '$lib/constants';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
+import { calculateRewardsPools } from './calculateRewardsPools';
 
 vi.mock('$lib/constants', () => ({
-	SUBGRAPH_URL: 'http://mocked-subgraph-url'
+	SUBGRAPH_URL: 'http://mocked-subgraph-url',
+	TOTAL_REWARD: 1000000000000000000000n,
+	ONE: 1000000000000000000000n
 }));
 
 vi.mock('./cysFLRwFLRQuote', () => ({
@@ -19,6 +22,28 @@ vi.mock('./cyWETHwFLRQuote', () => ({
 
 global.fetch = vi.fn();
 
+describe('calculateApy', () => {
+	it('calculates apy correctly', () => {
+		// if we have 500,000 rFLR in the pool, 5000 eligible cysFLR, and the price of 1 cysFLR is 50 FLR
+		// every cysFLR purchased will net you 500,000/5000 = 100 rFLR
+		// that cysFLR will cost you 50 FLR
+		// so your return is 1000/50 = 2x your investment
+		// over 12 months is 24x your investment
+		const poolAmount = ONE * 500_000n;
+		const totalEligible = ONE * 5000n;
+		const price = ONE * 50n;
+		const apy = calculateApy(poolAmount, totalEligible, price);
+		expect(apy).toBe(2400n * ONE); // 2400%
+	});
+
+	it('returns 0 if either the price or the total eligible is 0', () => {
+		const apy = calculateApy(ONE * 1000n, 0n, ONE * 50n);
+		expect(apy).toBe(0n);
+		const apy2 = calculateApy(ONE * 1000n, ONE * 5000n, 0n);
+		expect(apy2).toBe(0n);
+	});
+});
+
 describe('fetchStats', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -28,6 +53,7 @@ describe('fetchStats', () => {
 		const mockResponse = {
 			data: {
 				eligibleTotals: {
+					id: 'SINGLETON',
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleSum: '3000000000000000000000'
@@ -46,14 +72,24 @@ describe('fetchStats', () => {
 
 		const result = await fetchStats();
 
+		const rewardsPools = calculateRewardsPools(mockResponse.data.eligibleTotals);
+
 		expect(result).toEqual({
 			eligibleHolders: 96,
 			totalEligibleCysFLR: BigInt('2000000000000000000000'),
 			totalEligibleCyWETH: BigInt('1000000000000000000000'),
 			totalEligibleSum: BigInt('3000000000000000000000'),
-			monthlyRewards: BigInt('1000000000000000000000000'),
-			cysFLRApy: BigInt('800000000000000000000000'), // 800,000% (adjusted for 18 decimals)
-			cyWETHApy: BigInt('400000000000000000000000') // 400,000% (adjusted for 18 decimals)
+			rewardsPools,
+			cysFLRApy: calculateApy(
+				rewardsPools.cysFlr,
+				BigInt('2000000000000000000000'),
+				BigInt('500000000000000000')
+			),
+			cyWETHApy: calculateApy(
+				rewardsPools.cyWeth,
+				BigInt('1000000000000000000000'),
+				BigInt('1000000000000000000')
+			)
 		});
 
 		expect(fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {

@@ -2,9 +2,20 @@ import { type StatsQuery } from '../../generated-graphql';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
-import { ONE, SUBGRAPH_URL, TOTAL_REWARD } from '$lib/constants';
+import { ONE, SUBGRAPH_URL } from '$lib/constants';
 import { calculateRewardsPools } from './calculateRewardsPools';
 import type { GlobalStats } from '$lib/types';
+
+export const calculateApy = (rewardPool: bigint, totalEligible: bigint, price: bigint) => {
+	const numerator =
+		rewardPool *
+		12n * // 12 months
+		100n * // will be a percentage
+		ONE *
+		ONE; // 18 decimals twice, once for the total eligible and once for the price
+	const denominator = totalEligible * price;
+	return denominator > 0n ? numerator / denominator : 0n;
+};
 
 export async function fetchStats(): Promise<GlobalStats> {
 	const response = await fetch(SUBGRAPH_URL, {
@@ -21,33 +32,19 @@ export async function fetchStats(): Promise<GlobalStats> {
 	const totalEligibleSum = BigInt(data.eligibleTotals?.totalEligibleSum ?? 0);
 	const eligibleHolders = (data.accounts ?? []).length;
 
-	console.log('Total Eligible Sum:', totalEligibleSum.toString());
-	console.log('Monthly Rewards:', TOTAL_REWARD.toString());
-
 	// Get prices in FLR terms
 	const cysFLRwFLRPrice = await getcysFLRwFLRPrice();
 	const cyWETHwFLRPrice = await getcyWETHwFLRPrice();
-
-	console.log('cysFLR/wFLR Price:', cysFLRwFLRPrice.toString());
-	console.log('cyWETH/wFLR Price:', cyWETHwFLRPrice.toString());
 
 	if (!data.eligibleTotals) throw 'No eligible totals';
 
 	const rewardsPools = calculateRewardsPools(data.eligibleTotals);
 
 	// Calculate APY for cysFLR
-	const cysFLRNumerator = rewardsPools.cysFlr * 12n * 100n * ONE * ONE;
-	const cysFLRDenominator = BigInt(data.eligibleTotals.totalEligibleCysFLR) * cysFLRwFLRPrice;
-	const cysFLRApy = cysFLRDenominator > 0n ? cysFLRNumerator / cysFLRDenominator : 0n;
+	const cysFLRApy = calculateApy(rewardsPools.cysFlr, totalEligibleCysFLR, cysFLRwFLRPrice);
 
 	// Calculate APY for cyWETH
-	const cyWETHNumerator = rewardsPools.cyWeth * 12n * 100n * ONE * ONE;
-	const cyWETHDenominator = BigInt(data.eligibleTotals.totalEligibleCyWETH) * cyWETHwFLRPrice;
-	const cyWETHApy = cyWETHDenominator > 0n ? cyWETHNumerator / cyWETHDenominator : 0n;
-
-	console.log('Final APYs:');
-	console.log('cysFLR:', cysFLRApy.toString());
-	console.log('cyWETH:', cyWETHApy.toString());
+	const cyWETHApy = calculateApy(rewardsPools.cyWeth, totalEligibleCyWETH, cyWETHwFLRPrice);
 
 	return {
 		eligibleHolders,

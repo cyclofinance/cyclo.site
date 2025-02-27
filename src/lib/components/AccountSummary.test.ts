@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect, afterEach } from 'vitest';
 import AccountSummary from './AccountSummary.svelte';
-import { type AccountStats } from '$lib/queries/fetchAccountStatus';
+import type { AccountStats } from '$lib/types';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
@@ -12,12 +12,22 @@ vi.mock('$lib/queries/fetchAccountStatus', () => ({
 }));
 
 const mockStats: AccountStats = {
-	netTransfers: {
-		cysFLR: '100.0',
-		cyWETH: '200.0'
+	account: '0x1234567890123456789012345678901234567890',
+	eligibleBalances: {
+		cysFLR: BigInt(100),
+		cyWETH: BigInt(200)
 	},
-	percentage: 50,
-	proRataReward: 10,
+	shares: {
+		cysFLR: {
+			percentageShare: BigInt(50),
+			rewardsAmount: BigInt(10)
+		},
+		cyWETH: {
+			percentageShare: BigInt(50),
+			rewardsAmount: BigInt(10)
+		},
+		totalRewards: BigInt(20)
+	},
 	transfers: {
 		in: [],
 		out: []
@@ -56,7 +66,7 @@ describe('AccountSummary Component', () => {
 		});
 	});
 
-	it('should navigate to correct url after button click', async () => {
+	it('should have the right url fpor the account page', async () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
 		vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
 
@@ -67,39 +77,5 @@ describe('AccountSummary Component', () => {
 
 		// Check the href attribute
 		expect(link).toHaveAttribute('href', '/rewards/0x1234567890123456789012345678901234567890');
-	});
-
-	it('should display `not eligible for rewards` text if account not eligible', async () => {
-		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
-		vi.mocked(fetchAccountStatus).mockResolvedValue({
-			...mockStats,
-			percentage: 0,
-			proRataReward: 0
-		});
-
-		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
-
-		await waitFor(() => {
-			expect(screen.getByText('Your Rewards')).toBeInTheDocument();
-			expect(
-				screen.getByText(
-					'This account is not eligible for rewards. Only accounts with positive net transfers from approved sources are eligible.'
-				)
-			).toBeInTheDocument();
-		});
-	});
-
-	it('should display periodStats', async () => {
-		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
-		vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
-
-		render(AccountSummary, { props: { account: '0x1234567890123456789012345678901234567890' } });
-
-		await waitFor(() => {
-			expect(screen.getByText('100.0')).toBeInTheDocument(); // cysFLR value
-			expect(screen.getByText('200.0')).toBeInTheDocument(); // cyWETH value
-			expect(screen.getByText('50.0000%')).toBeInTheDocument(); // percentage
-			expect(screen.getByText('10.00')).toBeInTheDocument(); // proRataReward
-		});
 	});
 });

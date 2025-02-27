@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchTopRewards } from './fetchTopRewards';
-import { SUBGRAPH_URL } from '$lib/constants';
+import { ONE, SUBGRAPH_URL } from '$lib/constants';
 import TopAccounts from '$lib/queries/top-rewards.graphql?raw';
+import { calculateShares } from './calculateShares';
 
 vi.mock('$lib/constants', () => ({
-	SUBGRAPH_URL: 'http://mocked-subgraph-url'
+	SUBGRAPH_URL: 'http://mocked-subgraph-url',
+	ONE: 1000000000000000000000n,
+	TOTAL_REWARD: 1000000000000000000000n
 }));
 
 global.fetch = vi.fn();
@@ -32,7 +35,10 @@ describe('fetchTopRewards', () => {
 					}
 				],
 				eligibleTotals: {
-					totalEligibleSum: '1000000000000000000000'
+					id: 'SINGLETON',
+					totalEligibleCyWETH: '1000000000000000000000',
+					totalEligibleCysFLR: '2000000000000000000000',
+					totalEligibleSum: '3000000000000000000000'
 				}
 			}
 		};
@@ -46,21 +52,25 @@ describe('fetchTopRewards', () => {
 		expect(result).toEqual([
 			{
 				account: '0x123',
-				netTransfers: {
-					cysFLR: '1000.0',
-					cyWETH: '2000.0'
+				eligibleBalances: {
+					cysFLR: ONE,
+					cyWETH: 2n * ONE
 				},
-				percentage: 10,
-				proRataReward: 100000
+				shares: calculateShares(
+					mockResponse.data.accountsByCyBalance[0],
+					mockResponse.data.eligibleTotals
+				)
 			},
 			{
 				account: '0x456',
-				netTransfers: {
-					cysFLR: '500.0',
-					cyWETH: '1000.0'
+				eligibleBalances: {
+					cysFLR: ONE / 2n,
+					cyWETH: ONE
 				},
-				percentage: 5,
-				proRataReward: 50000
+				shares: calculateShares(
+					mockResponse.data.accountsByCyBalance[1],
+					mockResponse.data.eligibleTotals
+				)
 			}
 		]);
 
