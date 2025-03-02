@@ -15,7 +15,9 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	const data: TopAccountsQuery = (await response.json()).data;
 
 	const eligibleTotals = data.eligibleTotals;
-	if (!eligibleTotals) throw 'No eligible totals';
+	if (!eligibleTotals) {
+		throw 'No eligible totals';
+	}
 
 	const accountsWithShares = (data.accountsByCyBalance ?? []).map((account) => {
 		const shares = calculateShares(account, eligibleTotals);
