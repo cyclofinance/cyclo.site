@@ -66,7 +66,7 @@ describe('AccountSummary Component', () => {
 		});
 	});
 
-	it('should have the right url fpor the account page', async () => {
+	it('should have the right url for the account page', async () => {
 		const { fetchAccountStatus } = await import('$lib/queries/fetchAccountStatus');
 		vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
 
