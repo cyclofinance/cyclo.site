@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import StatsPanel from './StatsPanel.svelte';
-import { type GlobalStats } from '$lib/queries/fetchStats';
+import type { GlobalStats } from '$lib/types';
+import { ONE } from '$lib/constants';
 
 vi.mock('$lib/queries/fetchStats', () => ({
 	fetchStats: vi.fn()
@@ -12,9 +13,12 @@ const mockStats: GlobalStats = {
 	totalEligibleCysFLR: 1000000000000000000000n,
 	totalEligibleCyWETH: 2000000000000000000000n,
 	totalEligibleSum: 3000000000000000000000n,
-	monthlyRewards: 1000000000000000000000000n,
 	cysFLRApy: 500000000000000000n, // 50%
-	cyWETHApy: 750000000000000000n // 75%
+	cyWETHApy: 750000000000000000n, // 75%
+	rewardsPools: {
+		cysFlr: ONE * 1000n,
+		cyWeth: ONE * 2000n
+	}
 };
 
 describe('StatsPanel Component', () => {
@@ -47,7 +51,10 @@ describe('StatsPanel Component', () => {
 			expect(screen.getByText('3000.00')).toBeInTheDocument(); // total eligible
 			expect(screen.getByText('cysFLR: 1000.00')).toBeInTheDocument(); // cysFLR total
 			expect(screen.getByText('cyWETH: 2000.00')).toBeInTheDocument(); // cyWETH total
-			expect(screen.getByText('1,000,000')).toBeInTheDocument(); // monthly rewards
+			expect(screen.getByText('Monthly rFLR Rewards')).toBeInTheDocument();
+			expect(screen.getByText('Total: 1,500,000')).toBeInTheDocument(); // total rewards
+			expect(screen.getByText(`cysFLR: 1,000`)).toBeInTheDocument(); // cysFLR rewards
+			expect(screen.getByText(`cyWETH: 2,000`)).toBeInTheDocument(); // cyWETH rewards
 		});
 	});
 

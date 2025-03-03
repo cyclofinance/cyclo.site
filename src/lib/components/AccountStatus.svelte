@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fetchAccountStatus, type AccountStats } from '$lib/queries/fetchAccountStatus';
-	import { formatEther, getAddress } from 'ethers';
+	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
+	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
 	import { tokens } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
+	import type { AccountStats } from '$lib/types';
+	import { formatEther } from 'viem';
+	import AccountStatsComponent from './AccountStats.svelte';
 
 	export let account: string;
 
@@ -22,8 +25,6 @@
 			loading = false;
 		}
 	});
-
-	$: isEligible = stats?.percentage && stats.percentage > 0;
 </script>
 
 {#if loading}
@@ -42,31 +43,7 @@
 					Estimated Rewards for {account.slice(0, 6)}...{account.slice(-4)}
 				</h2>
 
-				{#if !isEligible}
-					<div class="bg-error/10 rounded py-4 text-gray-200">
-						This account is not eligible for rewards. Only accounts with positive net transfers from
-						approved sources are eligible.
-					</div>
-				{/if}
-
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:gap-8">
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Net cysFLR</div>
-						<div class="font-mono text-white">{stats.netTransfers.cysFLR}</div>
-					</div>
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Net cyWETH</div>
-						<div class="font-mono text-white">{stats.netTransfers.cyWETH}</div>
-					</div>
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Share</div>
-						<div class="font-mono text-white">{stats.percentage.toFixed(4)}%</div>
-					</div>
-					<div class="space-y-1">
-						<div class="text-sm text-gray-300">Estimated rFLR</div>
-						<div class="font-mono text-white">{stats.proRataReward.toFixed(2)}</div>
-					</div>
-				</div>
+				<AccountStatsComponent {stats} />
 			</div>
 		</Card>
 

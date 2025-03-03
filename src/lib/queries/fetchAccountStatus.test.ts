@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchAccountStatus } from './fetchAccountStatus';
-import { SUBGRAPH_URL } from '$lib/constants';
+import { ONE, SUBGRAPH_URL } from '$lib/constants';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
-
+import { calculateShares } from './calculateShares';
 vi.mock('$lib/constants', () => ({
-	SUBGRAPH_URL: 'http://mocked-subgraph-url'
+	SUBGRAPH_URL: 'http://mocked-subgraph-url',
+	ONE: 1000000000000000000000n,
+	TOTAL_REWARD: 1000000000000000000000n
 }));
 
 global.fetch = vi.fn();
@@ -19,14 +21,15 @@ describe('fetchAccountStatus', () => {
 		const mockData = {
 			data: {
 				eligibleTotals: {
+					id: 'SINGLETON',
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				account: {
-					cysFLRBalance: '100000000000000000000',
-					cyWETHBalance: '200000000000000000000',
-					totalCyBalance: '300000000000000000000',
+					cysFLRBalance: (100n * ONE).toString(),
+					cyWETHBalance: (200n * ONE).toString(),
+					totalCyBalance: (300n * ONE).toString(),
 					eligibleShare: '0.1',
 					transfersIn: [
 						{
@@ -61,12 +64,12 @@ describe('fetchAccountStatus', () => {
 		const result = await fetchAccountStatus(account);
 
 		expect(result).toEqual({
-			netTransfers: {
-				cysFLR: '100.0',
-				cyWETH: '200.0'
+			account,
+			eligibleBalances: {
+				cysFLR: 100n * ONE,
+				cyWETH: 200n * ONE
 			},
-			percentage: 0.1,
-			proRataReward: 100000,
+			shares: calculateShares(mockData.data.account, mockData.data.eligibleTotals),
 			transfers: {
 				in: mockData.data.account.transfersIn,
 				out: mockData.data.account.transfersOut
@@ -85,6 +88,7 @@ describe('fetchAccountStatus', () => {
 		const mockData = {
 			data: {
 				eligibleTotals: {
+					id: 'SINGLETON',
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleSum: '3000000000000000000000'

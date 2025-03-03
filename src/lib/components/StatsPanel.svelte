@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Card from './Card.svelte';
-	import { fetchStats, type GlobalStats } from '$lib/queries/fetchStats';
+	import { fetchStats } from '$lib/queries/fetchStats';
 	import { formatEther } from 'ethers';
+	import type { GlobalStats } from '$lib/types';
+	import { TOTAL_REWARD } from '$lib/constants';
 
 	let loading = true;
 	let error: string | null = null;
@@ -74,7 +76,11 @@
 			<div class="space-y-4">
 				<div class="text-sm text-gray-300">Monthly rFLR Rewards</div>
 				<div class="font-mono text-3xl font-bold text-white">
-					{Number(formatEther(stats.monthlyRewards)).toLocaleString()}
+					Total: {Number(formatEther(TOTAL_REWARD)).toLocaleString()}
+				</div>
+				<div class="space-y-1 font-mono text-sm text-gray-400">
+					<div>cysFLR: {Number(formatEther(stats.rewardsPools.cysFlr)).toLocaleString()}</div>
+					<div>cyWETH: {Number(formatEther(stats.rewardsPools.cyWeth)).toLocaleString()}</div>
 				</div>
 			</div>
 		</div>
