@@ -69,6 +69,7 @@
 		"lodash-es": "4.17.21",
 		"rehype-katex-svelte": "1.2.0",
 		"svelte-wagmi": "1.0.7",
-		"truncate-eth-address": "1.0.2"
+		"truncate-eth-address": "1.0.2",
+		"sushi": "./lib/sushiswap/packages/sushi"
 	}
 }

@@ -26,11 +26,11 @@
 		startGettingPricesAndBalances();
 	};
 	const getPricesAndBalances = () => {
-		blockNumberStore.refresh($wagmiConfig);
-		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
-		balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
+		// blockNumberStore.refresh($wagmiConfig);
+		// balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
+		// balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
 		if ($signerAddress) {
-			balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
+			// balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 		}
 	};
 
@@ -39,12 +39,12 @@
 	}
 
 	$: if ($selectedCyToken && $signerAddress) {
-		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
+		// balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 	}
 
 	const startGettingPricesAndBalances = () => {
-		blockNumberStore.refresh($wagmiConfig);
-		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
+		// blockNumberStore.refresh($wagmiConfig);
+		// balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
 		intervalId = setInterval(getPricesAndBalances, 3000);
 	};
 
@@ -58,8 +58,8 @@
 
 	onMount(() => {
 		if ($signerAddress) {
-			balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
-			balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
+			// balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
+			// balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
 		}
 	});
 </script>

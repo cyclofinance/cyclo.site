@@ -3,8 +3,9 @@
 	import { createEventDispatcher } from 'svelte';
 	import { handleDecimalSeparator } from '$lib/utils/handleDecimalSeparator';
 
-	export let amount: string | number = '';
+	export let amount: string = '';
 	export let unit: string = '';
+	export let maxButton: boolean = false;
 
 	let displayValue = amount.toString();
 
@@ -25,16 +26,18 @@
 	}
 
 	// Keep display value in sync when amount changes externally
-	$: if (amount.toString() !== displayValue) {
+	$: if (amount && amount.toString() !== displayValue) {
 		displayValue = amount.toString();
+	} else if (!amount) {
+		displayValue = '';
 	}
 </script>
 
 <div
-	class="flex h-full w-fit items-center justify-center rounded-sm border-2 border-white text-lg font-semibold text-primary outline-none md:text-2xl"
+	class="flex h-full w-full items-center justify-end rounded-sm border border-white text-lg font-semibold text-primary outline-none md:text-2xl"
 >
 	<input
-		class="mr-2 w-24 border-none bg-primary p-0 text-right text-base text-white outline-none [appearance:textfield] focus:ring-0 sm:text-lg md:w-40 md:text-2xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+		class="mr-2 w-full min-w-0 border-none bg-primary p-0 text-right text-base text-white outline-none [appearance:textfield] focus:ring-0 sm:text-lg md:text-2xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 		{...$$restProps}
 		on:input={handleInput}
 		min={0}
@@ -51,11 +54,13 @@
 			{unit}</span
 		>
 	{/if}
-	<button
-		disabled={!$signerAddress}
-		data-testid={'set-val-to-max'}
-		on:click={setValueToMax}
-		class="flex cursor-pointer items-center self-stretch bg-white pl-3 pr-2 text-sm sm:text-base"
-		>MAX</button
-	>
+	{#if maxButton}
+		<button
+			disabled={!$signerAddress}
+			data-testid={'set-val-to-max'}
+			on:click={setValueToMax}
+			class="flex cursor-pointer items-center self-stretch bg-white pl-3 pr-2 text-sm sm:text-base"
+			>MAX</button
+		>
+	{/if}
 </div>
