@@ -5,9 +5,15 @@
 	export let selected: T;
 	// eslint-disable-next-line
 	export let getOptionLabel: (option: T) => string;
+
+	export let dataTestId: string = '';
 </script>
 
-<select class="rounded border border-white bg-transparent px-2 py-1" bind:value={selected}>
+<select
+	class="rounded border border-white bg-transparent px-2 py-1"
+	bind:value={selected}
+	data-testid={dataTestId}
+>
 	{#each options as option}
 		<option value={option}>
 			{getOptionLabel(option)}

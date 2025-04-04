@@ -1,8 +1,11 @@
 <script lang="ts">
 	export let inset: boolean = false;
+	export let dataTestId: string = '';
 </script>
 
-<button {...$$restProps} on:click class:inset class:outset={!inset}><slot /></button>
+<button {...$$restProps} on:click class:inset class:outset={!inset} data-testid={dataTestId}
+	><slot /></button
+>
 
 <style lang="postcss">
 	button {

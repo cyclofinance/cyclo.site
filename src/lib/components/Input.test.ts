@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 describe('Input', () => {
 	it('renders the input field and unit', () => {
-		render(Input, { amount: '0.0', unit: 'FLR' });
+		render(Input, { amount: '0.0', unit: 'FLR', maxButton: true });
 
 		const input = screen.getByPlaceholderText('0.0');
 		const unit = screen.getByText('FLR');
@@ -99,7 +99,7 @@ describe('Input', () => {
 
 	it('dispatches setValueToMax event when MAX button is clicked', async () => {
 		const mockDispatch = vi.fn();
-		const { component } = render(Input, { amount: '0.0' });
+		const { component } = render(Input, { amount: '0.0', maxButton: true });
 		component.$on('setValueToMax', mockDispatch);
 
 		const maxButton = screen.getByText('MAX');

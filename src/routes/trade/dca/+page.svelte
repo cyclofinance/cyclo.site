@@ -47,6 +47,7 @@
 			options={['Buy', 'Sell']}
 			bind:selected={selectedBuyOrSell}
 			getOptionLabel={(option) => option}
+			dataTestId="buy-sell-select"
 		/>
 
 		<!-- token to buy or sell -->
@@ -54,42 +55,60 @@
 			options={cyTokens}
 			bind:selected={selectedCyToken}
 			getOptionLabel={(token) => token.name}
+			dataTestId="cy-token-select"
 		/>
 
 		<!-- token to spend or receive -->
-		<span class="text-sm text-gray-200">{selectedBuyOrSell == 'Buy' ? 'with' : 'for'} </span>
-		<Select options={tokens} bind:selected={selectedToken} getOptionLabel={(token) => token.name} />
+		<span class="text-sm text-gray-200" data-testid="with-for-label"
+			>{selectedBuyOrSell == 'Buy' ? 'with' : 'for'}</span
+		>
+		<Select
+			options={tokens}
+			bind:selected={selectedToken}
+			getOptionLabel={(token) => token.name}
+			dataTestId="token-select"
+		/>
 	</div>
 
 	<!-- amount to spend or receive -->
-	<div class="flex flex-col gap-2">
+	<div class="flex flex-col gap-2" data-testid="amount-container">
 		<span class="text-sm text-gray-200"
 			>Amount to {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'}</span
 		>
-		<TradeAmountInput amountToken={selectedAmountToken} bind:amount={selectedAmount} />
+		<TradeAmountInput
+			amountToken={selectedAmountToken}
+			bind:amount={selectedAmount}
+			dataTestId="amount-input"
+		/>
 	</div>
 
 	<!-- period over which to spend or receive -->
-	<div class="flex flex-col gap-2">
+	<div class="flex flex-col gap-2" data-testid="period-container">
 		<span class="text-sm text-gray-200">Over period</span>
 		<div class="flex items-center gap-2">
-			<Input type="number" bind:amount={selectedPeriod} />
+			<Input type="number" bind:amount={selectedPeriod} dataTestId="period-input" />
 			<Select
 				options={['Hours', 'Days', 'Minutes']}
 				bind:selected={selectedPeriodUnit}
 				getOptionLabel={(option) => option}
+				dataTestId="period-unit-select"
 			/>
 		</div>
 	</div>
 
 	<!-- lowest price to spend or receive -->
-	<div class="flex flex-col gap-2">
+	<div class="flex flex-col gap-2" data-testid="baseline-container">
 		<div class="text-sm text-gray-200">
 			{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${selectedToken.symbol} per ${selectedCyToken.symbol}`})
 		</div>
 
-		<Input type="number" unit={selectedToken.symbol} bind:amount={selectedBaseline} />
-		<TradePrice inputToken={selectedToken} outputToken={selectedCyToken} />
+		<Input
+			type="number"
+			unit={selectedToken.symbol}
+			bind:amount={selectedBaseline}
+			dataTestId="baseline-input"
+		/>
+		<TradePrice inputToken={selectedToken} outputToken={selectedCyToken} dataTestId="trade-price" />
 	</div>
-	<Button on:click={handleDeploy}>Deploy</Button>
+	<Button on:click={handleDeploy} dataTestId="deploy-button">Deploy</Button>
 </div>

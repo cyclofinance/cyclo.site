@@ -7,6 +7,8 @@
 	export let unit: string = '';
 	export let maxButton: boolean = false;
 
+	export let dataTestId: string = '';
+
 	let displayValue = amount.toString();
 
 	const dispatch = createEventDispatcher();
@@ -45,6 +47,7 @@
 		step="0.1"
 		type="text"
 		value={displayValue}
+		data-testid={dataTestId}
 	/>
 	{#if unit}
 		<span

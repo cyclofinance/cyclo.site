@@ -5,6 +5,7 @@
 
 	export let inputToken: Token;
 	export let outputToken: Token;
+	export let dataTestId: string = '';
 
 	let pricePromise: Promise<string>;
 
@@ -13,7 +14,7 @@
 	$: pricePromise = getPrice(outputToken, inputToken, dataFetcher);
 </script>
 
-<div class="text-right">
+<div class="text-right" data-testid={dataTestId}>
 	{#await pricePromise}
 		<div class="text-sm text-gray-200">Loading market price...</div>
 	{:then price}

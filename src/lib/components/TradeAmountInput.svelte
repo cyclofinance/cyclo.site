@@ -10,6 +10,8 @@
 	let inputAmount: string | undefined;
 	export let amount: bigint = 0n;
 
+	export let dataTestId: string = '';
+
 	let balance: bigint = 0n;
 	let decimals: number = 0;
 
@@ -58,6 +60,7 @@
 		unit={amountToken.symbol}
 		maxButton
 		on:setValueToMax={setValueToMax}
+		{dataTestId}
 	/>
 	<span class="text-right text-sm text-gray-200">
 		{#await balancePromise}

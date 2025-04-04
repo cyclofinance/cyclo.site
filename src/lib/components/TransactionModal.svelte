@@ -51,7 +51,7 @@
 						data-testid="view-transaction-link">View transaction on Flarescan</a
 					>
 				{/if}
-				<Button on:click={() => handleClose()} class="mt-4" data-testid="dismiss-button"
+				<Button on:click={() => handleClose()} class="mt-4" dataTestId="dismiss-button"
 					>DISMISS</Button
 				>
 			{:else if $transactionStore.status === TransactionStatus.SUCCESS}
@@ -89,7 +89,7 @@
 					{/if}
 				</div>
 
-				<Button on:click={() => handleClose()} class="mt-4" data-testid="dismiss-button"
+				<Button on:click={() => handleClose()} class="mt-4" dataTestId="dismiss-button"
 					>DISMISS</Button
 				>
 			{:else if $transactionStore.status === TransactionStatus.CHECKING_ALLOWANCE || $transactionStore.status === TransactionStatus.PENDING_WALLET || $transactionStore.status === TransactionStatus.PENDING_LOCK || $transactionStore.status === TransactionStatus.PENDING_UNLOCK || $transactionStore.status === TransactionStatus.PENDING_APPROVAL}
