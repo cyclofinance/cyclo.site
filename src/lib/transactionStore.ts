@@ -1,7 +1,7 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import type { Config } from '@wagmi/core';
-import { waitForTransactionReceipt } from '@wagmi/core';
+import { sendTransaction, waitForTransactionReceipt } from '@wagmi/core';
 import {
 	readErc20Allowance,
 	writeErc20Approve,
@@ -12,7 +12,11 @@ import balancesStore from './balancesStore';
 import { myReceipts } from './stores';
 import { refreshAllReceipts } from './queries/refreshAllReceipts';
 import { TransactionErrorMessage } from './types/errors';
-import type { CyToken } from './types';
+import type { CyToken, Token } from './types';
+import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
+import { wagmiConfig } from 'svelte-wagmi';
+import { getDcaDeploymentArgs } from './trade/getDeploymentArgs';
+import type { DataFetcher } from 'sushi';
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 export const ONE = BigInt('1000000000000000000');
@@ -231,6 +235,64 @@ const transactionStore = () => {
 		writeUnlock();
 	};
 
+	const handleDeployDca = async (
+		options: {
+			selectedCyToken: CyToken;
+			selectedToken: Token;
+			selectedBuyOrSell: 'Buy' | 'Sell';
+			selectedPeriodUnit: 'Days' | 'Hours' | 'Minutes';
+			selectedPeriod: string;
+			selectedAmountToken: Token;
+			selectedAmount: bigint;
+			selectedBaseline: string;
+		},
+		dataFetcher: DataFetcher
+	) => {
+		const config = get(wagmiConfig);
+		if (!config) throw new Error('Wagmi config not found');
+
+		awaitWalletConfirmation(`Preparing strategy...`);
+
+		const { deploymentArgs, outputToken } = await getDcaDeploymentArgs(options, dataFetcher);
+
+		if (deploymentArgs.approvals.length > 0) {
+			awaitWalletConfirmation(`Awaiting wallet confirmation to approve ${outputToken.symbol}...`);
+			await sendTransaction(config, {
+				data: deploymentArgs.approvals[0].calldata as Hex,
+				to: deploymentArgs.approvals[0].token as `0x${string}`
+			});
+		}
+
+		awaitWalletConfirmation(`Awaiting wallet confirmation to deploy your DCA strategy...`);
+
+		const hash = await sendTransaction(config, {
+			data: deploymentArgs.deploymentCalldata as Hex,
+			to: deploymentArgs.orderbookAddress as `0x${string}`
+		});
+
+		// Poll for the order to be added to the orderbook
+		const interval = setInterval(async () => {
+			const orders = await getTransactionAddOrders(
+				'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
+				hash
+			);
+			if (orders.length > 0) {
+				clearInterval(interval);
+				const orderHash = orders[0].order.orderHash;
+				const link = `
+				<a
+								target="_blank"
+								class="whitespace-pre-wrap break-words text-center hover:underline"
+								href="https://v2.raindex.finance/orders/flare-${orderHash}"
+								data-testid="raindex-link">Manage your order on Raindex</a
+							>
+				`;
+
+				return transactionSuccess(hash, link);
+			}
+		}, 2000);
+	};
+
 	return {
 		subscribe,
 		reset,
@@ -242,7 +304,8 @@ const transactionStore = () => {
 		awaitLockTx,
 		awaitUnlockTx,
 		transactionSuccess,
-		transactionError
+		transactionError,
+		handleDeployDca
 	};
 };
 

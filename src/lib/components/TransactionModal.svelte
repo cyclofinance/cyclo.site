@@ -70,10 +70,10 @@
 					</p>
 					{#if $transactionStore.message}
 						<p
-							class="w-full whitespace-pre-wrap break-words text-center text-sm font-normal text-gray-900 dark:text-white"
+							class="w-full break-words text-center text-sm font-normal text-gray-900 dark:text-white"
 							data-testid="success-message"
 						>
-							{$transactionStore.message}
+							{@html $transactionStore.message}
 						</p>
 					{/if}
 
@@ -84,12 +84,6 @@
 								class="whitespace-pre-wrap break-words text-center hover:underline"
 								href={`https://flarescan.com/tx/${$transactionStore.hash}`}
 								data-testid="view-transaction-link">View transaction on Flarescan</a
-							>
-							<a
-								target="_blank"
-								class="whitespace-pre-wrap break-words text-center hover:underline"
-								href={`https://sparkdex.ai/swap/`}
-								data-testid="sell-cysflr-link">Sell your cysFLR on Sparkdex</a
 							>
 						</div>
 					{/if}

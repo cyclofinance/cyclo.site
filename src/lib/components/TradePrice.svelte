@@ -1,21 +1,16 @@
 <script lang="ts">
 	import type { Token } from '$lib/types';
-	import { getPrice, getAndStartDataFetcher } from '$lib/trade/prices';
-	import { onMount } from 'svelte';
-	import type { DataFetcher } from 'sushi';
+	import { getPrice } from '$lib/trade/prices';
+	import { useDataFetcher } from '$lib/dataFetcher';
 
 	export let inputToken: Token;
 	export let outputToken: Token;
 
 	let pricePromise: Promise<string>;
 
-	let dataFetcher: DataFetcher;
+	const dataFetcher = useDataFetcher();
 
-	onMount(() => {
-		dataFetcher = getAndStartDataFetcher();
-	});
-
-	$: if (dataFetcher) pricePromise = getPrice(outputToken, inputToken, dataFetcher);
+	$: pricePromise = getPrice(outputToken, inputToken, dataFetcher);
 </script>
 
 <div class="text-right">

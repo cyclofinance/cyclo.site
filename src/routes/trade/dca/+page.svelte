@@ -6,9 +6,10 @@
 	import type { CyToken, Token } from '$lib/types';
 	import TradeAmountInput from '$lib/components/TradeAmountInput.svelte';
 	import Button from '$lib/components/Button.svelte';
-	import { handleDeployDca } from '$lib/trade/handleDeployDca';
 	import TradePrice from '$lib/components/TradePrice.svelte';
-
+	import type { DataFetcher } from 'sushi';
+	import { useDataFetcher } from '$lib/dataFetcher';
+	import transactionStore from '$lib/transactionStore';
 	let selectedCyToken: CyToken = cyTokens[0];
 	let selectedToken: Token = tokens[0];
 	let selectedBuyOrSell: 'Buy' | 'Sell' = 'Buy';
@@ -20,17 +21,22 @@
 
 	$: selectedAmountToken = selectedBuyOrSell == 'Buy' ? selectedToken : selectedCyToken;
 
+	const dataFetcher: DataFetcher = useDataFetcher();
+
 	const handleDeploy = () => {
-		handleDeployDca({
-			selectedCyToken,
-			selectedToken,
-			selectedBuyOrSell,
-			selectedPeriodUnit,
-			selectedAmountToken,
-			selectedAmount,
-			selectedPeriod,
-			selectedBaseline
-		});
+		transactionStore.handleDeployDca(
+			{
+				selectedCyToken,
+				selectedToken,
+				selectedBuyOrSell,
+				selectedPeriodUnit,
+				selectedAmountToken,
+				selectedAmount,
+				selectedPeriod,
+				selectedBaseline
+			},
+			dataFetcher
+		);
 	};
 </script>
 
