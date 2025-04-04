@@ -18,6 +18,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
+      - run: prep-sushi.sh
       - run: nix develop -c npm i
         working-directory: ./cyclo.sol
       - run: nix develop -c forge build

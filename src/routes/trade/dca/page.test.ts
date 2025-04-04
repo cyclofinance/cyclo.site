@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import Page from './+page.svelte';
-import { tokens } from '$lib/stores';
 import transactionStore from '$lib/transactionStore';
 import { useDataFetcher } from '$lib/dataFetcher';
 
@@ -49,6 +48,7 @@ describe('DCA Page', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		vi.mocked(useDataFetcher).mockReturnValue(mockDataFetcher as any);
 	});
 

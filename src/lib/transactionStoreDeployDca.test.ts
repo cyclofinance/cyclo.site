@@ -6,7 +6,6 @@ import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 import { flare } from '@wagmi/core/chains';
 import { DataFetcher } from 'sushi';
-import { get } from 'svelte/store';
 // Mock the dependencies, not the module under test
 vi.mock('./trade/getDeploymentArgs', () => ({
 	getDcaDeploymentArgs: vi.fn()

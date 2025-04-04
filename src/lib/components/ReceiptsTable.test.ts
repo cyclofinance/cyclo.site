@@ -13,7 +13,9 @@ describe('ReceiptsTable Component', () => {
 		address: '0xcdef1234abcdef5678',
 		underlyingAddress: '0xabcd1234',
 		underlyingSymbol: 'sFLR',
-		receiptAddress: '0xeeff5678'
+		receiptAddress: '0xeeff5678',
+		symbol: 'cysFLR',
+		decimals: 18
 	};
 
 	it('renders the receipts table with correct headers and data', async () => {

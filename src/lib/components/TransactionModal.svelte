@@ -73,6 +73,7 @@
 							class="w-full break-words text-center text-sm font-normal text-gray-900 dark:text-white"
 							data-testid="success-message"
 						>
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 							{@html $transactionStore.message}
 						</p>
 					{/if}

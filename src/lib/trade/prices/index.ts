@@ -10,7 +10,8 @@ export const getAndStartDataFetcher = () => {
 		chain: flare,
 		transport: http('https://flare-api.flare.network/ext/C/rpc')
 	});
-	const dataFetcher = new DataFetcher(flare.id, client);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const dataFetcher = new DataFetcher(flare.id, client as any);
 	dataFetcher.startDataFetching();
 	return dataFetcher;
 };
