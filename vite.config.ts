@@ -7,15 +7,6 @@ export default defineConfig({
 	define: {
 		'process.env': {}
 	},
-	server: {
-		fs: {
-			// Allow serving files from the sushi package directory
-			allow: [
-				// Add sushi package directory
-				'sushi-3.0.0.tgz'
-			]
-		}
-	},
 	test: {
 		server: {
 			deps: {
