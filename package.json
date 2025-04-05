@@ -68,8 +68,8 @@
 		"ethers": "6.13.0",
 		"lodash-es": "4.17.21",
 		"rehype-katex-svelte": "1.2.0",
+		"sushi": "file:sushi-3.0.0.tgz",
 		"svelte-wagmi": "1.0.7",
-		"truncate-eth-address": "1.0.2",
-		"sushi": "./lib/sushiswap/packages/sushi"
+		"truncate-eth-address": "1.0.2"
 	}
 }
