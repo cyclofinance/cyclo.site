@@ -10,9 +10,9 @@ export const getAndStartDataFetcher = () => {
 		chain: flare,
 		transport: http('https://flare-api.flare.network/ext/C/rpc')
 	});
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const dataFetcher = new DataFetcher(flare.id, client as any);
+	const dataFetcher = new DataFetcher(flare.id, client);
 	dataFetcher.startDataFetching();
+	dataFetcher.stopDataFetching();
 	return dataFetcher;
 };
 
@@ -22,21 +22,22 @@ export const getRoute = async (
 	amountIn: bigint,
 	dataFetcher: DataFetcher
 ): Promise<MultiRoute> => {
-	const client = createPublicClient({
-		chain: flare,
-		transport: http('https://flare-api.flare.network/ext/C/rpc')
-	});
-	const gasPrice = await client.getGasPrice();
+	// dataFecther's web3Client is the viem client that has been used to instantiate DataFetcher
+	const gasPrice = await dataFetcher.web3Client.getGasPrice();
 
 	await dataFetcher.fetchPoolsForToken(inputToken, outputToken);
-	const pcMap = await dataFetcher.getCurrentPoolCodeMap(inputToken, outputToken);
+	const pcMap = dataFetcher.getCurrentPoolCodeMap(inputToken, outputToken);
 	const route = Router.findBestRoute(
 		pcMap,
 		flare.id,
 		inputToken,
 		amountIn,
 		outputToken,
-		Number(gasPrice)
+		Number(gasPrice),
+		undefined,
+		undefined,
+		undefined,
+		'single'
 	);
 
 	return route;
