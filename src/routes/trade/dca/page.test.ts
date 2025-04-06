@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import Page from './+page.svelte';
 import transactionStore from '$lib/transactionStore';
 import { useDataFetcher } from '$lib/dataFetcher';
+import { Router } from 'sushi/router';
 
 // Mock dependencies
 vi.mock('$lib/dataFetcher', () => ({
@@ -12,6 +13,12 @@ vi.mock('$lib/dataFetcher', () => ({
 vi.mock('$lib/transactionStore', () => ({
 	default: {
 		handleDeployDca: vi.fn()
+	}
+}));
+
+vi.mock('sushi/router', () => ({
+	Router: {
+		findBestRoute: vi.fn()
 	}
 }));
 
@@ -43,13 +50,24 @@ describe('DCA Page', () => {
 		getLatestPrice: vi.fn(),
 		start: vi.fn(),
 		stop: vi.fn(),
-		subscribe: vi.fn()
+		subscribe: vi.fn(),
+		web3Client: {
+			getGasPrice: vi.fn()
+		},
+		fetchPoolsForToken: vi.fn(),
+		getCurrentPoolCodeMap: vi.fn()
+	};
+	const mockRoute = {
+		amountOutBI: 1500000000000000000n, // 1.5 output tokens
+		status: 'Success'
 	};
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		vi.mocked(useDataFetcher).mockReturnValue(mockDataFetcher as any);
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as any);
 	});
 
 	it('should render the DCA form', () => {

@@ -33,7 +33,9 @@ describe('prices/index', () => {
 	};
 
 	const mockDataFetcher = {
+		web3Client: mockClient,
 		startDataFetching: vi.fn(),
+		stopDataFetching: vi.fn(),
 		fetchPoolsForToken: vi.fn(),
 		getCurrentPoolCodeMap: vi.fn()
 	};
@@ -60,7 +62,7 @@ describe('prices/index', () => {
 		vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as unknown as MultiRoute);
 		vi.mocked(formatUnits).mockReturnValue('1.5');
 		mockClient.getGasPrice.mockResolvedValue(1000000000n); // 1 gwei
-		mockDataFetcher.getCurrentPoolCodeMap.mockResolvedValue(new Map());
+		mockDataFetcher.getCurrentPoolCodeMap.mockReturnValue(new Map());
 	});
 
 	describe('getAndStartDataFetcher', () => {
@@ -109,14 +111,7 @@ describe('prices/index', () => {
 				mockDataFetcher as unknown as DataFetcher
 			);
 
-			expect(createPublicClient).toHaveBeenCalledWith({
-				chain: flare,
-				transport: expect.objectContaining({
-					config: { type: 'http' },
-					value: { url: 'https://flare-api.flare.network/ext/C/rpc' }
-				})
-			});
-			expect(http).toHaveBeenCalledWith('https://flare-api.flare.network/ext/C/rpc');
+			expect(mockDataFetcher.web3Client.getGasPrice).toHaveBeenCalledOnce();
 		});
 
 		it('should fetch pools for the tokens', async () => {
@@ -161,7 +156,11 @@ describe('prices/index', () => {
 				mockInputToken,
 				mockAmountIn,
 				mockOutputToken,
-				1000000000
+				1000000000,
+				undefined,
+				undefined,
+				undefined,
+				'single'
 			);
 		});
 
@@ -234,7 +233,11 @@ describe('prices/index', () => {
 				inputTokenInstance,
 				10n ** 18n, // 1 token with 18 decimals
 				outputTokenInstance,
-				1000000000
+				1000000000,
+				undefined,
+				undefined,
+				undefined,
+				'single'
 			);
 		});
 
