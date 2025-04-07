@@ -174,6 +174,7 @@
 					bind:amount={amountToLock}
 					maxValue={$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n}
 					unit={$selectedCyToken.underlyingSymbol}
+					maxButton
 				/>
 				{#if $signerAddress}
 					<p
