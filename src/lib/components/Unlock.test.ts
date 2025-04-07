@@ -34,7 +34,9 @@ const selectedCyToken: CyToken = {
 	address: '0xcdef1234abcdef5678',
 	underlyingAddress: '0xabcd1234',
 	underlyingSymbol: 'sFLR',
-	receiptAddress: '0xeeff5678'
+	receiptAddress: '0xeeff5678',
+	symbol: 'cysFLR',
+	decimals: 18
 };
 
 const receipts: Receipt[] = [

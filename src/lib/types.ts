@@ -22,7 +22,14 @@ export type BlockScoutData = {
 	id: string;
 };
 
-export interface CyToken {
+export interface Token {
+	name: string;
+	symbol: string;
+	decimals: number;
+	address: Hex;
+}
+
+export interface CyToken extends Token {
 	name: string;
 	address: Hex;
 	underlyingAddress: Hex;

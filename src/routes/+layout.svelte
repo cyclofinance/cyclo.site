@@ -10,8 +10,9 @@
 	import { cusdxAddress, quoterAddress, selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import type { Hex } from 'viem';
+	import DataFetcherProvider from '$lib/components/DataFetcherProvider.svelte';
 
 	let intervalId: ReturnType<typeof setInterval>;
 	const initWallet = async () => {
@@ -25,6 +26,7 @@
 		await erckit.init();
 		startGettingPricesAndBalances();
 	};
+
 	const getPricesAndBalances = () => {
 		blockNumberStore.refresh($wagmiConfig);
 		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
@@ -38,13 +40,7 @@
 		initWallet();
 	}
 
-	$: if ($selectedCyToken && $signerAddress) {
-		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
-	}
-
 	const startGettingPricesAndBalances = () => {
-		blockNumberStore.refresh($wagmiConfig);
-		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
 		intervalId = setInterval(getPricesAndBalances, 3000);
 	};
 
@@ -55,24 +51,19 @@
 	onDestroy(() => {
 		stopGettingPriceRatio();
 	});
-
-	onMount(() => {
-		if ($signerAddress) {
-			balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
-			balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
-		}
-	});
 </script>
 
 {#if $wagmiConfig}
-	<div class="flex min-h-screen flex-col">
-		<a
-			href="https://fair.flare.network?utm_source=cyclo&utm_medium=eco_partners&utm_campaign=fair
+	<DataFetcherProvider>
+		<div class="flex min-h-screen flex-col">
+			<a
+				href="https://fair.flare.network?utm_source=cyclo&utm_medium=eco_partners&utm_campaign=fair
 "><img src="/flare-fair-banner.jpg" alt="Flare Fair" /></a
-		>
-		<Header launched={PUBLIC_LAUNCHED === 'true'} />
-		<main class="flex-grow bg-[#1C02B8]">
-			<slot />
-		</main>
-	</div>
+			>
+			<Header launched={PUBLIC_LAUNCHED === 'true'} />
+			<main class="flex-grow bg-[#1C02B8]">
+				<slot />
+			</main>
+		</div>
+	</DataFetcherProvider>
 {/if}

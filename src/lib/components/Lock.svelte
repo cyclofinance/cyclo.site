@@ -160,7 +160,7 @@
 			<span>LOCK AMOUNT</span>
 			<div class="flex flex-col">
 				<Input
-					data-testid="lock-input"
+					dataTestId="lock-input"
 					on:input={(event) => {
 						amountToLock = event.detail.value;
 						checkBalance();
@@ -174,6 +174,7 @@
 					bind:amount={amountToLock}
 					maxValue={$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n}
 					unit={$selectedCyToken.underlyingSymbol}
+					maxButton
 				/>
 				{#if $signerAddress}
 					<p
@@ -282,7 +283,7 @@
 			<Button
 				disabled={insufficientFunds || !assets || !amountToLock}
 				customClass="sm:text-xl text-lg w-full bg-white text-primary"
-				data-testid="lock-button"
+				dataTestId="lock-button"
 				on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
 			>
 		{:else}
@@ -369,7 +370,7 @@
 					disclaimerOpen = false;
 					runLockTransaction();
 				}}
-				data-testid="disclaimer-acknowledge-button"
+				dataTestId="disclaimer-acknowledge-button"
 			>
 				ACKNOWLEDGE AND LOCK
 			</Button>

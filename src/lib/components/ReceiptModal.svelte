@@ -105,8 +105,9 @@
 					readableAmountToRedeem = event.detail.value;
 					checkBalance();
 				}}
-				data-testid="redeem-input"
+				dataTestId="redeem-input"
 				placeholder="0.0"
+				maxButton
 				on:setValueToMax={() => {
 					amountToRedeem = maxRedeemable;
 					readableAmountToRedeem = Number(formatEther(maxRedeemable)).toString();
@@ -161,7 +162,7 @@
 	</div>
 
 	<Button
-		data-testid="unlock-button"
+		dataTestId="unlock-button"
 		customClass="w-full bg-white text-primary"
 		disabled={buttonStatus !== ButtonStatus.READY || amountToRedeem === BigInt(0)}
 		on:click={() =>
