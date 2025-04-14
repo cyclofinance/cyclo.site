@@ -12,10 +12,10 @@ import balancesStore from './balancesStore';
 import { myReceipts } from './stores';
 import { refreshAllReceipts } from './queries/refreshAllReceipts';
 import { TransactionErrorMessage } from './types/errors';
-import type { CyToken, Token } from './types';
+import type { CyToken } from './types';
 import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { wagmiConfig } from 'svelte-wagmi';
-import { getDcaDeploymentArgs } from './trade/getDeploymentArgs';
+import { getDcaDeploymentArgs, type DcaDeploymentArgs } from './trade/getDeploymentArgs';
 import type { DataFetcher } from 'sushi';
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
@@ -235,19 +235,7 @@ const transactionStore = () => {
 		writeUnlock();
 	};
 
-	const handleDeployDca = async (
-		options: {
-			selectedCyToken: CyToken;
-			selectedToken: Token;
-			selectedBuyOrSell: 'Buy' | 'Sell';
-			selectedPeriodUnit: 'Days' | 'Hours' | 'Minutes';
-			selectedPeriod: string;
-			selectedAmountToken: Token;
-			selectedAmount: bigint;
-			selectedBaseline: string;
-		},
-		dataFetcher: DataFetcher
-	) => {
+	const handleDeployDca = async (options: DcaDeploymentArgs, dataFetcher: DataFetcher) => {
 		const config = get(wagmiConfig);
 		if (!config) throw new Error('Wagmi config not found');
 

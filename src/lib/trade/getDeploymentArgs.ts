@@ -9,18 +9,24 @@ import { signerAddress } from 'svelte-wagmi';
 import type { DataFetcher } from 'sushi';
 import { getBaseline, getMaxTradeAmount, getPeriodInSeconds } from './derivations';
 import { tokens } from '$lib/constants';
+import type { Hex } from 'viem';
+
+export type DcaDeploymentArgs = {
+	selectedCyToken: CyToken;
+	selectedToken: Token;
+	selectedBuyOrSell: 'Buy' | 'Sell';
+	selectedPeriodUnit: 'Days' | 'Hours' | 'Minutes';
+	selectedPeriod: string;
+	selectedAmountToken: Token;
+	selectedAmount: bigint;
+	selectedBaseline: string;
+	inputVaultId: Hex | undefined;
+	outputVaultId: Hex | undefined;
+	depositAmount: bigint;
+};
 
 export const getDcaDeploymentArgs = async (
-	options: {
-		selectedCyToken: CyToken;
-		selectedToken: Token;
-		selectedBuyOrSell: 'Buy' | 'Sell';
-		selectedPeriodUnit: 'Days' | 'Hours' | 'Minutes';
-		selectedPeriod: string;
-		selectedAmountToken: Token;
-		selectedAmount: bigint;
-		selectedBaseline: string;
-	},
+	options: DcaDeploymentArgs,
 	dataFetcher: DataFetcher
 ) => {
 	const {
@@ -31,7 +37,10 @@ export const getDcaDeploymentArgs = async (
 		selectedAmountToken,
 		selectedAmount,
 		selectedPeriod,
-		selectedBaseline
+		selectedBaseline,
+		depositAmount,
+		inputVaultId,
+		outputVaultId
 	} = options;
 
 	const gui = await DotrainOrderGui.chooseDeployment(dcaStrategy, 'flare');
@@ -81,7 +90,15 @@ export const getDcaDeploymentArgs = async (
 		isPreset: false
 	});
 
-	gui.saveDeposit('output', formatUnits(selectedAmount, selectedAmountToken.decimals));
+	gui.saveDeposit('output', formatUnits(depositAmount, selectedAmountToken.decimals));
+
+	if (inputVaultId) {
+		gui.setVaultId(true, 0, inputVaultId);
+	}
+
+	if (outputVaultId) {
+		gui.setVaultId(false, 0, outputVaultId);
+	}
 
 	const $signerAddress = get(signerAddress);
 	if (!$signerAddress) throw new Error('Signer address not found');

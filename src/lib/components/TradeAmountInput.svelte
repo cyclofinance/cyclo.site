@@ -5,10 +5,14 @@
 	import { formatUnits, parseUnits } from 'viem';
 	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
 	import type { Token } from '$lib/types';
+	import type { ValidateFunction } from '$lib/trade/validateDeploymentArgs';
 
 	export let amountToken: Token;
 	let inputAmount: string | undefined;
 	export let amount: bigint = 0n;
+
+	export let validate: ValidateFunction = () => undefined;
+	export let isError: boolean = false;
 
 	export let dataTestId: string = '';
 
@@ -61,6 +65,8 @@
 		maxButton
 		on:setValueToMax={setValueToMax}
 		{dataTestId}
+		{validate}
+		bind:isError
 	/>
 	<span class="text-right text-sm text-gray-200">
 		{#await balancePromise}
