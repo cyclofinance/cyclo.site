@@ -47,7 +47,9 @@
 		!selectedAmount ||
 		!selectedPeriod ||
 		!selectedBaseline ||
-		(chooseOverrideDepositAmount && !overrideDepositAmount) ||
+		(chooseOverrideDepositAmount &&
+			!overrideDepositAmount &&
+			overrideDepositAmount !== BigInt(0)) ||
 		inputVaultIdError ||
 		outputVaultIdError ||
 		selectedAmountError ||
