@@ -55,8 +55,6 @@
 		selectedBaselineError ||
 		(chooseOverrideDepositAmount && overrideDepositAmountError);
 
-	$: console.log('overrideDepositAmount', overrideDepositAmount);
-
 	// advanced options
 	let showAdvancedOptions: boolean = false;
 	let chooseOverrideDepositAmount: boolean = false;
