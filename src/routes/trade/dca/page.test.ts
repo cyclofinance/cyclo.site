@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
 import Page from './+page.svelte';
 import transactionStore from '$lib/transactionStore';
 import { useDataFetcher } from '$lib/dataFetcher';

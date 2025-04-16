@@ -37,7 +37,7 @@ describe('VaultIdInput Component', () => {
 
 	it('should bind value correctly using a wrapper component', async () => {
 		const vaultIdStore = writable('');
-		const isErrorStore = writable(false);
+		const isErrorStore = writable<boolean>(false);
 
 		render(VaultIdInputTest, {
 			vaultIdStore,

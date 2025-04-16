@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import transactionStore from './transactionStore';
-import { getDcaDeploymentArgs } from './trade/getDeploymentArgs';
+import { getDcaDeploymentArgs, type DcaDeploymentArgs } from './trade/getDeploymentArgs';
 import { sendTransaction } from '@wagmi/core';
 import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
@@ -121,7 +121,10 @@ describe('transactionStore.handleDeployDca', () => {
 	});
 
 	it('should call getDcaDeploymentArgs with the correct options', async () => {
-		const deployPromise = transactionStore.handleDeployDca(mockOptions, mockDataFetcher);
+		const deployPromise = transactionStore.handleDeployDca(
+			mockOptions as DcaDeploymentArgs,
+			mockDataFetcher
+		);
 
 		// Advance timers to allow async operations to complete
 		await vi.runAllTimersAsync();
@@ -131,7 +134,10 @@ describe('transactionStore.handleDeployDca', () => {
 	});
 
 	it('should call sendTransaction for approval and deployment', async () => {
-		const deployPromise = transactionStore.handleDeployDca(mockOptions, mockDataFetcher);
+		const deployPromise = transactionStore.handleDeployDca(
+			mockOptions as DcaDeploymentArgs,
+			mockDataFetcher
+		);
 
 		// Advance timers to allow async operations to complete
 		await vi.runAllTimersAsync();
@@ -157,7 +163,10 @@ describe('transactionStore.handleDeployDca', () => {
 			outputToken: { symbol: 'TEST', name: 'Test Token', decimals: 18, address: '0xdef456' }
 		});
 
-		const deployPromise = transactionStore.handleDeployDca(mockOptions, mockDataFetcher);
+		const deployPromise = transactionStore.handleDeployDca(
+			mockOptions as DcaDeploymentArgs,
+			mockDataFetcher
+		);
 
 		// Advance timers to allow async operations to complete
 		await vi.runAllTimersAsync();
@@ -167,7 +176,10 @@ describe('transactionStore.handleDeployDca', () => {
 	});
 
 	it('should call transactionSuccess with the correct arguments', async () => {
-		const deployPromise = transactionStore.handleDeployDca(mockOptions, mockDataFetcher);
+		const deployPromise = transactionStore.handleDeployDca(
+			mockOptions as DcaDeploymentArgs,
+			mockDataFetcher
+		);
 
 		// Advance timers to allow async operations to complete
 		await vi.runAllTimersAsync();
