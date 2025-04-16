@@ -51,7 +51,7 @@
 						data-testid="view-transaction-link">View transaction on Flarescan</a
 					>
 				{/if}
-				<Button on:click={() => handleClose()} class="mt-4" data-testid="dismiss-button"
+				<Button on:click={() => handleClose()} class="mt-4" dataTestId="dismiss-button"
 					>DISMISS</Button
 				>
 			{:else if $transactionStore.status === TransactionStatus.SUCCESS}
@@ -70,10 +70,11 @@
 					</p>
 					{#if $transactionStore.message}
 						<p
-							class="w-full whitespace-pre-wrap break-words text-center text-sm font-normal text-gray-900 dark:text-white"
+							class="w-full break-words text-center text-sm font-normal text-gray-900 dark:text-white"
 							data-testid="success-message"
 						>
-							{$transactionStore.message}
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html $transactionStore.message}
 						</p>
 					{/if}
 
@@ -85,17 +86,11 @@
 								href={`https://flarescan.com/tx/${$transactionStore.hash}`}
 								data-testid="view-transaction-link">View transaction on Flarescan</a
 							>
-							<a
-								target="_blank"
-								class="whitespace-pre-wrap break-words text-center hover:underline"
-								href={`https://sparkdex.ai/swap/`}
-								data-testid="sell-cysflr-link">Sell your cysFLR on Sparkdex</a
-							>
 						</div>
 					{/if}
 				</div>
 
-				<Button on:click={() => handleClose()} class="mt-4" data-testid="dismiss-button"
+				<Button on:click={() => handleClose()} class="mt-4" dataTestId="dismiss-button"
 					>DISMISS</Button
 				>
 			{:else if $transactionStore.status === TransactionStatus.CHECKING_ALLOWANCE || $transactionStore.status === TransactionStatus.PENDING_WALLET || $transactionStore.status === TransactionStatus.PENDING_LOCK || $transactionStore.status === TransactionStatus.PENDING_UNLOCK || $transactionStore.status === TransactionStatus.PENDING_APPROVAL}

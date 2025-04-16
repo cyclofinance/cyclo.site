@@ -23,10 +23,6 @@
 	const mappedReceipts = receipts.map((receipt) => {
 		// Guard against undefined values
 		if (!receipt.balance || !receipt.tokenId) {
-			console.log('Missing required values:', {
-				balance: receipt.balance,
-				tokenId: receipt.tokenId
-			});
 			return {
 				...receipt,
 				totalsFlr: BigInt(0),

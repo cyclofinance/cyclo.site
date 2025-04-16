@@ -306,7 +306,6 @@ const balancesStore = () => {
 			assets,
 			blockNumber
 		);
-		console.log('swapQuotes', swapQuotes);
 		update((state) => ({
 			...state,
 			swapQuotes

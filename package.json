@@ -59,6 +59,7 @@
 	},
 	"dependencies": {
 		"@graphql-codegen/typescript-document-nodes": "^4.0.12",
+		"@rainlanguage/orderbook": "^0.0.1-alpha.11",
 		"@sveltejs/adapter-static": "3.0.6",
 		"@testing-library/user-event": "14.5.2",
 		"@wagmi/connectors": "5.3.5",
@@ -67,6 +68,7 @@
 		"ethers": "6.13.0",
 		"lodash-es": "4.17.21",
 		"rehype-katex-svelte": "1.2.0",
+		"sushi": "file:sushi-3.0.0.tgz",
 		"svelte-wagmi": "1.0.7",
 		"truncate-eth-address": "1.0.2"
 	}
