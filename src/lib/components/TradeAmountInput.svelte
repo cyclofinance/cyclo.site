@@ -9,7 +9,7 @@
 
 	export let amountToken: Token;
 	let inputAmount: string | undefined;
-	export let amount: bigint = 0n;
+	export let amount: bigint | undefined = undefined;
 
 	export let validate: ValidateFunction = () => undefined;
 	export let isError: boolean = false;
@@ -25,7 +25,7 @@
 
 	const resetInputAmount = () => {
 		inputAmount = undefined;
-		amount = 0n;
+		amount = undefined;
 	};
 
 	$: if (inputAmount) {

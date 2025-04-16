@@ -52,7 +52,8 @@ describe('getDcaDeploymentArgs', () => {
 			to: '0x1234567890123456789012345678901234567890',
 			data: '0xabcdef',
 			value: 0n
-		})
+		}),
+		setVaultId: vi.fn().mockResolvedValue(undefined)
 	};
 
 	const mockOptions = {
@@ -81,7 +82,10 @@ describe('getDcaDeploymentArgs', () => {
 			decimals: 18
 		},
 		selectedAmount: BigInt(1000000000000000000), // 1 TEST
-		selectedBaseline: '1.5'
+		selectedBaseline: '1.5',
+		inputVaultId: '0x1234567890123456789012345678901234567890' as `0x${string}`,
+		outputVaultId: '0x1234567890123456789012345678901234567890' as `0x${string}`,
+		depositAmount: BigInt(1000000000000000000)
 	};
 
 	const mockDataFetcher = new DataFetcher(flare.id);

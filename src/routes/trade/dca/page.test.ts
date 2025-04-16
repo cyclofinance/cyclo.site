@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import Page from './+page.svelte';
 import transactionStore from '$lib/transactionStore';
 import { useDataFetcher } from '$lib/dataFetcher';
@@ -75,7 +75,7 @@ describe('DCA Page', () => {
 
 		// Check that key elements are rendered
 		expect(screen.getByRole('button', { name: 'Deploy' })).toBeInTheDocument();
-		expect(screen.getByText('Over period')).toBeInTheDocument();
+		expect(screen.getByText('Every')).toBeInTheDocument();
 	});
 
 	it('should update the form when Buy/Sell selection changes', async () => {
@@ -158,5 +158,221 @@ describe('DCA Page', () => {
 		expect(callArgs.selectedPeriod).toBe('7');
 		expect(callArgs.selectedBaseline).toBe('1.5');
 		expect(callArgs.selectedPeriodUnit).toBe('Days'); // Default value
+	});
+
+	// New tests for advanced options
+	it('should toggle advanced options when clicked', async () => {
+		render(Page);
+
+		// Advanced options should be hidden initially
+		expect(screen.queryByText('Custom deposit amount')).not.toBeInTheDocument();
+
+		// Click the "Show advanced options" button
+		const advancedOptionsButton = screen.getByText('Show advanced options');
+		await fireEvent.click(advancedOptionsButton);
+
+		// Advanced options should now be visible
+		expect(screen.getByText('Custom deposit amount')).toBeInTheDocument();
+		expect(screen.getByText('Vault ids')).toBeInTheDocument();
+
+		// Click the "Hide advanced options" button
+		const hideAdvancedOptionsButton = screen.getByText('Hide advanced options');
+		await fireEvent.click(hideAdvancedOptionsButton);
+
+		// Advanced options should be hidden again
+		expect(screen.queryByText('Custom deposit amount')).not.toBeInTheDocument();
+	});
+
+	// Test for custom deposit amount
+	it('should show custom deposit amount input when toggled', async () => {
+		render(Page);
+
+		// Show advanced options
+		const advancedOptionsButton = screen.getByText('Show advanced options');
+		await fireEvent.click(advancedOptionsButton);
+
+		// Custom deposit amount input should not be visible initially
+		expect(screen.queryByTestId('deposit-amount-input')).not.toBeInTheDocument();
+
+		// Toggle custom deposit amount
+		const customDepositToggle = screen.getByRole('checkbox');
+		await fireEvent.click(customDepositToggle);
+
+		// Custom deposit amount input should now be visible
+		expect(screen.getByTestId('deposit-amount-input')).toBeInTheDocument();
+	});
+
+	// Test for vault ID inputs
+	it('should handle vault ID inputs correctly', async () => {
+		render(Page);
+
+		// Show advanced options
+		const advancedOptionsButton = screen.getByText('Show advanced options');
+		await fireEvent.click(advancedOptionsButton);
+
+		// Find vault ID inputs
+		const vaultIdInputs = screen.getAllByRole('textbox');
+		const inputVaultIdInput = vaultIdInputs.find(
+			(input) => input.closest('div')?.previousElementSibling?.textContent === 'Input vault id'
+		);
+		const outputVaultIdInput = vaultIdInputs.find(
+			(input) => input.closest('div')?.previousElementSibling?.textContent === 'Output vault id'
+		);
+
+		// Enter valid vault IDs
+		if (inputVaultIdInput) {
+			await fireEvent.input(inputVaultIdInput, { target: { value: '0x123abc' } });
+			await fireEvent.blur(inputVaultIdInput);
+		}
+
+		if (outputVaultIdInput) {
+			await fireEvent.input(outputVaultIdInput, { target: { value: '0x456def' } });
+			await fireEvent.blur(outputVaultIdInput);
+		}
+
+		// Fill in required fields
+		const amountInput = screen.getByTestId('amount-input');
+		const periodInput = screen.getByTestId('period-input');
+		const baselineInput = screen.getByTestId('baseline-input');
+
+		await fireEvent.input(amountInput, { target: { value: '100' } });
+		await fireEvent.input(periodInput, { target: { value: '7' } });
+		await fireEvent.input(baselineInput, { target: { value: '1.5' } });
+
+		// Click the Deploy button
+		const deployButton = screen.getByTestId('deploy-button');
+		await fireEvent.click(deployButton);
+
+		// Check that handleDeployDca was called with the correct vault IDs
+		const callArgs = vi.mocked(transactionStore.handleDeployDca).mock.calls[0][0];
+		expect(callArgs.inputVaultId).toBe('0x123abc');
+		expect(callArgs.outputVaultId).toBe('0x456def');
+	});
+
+	// Test for invalid vault ID validation
+	it('should show error for invalid vault IDs', async () => {
+		render(Page);
+
+		// Show advanced options
+		const advancedOptionsButton = screen.getByText('Show advanced options');
+		await fireEvent.click(advancedOptionsButton);
+
+		// Find vault ID inputs
+		const vaultIdInputs = screen.getAllByRole('textbox');
+		const inputVaultIdInput = vaultIdInputs.find(
+			(input) => input.closest('div')?.previousElementSibling?.textContent === 'Input vault id'
+		);
+
+		// Enter invalid vault ID
+		if (inputVaultIdInput) {
+			await fireEvent.input(inputVaultIdInput, { target: { value: 'not-a-hex-string' } });
+			await fireEvent.blur(inputVaultIdInput);
+		}
+
+		// Error message should be displayed
+		expect(screen.getByText('Invalid vault id: must be a valid hex string')).toBeInTheDocument();
+
+		// Deploy button should be disabled
+		const deployButton = screen.getByTestId('deploy-button');
+		expect(deployButton).toBeDisabled();
+	});
+
+	// Test for period unit selection
+	it('should update period unit when changed', async () => {
+		render(Page);
+
+		// Find the period unit select
+		const periodUnitSelect = screen.getByTestId('period-unit-select');
+
+		// Change to "Hours"
+		await fireEvent.change(periodUnitSelect, { target: { value: 'Hours' } });
+
+		// Fill in required fields
+		const amountInput = screen.getByTestId('amount-input');
+		const periodInput = screen.getByTestId('period-input');
+		const baselineInput = screen.getByTestId('baseline-input');
+
+		await fireEvent.input(amountInput, { target: { value: '100' } });
+		await fireEvent.input(periodInput, { target: { value: '7' } });
+		await fireEvent.input(baselineInput, { target: { value: '1.5' } });
+
+		// Click the Deploy button
+		const deployButton = screen.getByTestId('deploy-button');
+		await fireEvent.click(deployButton);
+
+		// Check that handleDeployDca was called with the correct period unit
+		const callArgs = vi.mocked(transactionStore.handleDeployDca).mock.calls[0][0];
+		expect(callArgs.selectedPeriodUnit).toBe('Hours');
+	});
+
+	// Test for form validation
+	it('should disable Deploy button when required fields are missing', async () => {
+		render(Page);
+
+		// Deploy button should be disabled initially
+		const deployButton = screen.getByTestId('deploy-button');
+		expect(deployButton).toBeDisabled();
+
+		// Fill in only some required fields
+		const amountInput = screen.getByTestId('amount-input');
+		await fireEvent.input(amountInput, { target: { value: '100' } });
+
+		// Button should still be disabled
+		expect(deployButton).toBeDisabled();
+
+		// Fill in more fields
+		const periodInput = screen.getByTestId('period-input');
+		await fireEvent.input(periodInput, { target: { value: '7' } });
+
+		// Button should still be disabled
+		expect(deployButton).toBeDisabled();
+
+		// Fill in the last required field
+		const baselineInput = screen.getByTestId('baseline-input');
+		await fireEvent.input(baselineInput, { target: { value: '1.5' } });
+
+		// Button should now be enabled
+		expect(deployButton).not.toBeDisabled();
+	});
+
+	// Test for custom deposit amount validation
+	it('should validate custom deposit amount', async () => {
+		render(Page);
+
+		// Show advanced options
+		const advancedOptionsButton = screen.getByText('Show advanced options');
+		await fireEvent.click(advancedOptionsButton);
+
+		// Toggle custom deposit amount
+		const customDepositToggle = screen.getByRole('checkbox');
+		await fireEvent.click(customDepositToggle);
+
+		// Fill in required fields except custom deposit
+		const amountInput = screen.getByTestId('amount-input');
+		const periodInput = screen.getByTestId('period-input');
+		const baselineInput = screen.getByTestId('baseline-input');
+
+		await fireEvent.input(amountInput, { target: { value: '100' } });
+		await fireEvent.input(periodInput, { target: { value: '7' } });
+		await fireEvent.input(baselineInput, { target: { value: '1.5' } });
+
+		// Deploy button should be disabled because custom deposit is required but empty
+		const deployButton = screen.getByTestId('deploy-button');
+		expect(deployButton).toBeDisabled();
+
+		// Fill in custom deposit amount
+		const depositAmountInput = screen.getByTestId('deposit-amount-input');
+		await fireEvent.input(depositAmountInput, { target: { value: '50' } });
+
+		// Button should now be enabled
+		expect(deployButton).not.toBeDisabled();
+	});
+
+	// Test for TradePrice component
+	it('should render TradePrice component with correct tokens', () => {
+		render(Page);
+
+		// TradePrice component should be rendered
+		expect(screen.getByTestId('trade-price')).toBeInTheDocument();
 	});
 });

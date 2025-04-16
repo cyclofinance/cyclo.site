@@ -47,15 +47,15 @@
 		!selectedAmount ||
 		!selectedPeriod ||
 		!selectedBaseline ||
-		(chooseOverrideDepositAmount &&
-			!overrideDepositAmount &&
-			overrideDepositAmount !== BigInt(0)) ||
+		(chooseOverrideDepositAmount && overrideDepositAmount == undefined) ||
 		inputVaultIdError ||
 		outputVaultIdError ||
 		selectedAmountError ||
 		selectedPeriodError ||
 		selectedBaselineError ||
 		(chooseOverrideDepositAmount && overrideDepositAmountError);
+
+	$: console.log('overrideDepositAmount', overrideDepositAmount);
 
 	// advanced options
 	let showAdvancedOptions: boolean = false;
