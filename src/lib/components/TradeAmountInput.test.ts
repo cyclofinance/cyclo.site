@@ -111,7 +111,7 @@ describe('TradeAmountInput Component', () => {
 		await component.$set({ amountToken: newToken });
 
 		await waitFor(() => {
-			expect(get(amountStore)).toBe(BigInt(0));
+			expect(get(amountStore)).toBe(undefined);
 		});
 	});
 
