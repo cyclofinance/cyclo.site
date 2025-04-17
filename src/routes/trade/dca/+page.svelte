@@ -19,6 +19,7 @@
 		validateBaseline,
 		validateOverrideDepositAmount
 	} from '$lib/trade/validateDeploymentArgs';
+	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
 
 	// selected values
 	let selectedCyToken: CyToken = cyTokens[0];
@@ -114,7 +115,11 @@
 	<!-- amount to spend or receive -->
 	<div class="flex flex-col gap-2" data-testid="amount-container">
 		<span class="text-sm text-gray-200"
-			>Amount to {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'}</span
+			>Amount to {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'}
+			<InfoTooltip
+				>The number of tokens you will {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'} every period of
+				time defined below. This creates a streaming budget over time.
+			</InfoTooltip></span
 		>
 		<TradeAmountInput
 			amountToken={selectedAmountToken}
@@ -127,7 +132,13 @@
 
 	<!-- period over which to spend or receive -->
 	<div class="flex flex-col gap-2" data-testid="period-container">
-		<span class="text-sm text-gray-200">Every</span>
+		<span class="text-sm text-gray-200"
+			>Every
+			<InfoTooltip
+				>The strategy will attempt to {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'}
+				the number of tokens you specified above every period of time defined here.</InfoTooltip
+			></span
+		>
 		<div class="flex items-start gap-2">
 			<Input
 				type="number"
@@ -149,6 +160,14 @@
 	<div class="flex flex-col gap-2" data-testid="baseline-container">
 		<div class="text-sm text-gray-200">
 			{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${selectedToken.symbol} per ${selectedCyToken.symbol}`})
+			<InfoTooltip
+				>The {selectedBuyOrSell == 'Buy' ? 'highest' : 'lowest'} price at which the strategy will {selectedBuyOrSell ==
+				'Buy'
+					? 'buy'
+					: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but note
+				the budget set above is still accruing, meaning the strategy will attempt to "catch up" when
+				the market comes back within range.
+			</InfoTooltip>
 		</div>
 
 		<Input
