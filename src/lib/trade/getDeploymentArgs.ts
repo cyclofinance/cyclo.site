@@ -72,7 +72,7 @@ export const getDcaDeploymentArgs = async (
 	const outputTokenInUSDC =
 		outputToken.address === tokens[0].address
 			? '1'
-			: await getPrice(outputToken, tokens[0], dataFetcher);
+			: await getPrice(tokens[0], outputToken, dataFetcher);
 
 	// The minimum trade amount should be $1 worth of the output token
 	gui.saveFieldValue('min-trade-amount', {
