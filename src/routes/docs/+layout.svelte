@@ -10,7 +10,7 @@
 </script>
 
 <div
-	class="sticky top-0 z-[999] flex h-[var(--header-height)] flex-row items-center gap-x-2 border-b bg-white px-2 py-6 md:hidden md:p-4"
+	class="sticky top-0 z-[999] flex h-[var(--header-height)] flex-row items-center gap-x-2 border-b bg-white px-2 py-6 text-black md:hidden md:p-4"
 >
 	<BarsOutline
 		class="block cursor-pointer"
@@ -20,7 +20,7 @@
 		data-testid="menu-icon"
 	/>
 </div>
-<div class="z-0 flex flex-col bg-white md:flex-row">
+<div class="z-0 flex flex-col bg-white text-black md:flex-row">
 	<div
 		data-testid="side-menu"
 		class:left-0={mobileMenuOpen}

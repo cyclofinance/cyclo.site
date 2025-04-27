@@ -56,10 +56,6 @@
 {#if $wagmiConfig}
 	<DataFetcherProvider>
 		<div class="flex min-h-screen flex-col">
-			<a
-				href="https://fair.flare.network?utm_source=cyclo&utm_medium=eco_partners&utm_campaign=fair
-"><img src="/flare-fair-banner.jpg" alt="Flare Fair" /></a
-			>
 			<Header launched={PUBLIC_LAUNCHED === 'true'} />
 			<main class="flex-grow bg-[#1C02B8]">
 				<slot />
