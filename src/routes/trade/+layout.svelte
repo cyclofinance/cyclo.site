@@ -3,7 +3,7 @@
 	import TransactionModal from '$lib/components/TransactionModal.svelte';
 </script>
 
-<Card size="lg" customClass="mx-auto mt-14 mb-14">
+<Card size="lg" customClass="mx-auto mt-6 mb-14">
 	<slot />
 </Card>
 <TransactionModal />
