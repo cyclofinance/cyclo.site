@@ -90,7 +90,9 @@
 	</p>
 	<p class="text-sm text-gray-200">
 		This strategy is powered by Raindex. Once you've deployed you can manage your order and withdraw
-		the funds on <a class="underline" href="https://v2.raindex.finance">the Raindex platform</a>.
+		the funds on <a target="_blank" class="underline" href="https://v2.raindex.finance"
+			>the Raindex platform</a
+		>.
 	</p>
 	<div class="flex flex-col gap-2">
 		<!-- whether to buy or sell -->
