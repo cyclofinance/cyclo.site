@@ -19,6 +19,12 @@ export const tokens: Token[] = [
 		decimals: 6
 	},
 	{
+		name: 'Tether: USD₮0',
+		symbol: 'USD₮0',
+		address: '0xe7cd86e13ac4309349f30b3435a9d337750fc82d' as Hex,
+		decimals: 6
+	},
+	{
 		name: 'Staked FLR',
 		symbol: 'sFLR',
 		address: '0x12e605bc104e93b45e1ad99f9e555f659051c2bb' as Hex,
