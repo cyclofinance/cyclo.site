@@ -107,7 +107,10 @@ describe('transactionStore.handleDeployDca', () => {
 		vi.mocked(getTransactionAddOrders).mockResolvedValue([
 			{
 				order: {
-					orderHash: '0xorderhash'
+					orderHash: '0xorderhash',
+					orderbook: {
+						id: '0xorderbookid'
+					}
 				}
 			}
 		]);
