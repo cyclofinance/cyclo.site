@@ -28,6 +28,8 @@
 	let amountToRedeem = BigInt(0);
 	let sFlrToReceive = BigInt(0);
 	let isCalculating = false;
+	let shouldCallContract = false;
+	let debounceTimer: NodeJS.Timeout;
 
 	const readableBalance = Number(formatEther(receipt.balance));
 	const tokenId = receipt.tokenId;
@@ -46,16 +48,21 @@
 			return;
 		}
 
-		isCalculating = true;
-		const _sFlrToReceive = await readContract($wagmiConfig, {
-			abi: erc20PriceOracleReceiptVaultAbi,
-			functionName: 'previewRedeem',
-			address: $selectedCyToken.address,
-			args: [amountToRedeem, receipt.tokenId]
-		});
-		sFlrToReceive = _sFlrToReceive as bigint;
-		isCalculating = false;
-		
+		try{
+			isCalculating = true;
+			const _sFlrToReceive = await readContract($wagmiConfig, {
+				abi: erc20PriceOracleReceiptVaultAbi,
+				functionName: 'previewRedeem',
+				address: $selectedCyToken.address,
+				args: [amountToRedeem, receipt.tokenId]
+			});
+			sFlrToReceive = _sFlrToReceive as bigint;
+		} catch {
+			sFlrToReceive = BigInt(0);
+			amountToRedeem = BigInt(0);
+		} finally {
+			isCalculating = false;
+		}
 	};
 
 	$: maxRedeemable =
@@ -63,9 +70,6 @@
 		(erc1155balance ?? 0n)
 			? $balancesStore.balances[receipt.token || 'cysFLR']?.signerBalance ?? 0n
 			: erc1155balance ?? 0n;
-
-	let shouldCallContract = false;
-	let debounceTimer: NodeJS.Timeout;
 
 	$: if (shouldCallContract && amountToRedeem !== undefined && !isCalculating) {
 		if (debounceTimer) {
