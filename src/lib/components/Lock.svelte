@@ -84,7 +84,10 @@
 </script>
 
 <Card size="lg">
-	<div class="flex w-full flex-col items-center justify-center gap-12 overflow-x-hidden" data-testid="lock-container">
+	<div
+		class="flex w-full flex-col items-center justify-center gap-12 overflow-x-hidden"
+		data-testid="lock-container"
+	>
 		<div
 			class="flex w-full flex-col justify-between text-xl font-semibold text-white sm:flex-row sm:text-2xl"
 		>
@@ -115,11 +118,13 @@
 		<div
 			class="flex w-full flex-col justify-between text-xl font-semibold text-white sm:flex-row sm:text-2xl"
 		>
-			<div class="flex flex-col gap-0 min-w-0">
-				<span class="break-words">cy{$selectedCyToken.underlyingSymbol} PER {$selectedCyToken.underlyingSymbol}</span>
+			<div class="flex min-w-0 flex-col gap-0">
+				<span class="break-words"
+					>cy{$selectedCyToken.underlyingSymbol} PER {$selectedCyToken.underlyingSymbol}</span
+				>
 				<a
 					href={base + '/docs/why-flare'}
-					class="cursor-pointer text-xs font-light hover:underline break-words"
+					class="cursor-pointer break-words text-xs font-light hover:underline"
 					target="_blank"
 					data-testid="price-ratio-link">How does Cyclo use the FTSO?</a
 				>
@@ -210,11 +215,11 @@
 			</div>
 
 			<div class="flex w-full items-center justify-center px-4">
-				<div
-					class="flex w-1/3 flex-col items-center justify-center pb-12 text-center text-white"
-				>
-					<img src={ftso} alt="ftso" class="w-16 h-16" />
-					<span class="text-sm break-all max-w-full">{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}</span>
+				<div class="flex w-1/3 flex-col items-center justify-center pb-12 text-center text-white">
+					<img src={ftso} alt="ftso" class="h-16 w-16" />
+					<span class="max-w-full break-all text-sm"
+						>{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}</span
+					>
 				</div>
 				<img src={mintDia} alt="diagram" class="w-1/3 max-w-sm" />
 				<div class="w-1/3"></div>
@@ -240,7 +245,7 @@
 		</div>
 
 		<!-- Mint diagram for mobile -->
-		<div class="flex w-full flex-col items-center gap-2 sm:hidden px-2">
+		<div class="flex w-full flex-col items-center gap-2 px-2 sm:hidden">
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white md:text-2xl"
 			>
@@ -249,9 +254,15 @@
 				<span class="break-words">{$selectedCyToken.underlyingSymbol}</span>
 			</div>
 			<img src={mintMobileSquiggle} alt="diagram" class="h-12" />
-			<div class="flex w-full max-w-sm flex-col items-center justify-center text-center text-white px-2">
-				<img src={ftso} alt="ftso" class="w-8 h-8" />
-				<span class="text-xs break-all">{Number(formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString()))}</span>
+			<div
+				class="flex w-full max-w-sm flex-col items-center justify-center px-2 text-center text-white"
+			>
+				<img src={ftso} alt="ftso" class="h-8 w-8" />
+				<span class="break-all text-xs"
+					>{Number(
+						formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString())
+					)}</span
+				>
 			</div>
 			<img src={mintMobile} alt="diagram" class="h-60 max-w-full" />
 			<div
@@ -265,7 +276,7 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				<span class="text-sm break-words" data-testid="calculated-cysflr-usd-mobile"
+				<span class="break-words text-sm" data-testid="calculated-cysflr-usd-mobile"
 					>Current market value ~$ {amountToLock
 						? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
 						: '0'}</span

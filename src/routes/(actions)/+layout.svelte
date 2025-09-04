@@ -15,7 +15,7 @@
 	}
 </script>
 
-<div class="flex flex-grow flex-col items-center gap-6 bg-[#1C02B8] p-2 sm:p-6 overflow-x-hidden">
+<div class="flex flex-grow flex-col items-center gap-6 overflow-x-hidden bg-[#1C02B8] p-2 sm:p-6">
 	<div class="flex h-fit max-w-prose gap-6">
 		<HrefButton href={base + '/lock'} class="w-24 sm:w-32" inset={$page.url.pathname === '/lock'}
 			>LOCK</HrefButton

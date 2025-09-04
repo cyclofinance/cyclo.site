@@ -57,7 +57,7 @@
 	<DataFetcherProvider>
 		<div class="flex min-h-screen flex-col overflow-x-hidden">
 			<Header launched={PUBLIC_LAUNCHED === 'true'} />
-			<main class="flex-grow bg-[#1C02B8] overflow-x-hidden">
+			<main class="flex-grow overflow-x-hidden bg-[#1C02B8]">
 				<slot />
 			</main>
 		</div>
