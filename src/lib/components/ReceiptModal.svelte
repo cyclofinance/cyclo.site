@@ -29,7 +29,7 @@
 	let sFlrToReceive = BigInt(0);
 	let isCalculating = false;
 	let shouldCallContract = false;
-	let debounceTimer: NodeJS.Timeout;
+	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	const readableBalance = Number(formatEther(receipt.balance));
 	const tokenId = receipt.tokenId;
@@ -48,7 +48,7 @@
 			return;
 		}
 
-		try{
+		try {
 			isCalculating = true;
 			const _sFlrToReceive = await readContract($wagmiConfig, {
 				abi: erc20PriceOracleReceiptVaultAbi,
@@ -75,7 +75,7 @@
 		if (debounceTimer) {
 			clearTimeout(debounceTimer);
 		}
-		
+
 		debounceTimer = setTimeout(() => {
 			checkBalance();
 			shouldCallContract = false;
@@ -133,7 +133,11 @@
 				bind:amount={readableAmountToRedeem}
 				on:input={(event) => {
 					readableAmountToRedeem = event.detail.value;
-					if (!readableAmountToRedeem || readableAmountToRedeem === '' || readableAmountToRedeem === '0') {
+					if (
+						!readableAmountToRedeem ||
+						readableAmountToRedeem === '' ||
+						readableAmountToRedeem === '0'
+					) {
 						amountToRedeem = BigInt(0);
 						sFlrToReceive = BigInt(0);
 						shouldCallContract = false;

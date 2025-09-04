@@ -53,7 +53,7 @@ describe('ReceiptModal Component', () => {
 	});
 
 	it('should calculate and display correct flrToReceive when redeem amount is entered', async () => {
-		vi.mocked(readContract).mockImplementation(() => 
+		vi.mocked(readContract).mockImplementation(() =>
 			Promise.resolve(BigInt('21663778162911611785'))
 		);
 
