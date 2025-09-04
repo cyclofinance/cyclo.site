@@ -4,6 +4,7 @@
 	import { fade } from 'svelte/transition';
 	import transactionStore from '$lib/transactionStore';
 	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
+	import { readContract } from '@wagmi/core';
 	import { formatEther, parseEther } from 'ethers';
 	import burnDia from '$lib/images/burn-dia.svg';
 	import mobileBurnLine from '$lib/images/mobile-burn-line.svg';
@@ -11,6 +12,7 @@
 	import Input from './Input.svelte';
 	import Button from './Button.svelte';
 	import { selectedCyToken } from '$lib/stores';
+	import { erc20PriceOracleReceiptVaultAbi } from '$lib/contracts/erc20PriceOracleReceiptVaultAbi';
 
 	export let receipt: Receipt;
 	export let token: CyToken;
@@ -25,17 +27,35 @@
 	let readableAmountToRedeem: string = '';
 	let amountToRedeem = BigInt(0);
 	let sFlrToReceive = BigInt(0);
+	let isCalculating = false;
 
 	const readableBalance = Number(formatEther(receipt.balance));
 	const tokenId = receipt.tokenId;
 
-	const checkBalance = () => {
-		if (readableAmountToRedeem) {
-			const bigNumValue = BigInt(parseEther(readableAmountToRedeem.toString()).toString());
-			amountToRedeem = bigNumValue;
-		} else {
-			amountToRedeem = BigInt(0);
+	const checkBalance = async () => {
+		if (isCalculating || !receipt.tokenId) {
+			if (!readableAmountToRedeem) {
+				amountToRedeem = BigInt(0);
+			}
+			return;
 		}
+
+		if (!readableAmountToRedeem || readableAmountToRedeem === '') {
+			amountToRedeem = BigInt(0);
+			sFlrToReceive = BigInt(0);
+			return;
+		}
+
+		isCalculating = true;
+		const _sFlrToReceive = await readContract($wagmiConfig, {
+			abi: erc20PriceOracleReceiptVaultAbi,
+			functionName: 'previewRedeem',
+			address: $selectedCyToken.address,
+			args: [amountToRedeem, receipt.tokenId]
+		});
+		sFlrToReceive = _sFlrToReceive as bigint;
+		isCalculating = false;
+		
 	};
 
 	$: maxRedeemable =
@@ -43,6 +63,20 @@
 		(erc1155balance ?? 0n)
 			? $balancesStore.balances[receipt.token || 'cysFLR']?.signerBalance ?? 0n
 			: erc1155balance ?? 0n;
+
+	let shouldCallContract = false;
+	let debounceTimer: NodeJS.Timeout;
+
+	$: if (shouldCallContract && amountToRedeem !== undefined && !isCalculating) {
+		if (debounceTimer) {
+			clearTimeout(debounceTimer);
+		}
+		
+		debounceTimer = setTimeout(() => {
+			checkBalance();
+			shouldCallContract = false;
+		}, 300);
+	}
 
 	$: insufficientReceipts = erc1155balance < amountToRedeem;
 	$: insufficientcysFlr =
@@ -55,14 +89,6 @@
 			: insufficientcysFlr
 				? ButtonStatus.INSUFFICIENT_TOKEN
 				: ButtonStatus.READY;
-
-	$: if (amountToRedeem > 0) {
-		const _sFlrToReceive = (amountToRedeem * 10n ** 18n) / BigInt(receipt.tokenId);
-		sFlrToReceive = _sFlrToReceive;
-	} else {
-		sFlrToReceive = BigInt(0);
-		amountToRedeem = BigInt(0);
-	}
 </script>
 
 <div
@@ -103,7 +129,19 @@
 				bind:amount={readableAmountToRedeem}
 				on:input={(event) => {
 					readableAmountToRedeem = event.detail.value;
-					checkBalance();
+					if (!readableAmountToRedeem || readableAmountToRedeem === '' || readableAmountToRedeem === '0') {
+						amountToRedeem = BigInt(0);
+						sFlrToReceive = BigInt(0);
+						shouldCallContract = false;
+						return;
+					}
+					try {
+						amountToRedeem = parseEther(readableAmountToRedeem.toString());
+						shouldCallContract = true;
+					} catch {
+						amountToRedeem = BigInt(0);
+						shouldCallContract = false;
+					}
 				}}
 				dataTestId="redeem-input"
 				placeholder="0.0"
@@ -111,6 +149,7 @@
 				on:setValueToMax={() => {
 					amountToRedeem = maxRedeemable;
 					readableAmountToRedeem = Number(formatEther(maxRedeemable)).toString();
+					shouldCallContract = true;
 				}}
 			/>
 			<p class="my-2 text-left text-xs font-light sm:text-right" data-testid="sflr-balance">
