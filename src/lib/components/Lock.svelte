@@ -84,11 +84,11 @@
 </script>
 
 <Card size="lg">
-	<div class="flex w-full flex-col items-center justify-center gap-10" data-testid="lock-container">
+	<div class="flex w-full flex-col items-center justify-center gap-12 overflow-x-hidden" data-testid="lock-container">
 		<div
-			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
+			class="flex w-full flex-col justify-between text-xl font-semibold text-white sm:flex-row sm:text-2xl"
 		>
-			<span>SELECT TOKEN</span>
+			<span class="break-words">SELECT TOKEN</span>
 			<Select
 				options={tokens}
 				bind:selected={$selectedCyToken}
@@ -98,12 +98,12 @@
 
 		{#if $signerAddress}
 			<div
-				class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
+				class="flex w-full flex-col justify-between text-xl font-semibold text-white sm:flex-row sm:text-2xl"
 			>
-				<span>{$selectedCyToken.underlyingSymbol} BALANCE</span>
+				<span class="break-words">{$selectedCyToken.underlyingSymbol} BALANCE</span>
 
 				<div class="flex flex-row gap-4">
-					<span data-testid="your-balance">
+					<span data-testid="your-balance" class="break-all">
 						{formatEther(
 							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
 						)}
@@ -113,13 +113,13 @@
 		{/if}
 
 		<div
-			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
+			class="flex w-full flex-col justify-between text-xl font-semibold text-white sm:flex-row sm:text-2xl"
 		>
-			<div class="flex flex-col gap-0">
-				<span>cy{$selectedCyToken.underlyingSymbol} PER {$selectedCyToken.underlyingSymbol}</span>
+			<div class="flex flex-col gap-0 min-w-0">
+				<span class="break-words">cy{$selectedCyToken.underlyingSymbol} PER {$selectedCyToken.underlyingSymbol}</span>
 				<a
 					href={base + '/docs/why-flare'}
-					class="cursor-pointer text-xs font-light hover:underline"
+					class="cursor-pointer text-xs font-light hover:underline break-words"
 					target="_blank"
 					data-testid="price-ratio-link">How does Cyclo use the FTSO?</a
 				>
@@ -155,9 +155,9 @@
 		</div>
 
 		<div
-			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
+			class="flex w-full flex-col justify-between text-xl font-semibold text-white sm:flex-row sm:text-2xl"
 		>
-			<span>LOCK AMOUNT</span>
+			<span class="break-words">LOCK AMOUNT</span>
 			<div class="flex flex-col">
 				<Input
 					dataTestId="lock-input"
@@ -200,42 +200,38 @@
 		</div>
 
 		<!-- Mint diagram for desktop -->
-		<div class="hidden w-full flex-col gap-2 sm:flex">
+		<div class="hidden w-full flex-col gap-4 sm:flex">
 			<div
-				class="flex w-full flex-row items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:flex-col sm:text-xl"
+				class="flex w-full flex-row items-center justify-center gap-2 text-center text-xl font-semibold text-white sm:flex-col sm:text-2xl"
 			>
 				<span>{amountToLock || '0'}</span>
 
 				<span>{$selectedCyToken.underlyingSymbol}</span>
 			</div>
 
-			<div class="flex w-full">
+			<div class="flex w-full items-center justify-center px-4">
 				<div
-					class="flex w-1/4 flex-col items-center justify-center pb-12 pl-6 pr-2 text-center text-white"
+					class="flex w-1/3 flex-col items-center justify-center pb-12 text-center text-white"
 				>
-					<img src={ftso} alt="ftso" class="w-1/2" />
-					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-						{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}
-					{/key}
+					<img src={ftso} alt="ftso" class="w-16 h-16" />
+					<span class="text-sm break-all max-w-full">{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}</span>
 				</div>
-				<img src={mintDia} alt="diagram" class="w-1/2" />
-				<div class="w-1/4"></div>
+				<img src={mintDia} alt="diagram" class="w-1/3 max-w-sm" />
+				<div class="w-1/3"></div>
 			</div>
 
 			<div
-				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
+				class="flex w-full items-center justify-center gap-2 text-center text-xl font-semibold text-white sm:text-2xl"
 			>
-				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-					<span data-testid="calculated-cysflr"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
-					>
-				{/key}
+				<span data-testid="calculated-cysflr"
+					>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+				>
 				<span>{$selectedCyToken.name}</span>
 			</div>
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				<span class="text-sm" data-testid="calculated-cysflr-usd"
+				<span class="text-base" data-testid="calculated-cysflr-usd"
 					>Current market value ~$ {amountToLock
 						? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
 						: '0'}</span
@@ -244,34 +240,32 @@
 		</div>
 
 		<!-- Mint diagram for mobile -->
-		<div class="flex w-full flex-col items-center gap-2 sm:hidden">
+		<div class="flex w-full flex-col items-center gap-2 sm:hidden px-2">
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white md:text-2xl"
 			>
-				<span>{amountToLock || '0'}</span>
+				<span class="break-words">{amountToLock || '0'}</span>
 
-				<span>{$selectedCyToken.underlyingSymbol}</span>
+				<span class="break-words">{$selectedCyToken.underlyingSymbol}</span>
 			</div>
 			<img src={mintMobileSquiggle} alt="diagram" class="h-12" />
-			<div class="flex w-1/4 flex-col items-center justify-center text-center text-white">
-				<img src={ftso} alt="ftso" class="" />
-				{Number(formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString()))}
+			<div class="flex w-full max-w-sm flex-col items-center justify-center text-center text-white px-2">
+				<img src={ftso} alt="ftso" class="w-8 h-8" />
+				<span class="text-xs break-all">{Number(formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString()))}</span>
 			</div>
-			<img src={mintMobile} alt="diagram" class="h-60" />
+			<img src={mintMobile} alt="diagram" class="h-60 max-w-full" />
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white md:text-2xl"
 			>
-				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-					<span data-testid="calculated-cysflr-mobile"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
-					>
-				{/key}
+				<span data-testid="calculated-cysflr-mobile"
+					>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+				>
 				<span>{$selectedCyToken.name}</span>
 			</div>
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				<span class="text-sm" data-testid="calculated-cysflr-usd-mobile"
+				<span class="text-sm break-words" data-testid="calculated-cysflr-usd-mobile"
 					>Current market value ~$ {amountToLock
 						? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
 						: '0'}</span
@@ -282,13 +276,13 @@
 		{#if $signerAddress}
 			<Button
 				disabled={insufficientFunds || !assets || !amountToLock}
-				customClass="sm:text-xl text-lg w-full bg-white text-primary"
+				customClass="sm:text-2xl text-xl w-full bg-white text-primary py-4"
 				dataTestId="lock-button"
 				on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
 			>
 		{:else}
 			<Button
-				customClass="text-lg"
+				customClass="text-xl py-4"
 				data-testid="connect-wallet-button"
 				on:click={() => $web3Modal.open()}>CONNECT WALLET</Button
 			>

@@ -55,9 +55,9 @@
 
 {#if $wagmiConfig}
 	<DataFetcherProvider>
-		<div class="flex min-h-screen flex-col">
+		<div class="flex min-h-screen flex-col overflow-x-hidden">
 			<Header launched={PUBLIC_LAUNCHED === 'true'} />
-			<main class="flex-grow bg-[#1C02B8]">
+			<main class="flex-grow bg-[#1C02B8] overflow-x-hidden">
 				<slot />
 			</main>
 		</div>
