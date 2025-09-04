@@ -8,6 +8,11 @@
 body {
 	font-family: 'JetBrains Mono', monospace;
 	color: #ffffff;
+	overflow-x: hidden;
+}
+
+html {
+	overflow-x: hidden;
 }
 
 *:focus {
