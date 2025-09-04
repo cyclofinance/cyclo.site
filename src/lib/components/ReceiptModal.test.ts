@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/svelte';
 import ReceiptModal from './ReceiptModal.svelte';
 import transactionStore from '$lib/transactionStore';
-
+import { readContract } from '@wagmi/core';
 import { formatEther, parseEther } from 'ethers';
 import { mockReceipt } from '$lib/mocks/mockReceipt';
 import userEvent from '@testing-library/user-event';
@@ -13,6 +13,12 @@ const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStor
 vi.mock('$lib/balancesStore', async () => {
 	return {
 		default: mockBalancesStore
+	};
+});
+
+vi.mock('@wagmi/core', () => {
+	return {
+		readContract: vi.fn()
 	};
 });
 
@@ -47,6 +53,10 @@ describe('ReceiptModal Component', () => {
 	});
 
 	it('should calculate and display correct flrToReceive when redeem amount is entered', async () => {
+		vi.mocked(readContract).mockImplementation(() =>
+			Promise.resolve(BigInt('21663778162911611785'))
+		);
+
 		render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
 
 		const input = screen.getByTestId('redeem-input');
