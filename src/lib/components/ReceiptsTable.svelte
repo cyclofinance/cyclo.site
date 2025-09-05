@@ -33,13 +33,13 @@
 			console.log('$receipt.balance : ', receipt.balance);
 
 
-			const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle($wagmiConfig, {
+			const { result: swapQuote } = await simulateQuoterQuoteExactOutputSingle($wagmiConfig, {
 				address: get(quoterAddress),
 				args: [
 					{
 						tokenIn: $selectedCyToken.underlyingAddress,
 						tokenOut: $selectedCyToken.address,
-						amountIn: BigInt(100e18),
+						amount: BigInt(receipt.balance),
 						fee: 3000,
 						sqrtPriceLimitX96: BigInt(0)
 					}
