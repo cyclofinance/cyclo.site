@@ -175,7 +175,11 @@
 									? 'text-red-400'
 									: ''}
 						>
-							{receipt.profitLoss && receipt.profitLoss > 0 ? '+' : ''}{receipt.readableProfitLoss}
+							{receipt.profitLoss && receipt.profitLoss > 0
+								? '+'
+								: receipt.profitLoss && receipt.profitLoss < 0
+									? '-'
+									: ''}{receipt.readableProfitLoss}
 						</TableBodyCell>
 						<TableBodyCell class="">
 							<Button
@@ -208,7 +212,11 @@
 						class:text-red-400={receipt.profitLoss && receipt.profitLoss < 0}
 						data-testid={`profit-loss-${index}`}
 					>
-						{receipt.profitLoss && receipt.profitLoss > 0 ? '+' : ''}{receipt.readableProfitLoss}
+						{receipt.profitLoss && receipt.profitLoss > 0
+							? '+'
+							: receipt.profitLoss && receipt.profitLoss < 0
+								? '-'
+								: ''}{receipt.readableProfitLoss}
 						{token.underlyingSymbol}
 					</div>
 				</div>

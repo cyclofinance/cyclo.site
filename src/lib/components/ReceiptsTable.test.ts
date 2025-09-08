@@ -91,6 +91,7 @@ describe('ReceiptsTable Component', () => {
 			for (let i = 0; i < mockReceipts.length; i++) {
 				const profitLossElements = screen.getAllByTestId(`profit-loss-${i}`);
 				expect(profitLossElements.length).toBeGreaterThan(0);
+				// The mock receipt has a positive profit loss, so it should show with a + sign
 				expect(profitLossElements[0]).toHaveTextContent('+0.60000');
 			}
 		});
