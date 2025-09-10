@@ -21,7 +21,7 @@
 		const config = chartConfigs[$selectedCyToken.symbol as keyof typeof chartConfigs];
 		if (config) {
 			isLoading = true;
-			chartUrl = `https://dexscreener.com/flare/${config.address}?embed=1&theme=dark&chartTheme=dark&chartType=usd&interval=15m&chartLeftToolbar=1&chartRightToolbar=1`;
+			chartUrl = `https://dexscreener.com/flare/${config.address}?embed=1&theme=dark&chartTheme=dark&chartType=usd&interval=1d&chartLeftToolbar=1&chartRightToolbar=1`;
 		}
 	}
 
