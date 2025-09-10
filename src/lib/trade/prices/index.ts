@@ -61,3 +61,23 @@ export const getPrice = async (
 	const price = formatUnits(route.amountOutBI, outputToken.decimals);
 	return price;
 };
+
+export const getAmountOut = async (
+	inputToken: _Token,
+	outputToken: _Token,
+	amountIn: bigint,
+	dataFetcher: DataFetcher
+) => {
+	const route = await getRoute(
+		new Token({
+			chainId: flare.id,
+			address: inputToken.address,
+			decimals: inputToken.decimals
+		}),
+		new Token({ chainId: flare.id, address: outputToken.address, decimals: outputToken.decimals }),
+		amountIn,
+		dataFetcher
+	);
+	const amountOut = formatUnits(route.amountOutBI, outputToken.decimals);
+	return amountOut;
+};

@@ -10,9 +10,9 @@
 		Button
 	} from 'flowbite-svelte';
 	import type { CyToken, Receipt as ReceiptType } from '$lib/types';
-	import { formatEther } from 'ethers';
+	import { formatEther, parseEther } from 'ethers';
 	import { wagmiConfig } from 'svelte-wagmi';
-	import { quoterAddress, selectedCyToken } from '$lib/stores';
+	import { quoterAddress, selectedCyToken, } from '$lib/stores';
 
 	import ReceiptModal from '$lib/components/ReceiptModal.svelte';
 	import Card from './Card.svelte';
@@ -21,66 +21,42 @@
 		simulateQuoterQuoteExactOutputSingle
 	} from '../../generated';
 	import { get } from 'svelte/store';
+	import type { DataFetcher } from 'sushi';
+	import { useDataFetcher } from '$lib/dataFetcher';
+	import { getAmountOut, getPrice } from '$lib/trade/prices';
+	import { Token } from 'sushi/currency';
+	import { flare } from '@wagmi/core/chains';
 
 	export let token: CyToken;
 
 	export let receipts: ReceiptType[];
 	let selectedReceipt: ReceiptType | null = null;
 	let mappedReceipts: ReceiptType[] = [];
+	let isLoading = false;
+	
+	// Initialize dataFetcher at component level
+	const dataFetcher: DataFetcher = useDataFetcher();
 
-	// Function to calculate swap quote for a receipt
 	async function calculateSwapQuote(receipt: ReceiptType) {
 		try {
-			const isCyWETH =
-				$selectedCyToken.symbol?.toLowerCase().includes('weth') ||
-				$selectedCyToken.name?.toLowerCase().includes('weth');
-			const feeTiers = isCyWETH ? [10000, 3000, 500] : [3000, 500, 10000];
-			let lastError = null;
+			const swapQuote = await getAmountOut(
+				{
+					address: $selectedCyToken.address,
+					decimals: $selectedCyToken.decimals,
+					name: $selectedCyToken.name || 'Unknown',
+					symbol: $selectedCyToken.symbol || 'UNK'
+				},
+				{
+					address: $selectedCyToken.underlyingAddress,
+					decimals: $selectedCyToken.decimals,
+					name: 'UNKONW',
+					symbol: $selectedCyToken.underlyingSymbol || 'UNK'
+				},
+				receipt.balance,
+				dataFetcher
+			);
 
-			for (const fee of feeTiers) {
-				try {
-					const { result: swapQuote } = await simulateQuoterQuoteExactOutputSingle($wagmiConfig, {
-						address: get(quoterAddress),
-						args: [
-							{
-								tokenIn: $selectedCyToken.underlyingAddress,
-								tokenOut: $selectedCyToken.address,
-								amount: BigInt(receipt.balance),
-								fee: fee,
-								sqrtPriceLimitX96: BigInt(0)
-							}
-						]
-					});
-					return swapQuote[0];
-				} catch (feeError) {
-					lastError = feeError;
-					continue;
-				}
-			}
-
-			for (const fee of feeTiers) {
-				try {
-					const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle($wagmiConfig, {
-						address: get(quoterAddress),
-						args: [
-							{
-								tokenIn: $selectedCyToken.address,
-								tokenOut: $selectedCyToken.underlyingAddress,
-								amountIn: BigInt(receipt.balance),
-								fee: fee,
-								sqrtPriceLimitX96: BigInt(0)
-							}
-						]
-					});
-
-					return swapQuote[0];
-				} catch (reverseError) {
-					lastError = reverseError;
-					continue;
-				}
-			}
-
-			throw lastError || new Error('All swap attempts failed');
+			return swapQuote;
 		} catch (error) {
 			console.error('Error calculating swap quote:', error);
 			return null;
@@ -89,12 +65,11 @@
 
 	// Function to process receipts with swap quotes
 	async function processReceipts() {
-		const processedReceipts: ReceiptType[] = [];
-
-		for (const receipt of receipts) {
+		isLoading = true;
+		const processReceipt = async (receipt: ReceiptType): Promise<ReceiptType> => {
 			// Guard against undefined values
 			if (!receipt.balance || !receipt.tokenId) {
-				processedReceipts.push({
+				return {
 					...receipt,
 					totalsFlr: BigInt(0),
 					readableFlrPerReceipt: '0.00000',
@@ -103,8 +78,7 @@
 					readableSwapQuote: '0.00000',
 					profitLoss: 0n,
 					readableProfitLoss: '0.00000'
-				});
-				continue;
+				};
 			}
 
 			const balance = BigInt(receipt.balance);
@@ -114,12 +88,14 @@
 
 			// Calculate swap quote
 			const swapQuote = await calculateSwapQuote(receipt);
-			const swapQuoteValue = swapQuote || 0n;
+			const swapQuoteValue = swapQuote && !isNaN(Number(swapQuote)) 
+				? BigInt(Math.floor(Number(swapQuote) * 10 ** $selectedCyToken.decimals)) 
+				: 0n;
 
 			// Calculate P/L: totalsFlr - swapQuote
 			const profitLoss = totalsFlr - swapQuoteValue;
 
-			processedReceipts.push({
+			return {
 				...receipt,
 				totalsFlr: totalsFlr,
 				readableFlrPerReceipt: Number(formatEther(flrPerReceipt)).toFixed(5),
@@ -128,10 +104,13 @@
 				readableSwapQuote: swapQuote ? Number(formatEther(swapQuoteValue)).toFixed(5) : 'Error',
 				profitLoss: profitLoss,
 				readableProfitLoss: Number(formatEther(profitLoss)).toFixed(5)
-			});
-		}
+			};
+		};
 
+		// Process all receipts in parallel
+		const processedReceipts = await Promise.all(receipts.map(processReceipt));
 		mappedReceipts = processedReceipts;
+		isLoading = false;
 	}
 
 	// Process receipts when receipts prop changes
@@ -156,47 +135,66 @@
 			<TableBody
 				tableBodyClass="bg-opacity-0 [&_td]:text-white p-1 [&_td]:text-left [&_td]:px-2 [&_td]:md:px-6"
 			>
-				{#each mappedReceipts as receipt, index}
-					<TableBodyRow class="bg-opacity-0 " data-testid={`receipt-row-${index}`}>
-						<TableBodyCell class="" data-testid={`total-locked-${index}`}>
-							{receipt.readableTotalsFlr}
-						</TableBodyCell>
-						<TableBodyCell data-testid={`number-held-${index}`}>
-							{Number(formatEther(receipt.balance)).toFixed(5)}
-						</TableBodyCell>
-						<TableBodyCell data-testid={`locked-price-${index}`}>
-							{Number(formatEther(receipt.tokenId)).toFixed(5)}
-						</TableBodyCell>
-						<TableBodyCell
-							data-testid={`profit-loss-${index}`}
-							class={receipt.profitLoss && receipt.profitLoss > 0
-								? 'text-green-400'
-								: receipt.profitLoss && receipt.profitLoss < 0
-									? 'text-red-400'
-									: ''}
-						>
-							{receipt.profitLoss && receipt.profitLoss > 0
-								? '+'
-								: receipt.profitLoss && receipt.profitLoss < 0
-									? '-'
-									: ''}{receipt.readableProfitLoss}
-						</TableBodyCell>
-						<TableBodyCell class="">
-							<Button
-								class="flex items-center justify-center rounded-none border-2 border-white bg-primary px-2 py-1 font-bold text-white transition-all hover:bg-blue-700 disabled:bg-neutral-600"
-								data-testid={`redeem-button-${index}`}
-								on:click={() => (selectedReceipt = receipt)}>Unlock</Button
-							>
+				{#if isLoading}
+					<TableBodyRow class="bg-opacity-0">
+						<TableBodyCell colspan="5" class="text-center py-8">
+							<div class="flex items-center justify-center">
+								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+								<span class="ml-2 text-white">Loading receipts...</span>
+							</div>
 						</TableBodyCell>
 					</TableBodyRow>
-				{/each}
+				{:else}
+					{#each mappedReceipts as receipt, index}
+						<TableBodyRow class="bg-opacity-0 " data-testid={`receipt-row-${index}`}>
+							<TableBodyCell class="" data-testid={`total-locked-${index}`}>
+								{receipt.readableTotalsFlr}
+							</TableBodyCell>
+							<TableBodyCell data-testid={`number-held-${index}`}>
+								{Number(formatEther(receipt.balance)).toFixed(5)}
+							</TableBodyCell>
+							<TableBodyCell data-testid={`locked-price-${index}`}>
+								{Number(formatEther(receipt.tokenId)).toFixed(5)}
+							</TableBodyCell>
+							<TableBodyCell
+								data-testid={`profit-loss-${index}`}
+								class={receipt.profitLoss && receipt.profitLoss > 0
+									? 'text-green-400'
+									: receipt.profitLoss && receipt.profitLoss < 0
+										? 'text-red-400'
+										: ''}
+							>
+								{receipt.profitLoss && receipt.profitLoss > 0
+									? '+'
+									: receipt.profitLoss && receipt.profitLoss < 0
+										? '-'
+										: ''}{receipt.readableProfitLoss}
+							</TableBodyCell>
+							<TableBodyCell class="">
+								<Button
+									class="flex items-center justify-center rounded-none border-2 border-white bg-primary px-2 py-1 font-bold text-white transition-all hover:bg-blue-700 disabled:bg-neutral-600"
+									data-testid={`redeem-button-${index}`}
+									on:click={() => (selectedReceipt = receipt)}>Unlock</Button
+								>
+							</TableBodyCell>
+						</TableBodyRow>
+					{/each}
+				{/if}
 			</TableBody>
 		</Table>
 	</div>
 
 	<!-- Mobile Card View -->
 	<div class="space-y-3 md:hidden">
-		{#each mappedReceipts as receipt, index}
+		{#if isLoading}
+			<div class="rounded-lg border-2 border-white bg-opacity-0 p-4 text-white text-center">
+				<div class="flex items-center justify-center">
+					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+					<span class="ml-2">Loading receipts...</span>
+				</div>
+			</div>
+		{:else}
+			{#each mappedReceipts as receipt, index}
 			<div
 				class="rounded-lg border-2 border-white bg-opacity-0 p-4 text-white"
 				data-testid={`receipt-card-${index}`}
@@ -254,7 +252,8 @@
 					Unlock
 				</Button>
 			</div>
-		{/each}
+			{/each}
+		{/if}
 	</div>
 </Card>
 
