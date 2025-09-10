@@ -7,14 +7,10 @@ import { formatEther } from 'ethers';
 
 const mockReceipts = [mockReceipt, mockReceipt];
 
-// Mock the generated functions to prevent network calls
-vi.mock('../../generated', () => ({
-	simulateQuoterQuoteExactOutputSingle: vi.fn().mockResolvedValue({
-		result: [BigInt('1000000000000000000')] // Mock result
-	}),
-	simulateQuoterQuoteExactInputSingle: vi.fn().mockResolvedValue({
-		result: [BigInt('1000000000000000000')] // Mock result
-	})
+// Mock the getAmountOut function to prevent network calls
+vi.mock('$lib/trade/prices', () => ({
+	getAmountOut: vi.fn().mockResolvedValue('1.0'), // Mock result as string
+	getPrice: vi.fn().mockResolvedValue('1.0')
 }));
 
 describe('ReceiptsTable Component', () => {
@@ -91,7 +87,7 @@ describe('ReceiptsTable Component', () => {
 			for (let i = 0; i < mockReceipts.length; i++) {
 				const profitLossElements = screen.getAllByTestId(`profit-loss-${i}`);
 				expect(profitLossElements.length).toBeGreaterThan(0);
-				// The mock receipt has a positive profit loss, so it should show with a + sign
+				// The mock receipt shows the actual calculated profit loss
 				expect(profitLossElements[0]).toHaveTextContent('+0.60000');
 			}
 		});

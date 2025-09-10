@@ -10,22 +10,13 @@
 		Button
 	} from 'flowbite-svelte';
 	import type { CyToken, Receipt as ReceiptType } from '$lib/types';
-	import { formatEther, parseEther } from 'ethers';
-	import { wagmiConfig } from 'svelte-wagmi';
-	import { quoterAddress, selectedCyToken, } from '$lib/stores';
-
+	import { formatEther } from 'ethers';
+	import { selectedCyToken } from '$lib/stores';
 	import ReceiptModal from '$lib/components/ReceiptModal.svelte';
 	import Card from './Card.svelte';
-	import {
-		simulateQuoterQuoteExactInputSingle,
-		simulateQuoterQuoteExactOutputSingle
-	} from '../../generated';
-	import { get } from 'svelte/store';
 	import type { DataFetcher } from 'sushi';
 	import { useDataFetcher } from '$lib/dataFetcher';
-	import { getAmountOut, getPrice } from '$lib/trade/prices';
-	import { Token } from 'sushi/currency';
-	import { flare } from '@wagmi/core/chains';
+	import { getAmountOut } from '$lib/trade/prices';
 
 	export let token: CyToken;
 
@@ -33,7 +24,7 @@
 	let selectedReceipt: ReceiptType | null = null;
 	let mappedReceipts: ReceiptType[] = [];
 	let isLoading = false;
-	
+
 	// Initialize dataFetcher at component level
 	const dataFetcher: DataFetcher = useDataFetcher();
 
@@ -88,9 +79,10 @@
 
 			// Calculate swap quote
 			const swapQuote = await calculateSwapQuote(receipt);
-			const swapQuoteValue = swapQuote && !isNaN(Number(swapQuote)) 
-				? BigInt(Math.floor(Number(swapQuote) * 10 ** $selectedCyToken.decimals)) 
-				: 0n;
+			const swapQuoteValue =
+				swapQuote && !isNaN(Number(swapQuote))
+					? BigInt(Math.floor(Number(swapQuote) * 10 ** $selectedCyToken.decimals))
+					: 0n;
 
 			// Calculate P/L: totalsFlr - swapQuote
 			const profitLoss = totalsFlr - swapQuoteValue;
@@ -137,9 +129,9 @@
 			>
 				{#if isLoading}
 					<TableBodyRow class="bg-opacity-0">
-						<TableBodyCell colspan="5" class="text-center py-8">
+						<TableBodyCell colspan="5" class="py-8 text-center">
 							<div class="flex items-center justify-center">
-								<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+								<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
 								<span class="ml-2 text-white">Loading receipts...</span>
 							</div>
 						</TableBodyCell>
@@ -187,71 +179,71 @@
 	<!-- Mobile Card View -->
 	<div class="space-y-3 md:hidden">
 		{#if isLoading}
-			<div class="rounded-lg border-2 border-white bg-opacity-0 p-4 text-white text-center">
+			<div class="rounded-lg border-2 border-white bg-opacity-0 p-4 text-center text-white">
 				<div class="flex items-center justify-center">
-					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+					<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
 					<span class="ml-2">Loading receipts...</span>
 				</div>
 			</div>
 		{:else}
 			{#each mappedReceipts as receipt, index}
-			<div
-				class="rounded-lg border-2 border-white bg-opacity-0 p-4 text-white"
-				data-testid={`receipt-card-${index}`}
-			>
-				<!-- Header with P/L indicator -->
-				<div class="mb-3 flex items-start justify-between">
-					<div class="text-sm font-medium text-gray-300">
-						Position #{index + 1}
-					</div>
-					<div
-						class="text-sm font-bold"
-						class:text-green-400={receipt.profitLoss && receipt.profitLoss > 0}
-						class:text-red-400={receipt.profitLoss && receipt.profitLoss < 0}
-						data-testid={`profit-loss-${index}`}
-					>
-						{receipt.profitLoss && receipt.profitLoss > 0
-							? '+'
-							: receipt.profitLoss && receipt.profitLoss < 0
-								? '-'
-								: ''}{receipt.readableProfitLoss}
-						{token.underlyingSymbol}
-					</div>
-				</div>
-
-				<!-- Data rows -->
-				<div class="mb-4 space-y-2">
-					<div class="flex items-center justify-between">
-						<span class="text-sm text-gray-300">Total {token.underlyingSymbol} Locked:</span>
-						<span class="text-sm font-medium" data-testid={`total-locked-${index}`}>
-							{receipt.readableTotalsFlr}
-						</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-sm text-gray-300">Total {token.name} minted:</span>
-						<span class="text-sm font-medium" data-testid={`number-held-${index}`}>
-							{Number(formatEther(receipt.balance)).toFixed(5)}
-						</span>
-					</div>
-					<div class="flex items-center justify-between">
-						<span class="text-sm text-gray-300"
-							>{token.name} per locked {token.underlyingSymbol}:</span
-						>
-						<span class="text-sm font-medium" data-testid={`locked-price-${index}`}>
-							{Number(formatEther(receipt.tokenId)).toFixed(5)}
-						</span>
-					</div>
-				</div>
-
-				<!-- Unlock button -->
-				<Button
-					class="flex w-full items-center justify-center rounded-none border-2 border-white bg-primary py-2 font-bold text-white transition-all hover:bg-blue-700 disabled:bg-neutral-600"
-					data-testid={`redeem-button-${index}`}
-					on:click={() => (selectedReceipt = receipt)}
+				<div
+					class="rounded-lg border-2 border-white bg-opacity-0 p-4 text-white"
+					data-testid={`receipt-card-${index}`}
 				>
-					Unlock
-				</Button>
-			</div>
+					<!-- Header with P/L indicator -->
+					<div class="mb-3 flex items-start justify-between">
+						<div class="text-sm font-medium text-gray-300">
+							Position #{index + 1}
+						</div>
+						<div
+							class="text-sm font-bold"
+							class:text-green-400={receipt.profitLoss && receipt.profitLoss > 0}
+							class:text-red-400={receipt.profitLoss && receipt.profitLoss < 0}
+							data-testid={`profit-loss-${index}`}
+						>
+							{receipt.profitLoss && receipt.profitLoss > 0
+								? '+'
+								: receipt.profitLoss && receipt.profitLoss < 0
+									? '-'
+									: ''}{receipt.readableProfitLoss}
+							{token.underlyingSymbol}
+						</div>
+					</div>
+
+					<!-- Data rows -->
+					<div class="mb-4 space-y-2">
+						<div class="flex items-center justify-between">
+							<span class="text-sm text-gray-300">Total {token.underlyingSymbol} Locked:</span>
+							<span class="text-sm font-medium" data-testid={`total-locked-${index}`}>
+								{receipt.readableTotalsFlr}
+							</span>
+						</div>
+						<div class="flex items-center justify-between">
+							<span class="text-sm text-gray-300">Total {token.name} minted:</span>
+							<span class="text-sm font-medium" data-testid={`number-held-${index}`}>
+								{Number(formatEther(receipt.balance)).toFixed(5)}
+							</span>
+						</div>
+						<div class="flex items-center justify-between">
+							<span class="text-sm text-gray-300"
+								>{token.name} per locked {token.underlyingSymbol}:</span
+							>
+							<span class="text-sm font-medium" data-testid={`locked-price-${index}`}>
+								{Number(formatEther(receipt.tokenId)).toFixed(5)}
+							</span>
+						</div>
+					</div>
+
+					<!-- Unlock button -->
+					<Button
+						class="flex w-full items-center justify-center rounded-none border-2 border-white bg-primary py-2 font-bold text-white transition-all hover:bg-blue-700 disabled:bg-neutral-600"
+						data-testid={`redeem-button-${index}`}
+						on:click={() => (selectedReceipt = receipt)}
+					>
+						Unlock
+					</Button>
+				</div>
 			{/each}
 		{/if}
 	</div>
