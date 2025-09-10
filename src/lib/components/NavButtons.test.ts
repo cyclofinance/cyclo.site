@@ -96,7 +96,7 @@ describe('NavButtons Component', () => {
 
 	it('should display chart button in mobile menu', async () => {
 		render(NavButtons, { props: { launched: true } });
-		
+
 		// Open mobile menu
 		const hamburger = screen.getByTestId('nav-hamburger');
 		await userEvent.click(hamburger);
