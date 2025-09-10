@@ -60,6 +60,14 @@
 		>
 			Trade
 		</a>
+		<a
+			href={base + '/chart'}
+			data-testid="chart-button-mobile"
+			class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
+			on:click={toggleMenu}
+		>
+			Chart
+		</a>
 	</div>
 {/if}
 
@@ -94,10 +102,18 @@
 	</a>
 	<a
 		href={base + '/trade/dca'}
-		data-testid="trade-button-mobile"
+		data-testid="trade-button"
 		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
 		on:click={toggleMenu}
 	>
 		Trade
+	</a>
+	<a
+		href={base + '/chart'}
+		data-testid="chart-button"
+		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
+		on:click={toggleMenu}
+	>
+		Chart
 	</a>
 </div>
