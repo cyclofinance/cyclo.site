@@ -25,9 +25,6 @@
 			class="w-24 sm:w-32"
 			inset={$page.url.pathname === '/unlock'}>UNLOCK</HrefButton
 		>
-		<HrefButton href={base + '/chart'} class="w-24 sm:w-32" inset={$page.url.pathname === '/chart'}
-			>CHART</HrefButton
-		>
 	</div>
 	<slot />
 	<Footer />
