@@ -1,4 +1,4 @@
-import { createPublicClient, formatUnits, http } from 'viem';
+import { createPublicClient, formatUnits, formatEther, http, fallback } from 'viem';
 import { flare } from '@wagmi/core/chains';
 import { DataFetcher, Router } from 'sushi/router';
 import { Token } from 'sushi/currency';
@@ -8,7 +8,11 @@ import type { MultiRoute } from 'sushi/tines';
 export const getAndStartDataFetcher = () => {
 	const client = createPublicClient({
 		chain: flare,
-		transport: http('https://flare-api.flare.network/ext/C/rpc')
+		transport: fallback([
+			http('https://flare-api.flare.network/ext/C/rpc'),
+			http('https://rpc.ankr.com/flare'),
+			http('https://flare.rpc.thirdweb.com')
+		])
 	});
 	const dataFetcher = new DataFetcher(flare.id, client);
 	dataFetcher.startDataFetching();
@@ -78,6 +82,6 @@ export const getAmountOut = async (
 		amountIn,
 		dataFetcher
 	);
-	const amountOut = formatUnits(route.amountOutBI, outputToken.decimals);
+	const amountOut = formatEther(route.amountOutBI);
 	return amountOut;
 };

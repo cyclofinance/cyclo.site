@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getAndStartDataFetcher, getRoute, getPrice } from './index';
-import { createPublicClient, formatUnits, http, type PublicClient } from 'viem';
+import { getAndStartDataFetcher, getRoute, getPrice, getAmountOut } from './index';
+import { createPublicClient, formatUnits, formatEther, http, fallback, type PublicClient } from 'viem';
 import { flare } from '@wagmi/core/chains';
 import { DataFetcher, Router } from 'sushi/router';
 import type { Token } from '$lib/types';
@@ -11,7 +11,9 @@ import type { MultiRoute } from 'sushi/tines';
 vi.mock('viem', () => ({
 	createPublicClient: vi.fn(),
 	formatUnits: vi.fn(),
-	http: vi.fn()
+	formatEther: vi.fn(),
+	http: vi.fn(),
+	fallback: vi.fn()
 }));
 
 // Mock sushi/router
@@ -50,17 +52,23 @@ describe('prices/index', () => {
 
 		// Setup mocks
 		vi.mocked(createPublicClient).mockReturnValue(mockClient as unknown as PublicClient);
-		vi.mocked(http).mockReturnValue({
+		vi.mocked(http).mockImplementation((url?: string) => ({
 			config: { type: 'http' },
 			request: vi.fn(),
-			value: { url: 'https://flare-api.flare.network/ext/C/rpc' }
-		} as unknown as ReturnType<typeof http>);
+			value: { url: url || 'https://flare-api.flare.network/ext/C/rpc' }
+		} as unknown as ReturnType<typeof http>));
+		vi.mocked(fallback).mockReturnValue({
+			config: { type: 'fallback' },
+			request: vi.fn(),
+			value: { transports: [] }
+		} as unknown as ReturnType<typeof fallback>);
 		vi.mocked(DataFetcher).mockImplementation(() => mockDataFetcher as unknown as DataFetcher);
 		vi.mocked(SushiToken).mockImplementation(
 			({ chainId, address, decimals }) => ({ chainId, address, decimals }) as unknown as SushiToken
 		);
 		vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as unknown as MultiRoute);
 		vi.mocked(formatUnits).mockReturnValue('1.5');
+		vi.mocked(formatEther).mockReturnValue('1.5');
 		mockClient.getGasPrice.mockResolvedValue(1000000000n); // 1 gwei
 		mockDataFetcher.getCurrentPoolCodeMap.mockReturnValue(new Map());
 	});
@@ -72,11 +80,27 @@ describe('prices/index', () => {
 			expect(createPublicClient).toHaveBeenCalledWith({
 				chain: flare,
 				transport: expect.objectContaining({
-					config: { type: 'http' },
-					value: { url: 'https://flare-api.flare.network/ext/C/rpc' }
+					config: { type: 'fallback' },
+					value: { transports: [] }
 				})
 			});
+			expect(fallback).toHaveBeenCalledWith([
+				expect.objectContaining({
+					config: { type: 'http' },
+					value: { url: 'https://flare-api.flare.network/ext/C/rpc' }
+				}),
+				expect.objectContaining({
+					config: { type: 'http' },
+					value: { url: 'https://rpc.ankr.com/flare' }
+				}),
+				expect.objectContaining({
+					config: { type: 'http' },
+					value: { url: 'https://flare.rpc.thirdweb.com' }
+				})
+			]);
 			expect(http).toHaveBeenCalledWith('https://flare-api.flare.network/ext/C/rpc');
+			expect(http).toHaveBeenCalledWith('https://rpc.ankr.com/flare');
+			expect(http).toHaveBeenCalledWith('https://flare.rpc.thirdweb.com');
 		});
 
 		it('should create a DataFetcher with the correct parameters', () => {
@@ -255,6 +279,98 @@ describe('prices/index', () => {
 			const result = await getPrice(
 				mockInputToken as unknown as Token,
 				mockOutputToken as unknown as Token,
+				mockDataFetcher as unknown as DataFetcher
+			);
+
+			expect(result).toBe('1.5');
+		});
+	});
+	
+	describe('getAmountOut', () => {
+		const mockInputToken = {
+			address: '0xabc123' as `0x${string}`,
+			decimals: 18,
+			symbol: 'TEST1',
+			name: 'Test Token 1'
+		};
+
+		const mockOutputToken = {
+			address: '0xdef456' as `0x${string}`,
+			decimals: 18,
+			symbol: 'TEST2',
+			name: 'Test Token 2'
+		};
+
+		const mockAmountIn = 2000000000000000000n; // 2 input tokens
+
+		it('should create Token instances with the correct parameters', async () => {
+			await getAmountOut(
+				mockInputToken as unknown as Token,
+				mockOutputToken as unknown as Token,
+				mockAmountIn,
+				mockDataFetcher as unknown as DataFetcher
+			);
+
+			expect(SushiToken).toHaveBeenCalledWith({
+				chainId: flare.id,
+				address: mockInputToken.address,
+				decimals: mockInputToken.decimals
+			});
+
+			expect(SushiToken).toHaveBeenCalledWith({
+				chainId: flare.id,
+				address: mockOutputToken.address,
+				decimals: mockOutputToken.decimals
+			});
+		});
+
+		it('should get the route with the provided amount', async () => {
+			await getAmountOut(
+				mockInputToken as unknown as Token,
+				mockOutputToken as unknown as Token,
+				mockAmountIn,
+				mockDataFetcher as unknown as DataFetcher
+			);
+
+			// Second call to Token is for the output token
+			const inputTokenInstance = vi.mocked(SushiToken).mock.results[0].value;
+			const outputTokenInstance = vi.mocked(SushiToken).mock.results[1].value;
+
+			expect(mockDataFetcher.fetchPoolsForToken).toHaveBeenCalledWith(
+				inputTokenInstance,
+				outputTokenInstance
+			);
+
+			expect(Router.findBestRoute).toHaveBeenCalledWith(
+				new Map(),
+				flare.id,
+				inputTokenInstance,
+				mockAmountIn,
+				outputTokenInstance,
+				1000000000,
+				undefined,
+				undefined,
+				undefined,
+				'single'
+			);
+		});
+
+		it('should format the output amount using formatEther', async () => {
+			await getAmountOut(
+				mockInputToken as unknown as Token,
+				mockOutputToken as unknown as Token,
+				mockAmountIn,
+				mockDataFetcher as unknown as DataFetcher
+			);
+
+			expect(formatEther).toHaveBeenCalledWith(mockRoute.amountOutBI);
+		});
+
+		it('should return the formatted amount out', async () => {
+			const result = await getAmountOut(
+				mockInputToken as unknown as Token,
+				mockOutputToken as unknown as Token,
+				mockAmountIn,
 				mockDataFetcher as unknown as DataFetcher
 			);
 
