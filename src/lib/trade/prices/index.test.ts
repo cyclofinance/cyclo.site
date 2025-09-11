@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getAndStartDataFetcher, getRoute, getPrice, getAmountOut } from './index';
-import { createPublicClient, formatUnits, formatEther, http, fallback, type PublicClient } from 'viem';
+import {
+	createPublicClient,
+	formatUnits,
+	formatEther,
+	http,
+	fallback,
+	type PublicClient
+} from 'viem';
 import { flare } from '@wagmi/core/chains';
 import { DataFetcher, Router } from 'sushi/router';
 import type { Token } from '$lib/types';
@@ -52,11 +59,14 @@ describe('prices/index', () => {
 
 		// Setup mocks
 		vi.mocked(createPublicClient).mockReturnValue(mockClient as unknown as PublicClient);
-		vi.mocked(http).mockImplementation((url?: string) => ({
-			config: { type: 'http' },
-			request: vi.fn(),
-			value: { url: url || 'https://flare-api.flare.network/ext/C/rpc' }
-		} as unknown as ReturnType<typeof http>));
+		vi.mocked(http).mockImplementation(
+			(url?: string) =>
+				({
+					config: { type: 'http' },
+					request: vi.fn(),
+					value: { url: url || 'https://flare-api.flare.network/ext/C/rpc' }
+				}) as unknown as ReturnType<typeof http>
+		);
 		vi.mocked(fallback).mockReturnValue({
 			config: { type: 'fallback' },
 			request: vi.fn(),
@@ -285,7 +295,7 @@ describe('prices/index', () => {
 			expect(result).toBe('1.5');
 		});
 	});
-	
+
 	describe('getAmountOut', () => {
 		const mockInputToken = {
 			address: '0xabc123' as `0x${string}`,
