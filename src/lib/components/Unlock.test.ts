@@ -9,6 +9,15 @@ import { writable } from 'svelte/store';
 
 const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
+vi.mock('../../generated', () => ({
+	simulateQuoterQuoteExactOutputSingle: vi.fn().mockResolvedValue({
+		result: [BigInt('1000000000000000000')]
+	}),
+	simulateQuoterQuoteExactInputSingle: vi.fn().mockResolvedValue({
+		result: [BigInt('1000000000000000000')]
+	})
+}));
+
 vi.mock('$lib/queries/getReceipts', () => ({
 	getSingleTokenReceipts: vi.fn()
 }));
@@ -161,7 +170,10 @@ describe('Unlock Component', () => {
 		await waitFor(() => {
 			expect(screen.queryByText('NO cysFLR RECEIPTS FOUND...')).not.toBeInTheDocument();
 			expect(screen.queryByText('LOADING...')).not.toBeInTheDocument();
-			expect(screen.getByText('1.60000')).toBeInTheDocument();
+			// Use getAllByTestId to handle both desktop and mobile layouts
+			const totalLockedElements = screen.getAllByTestId('total-locked-0');
+			expect(totalLockedElements.length).toBeGreaterThan(0);
+			expect(totalLockedElements[0]).toHaveTextContent('1.60000');
 		});
 	});
 

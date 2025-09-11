@@ -12,6 +12,10 @@ export type Receipt = {
 	readableFlrPerReceipt?: string;
 	totalsFlr?: bigint;
 	token?: string;
+	swapQuote?: bigint;
+	readableSwapQuote?: string;
+	profitLoss?: bigint;
+	readableProfitLoss?: string;
 };
 
 export type BlockScoutData = {

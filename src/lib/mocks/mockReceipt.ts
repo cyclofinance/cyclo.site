@@ -9,5 +9,7 @@ export const mockReceipt: Receipt = {
 	tokenAddress: '0x6D6111ab02800aC64f66456874add77F44529a90',
 	tokenId: '23080000000000000',
 	token: 'cysFLR',
-	totalsFlr: 536928000000000000n
+	totalsFlr: 536928000000000000n,
+	profitLoss: 600000000000000000n,
+	readableProfitLoss: '0.60000'
 } as Receipt;
