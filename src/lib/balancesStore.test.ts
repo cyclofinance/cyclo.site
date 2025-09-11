@@ -62,6 +62,7 @@ describe('balancesStore', () => {
 				}
 			},
 			statsLoading: true,
+			swapQuoteLoading: false,
 			status: 'Checking',
 			swapQuotes: {
 				cusdxOutput: BigInt(0),
@@ -158,6 +159,7 @@ describe('balancesStore', () => {
 				}
 			},
 			statsLoading: true,
+			swapQuoteLoading: false,
 			status: 'Checking',
 			swapQuotes: {
 				cusdxOutput: BigInt(0),

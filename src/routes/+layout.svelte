@@ -7,7 +7,7 @@
 	import { browser } from '$app/environment';
 	import { PUBLIC_LAUNCHED } from '$env/static/public';
 	import { flare } from '@wagmi/core/chains';
-	import { cusdxAddress, quoterAddress, selectedCyToken } from '$lib/stores';
+	import { selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
 	import { onDestroy } from 'svelte';
@@ -30,7 +30,6 @@
 	const getPricesAndBalances = () => {
 		blockNumberStore.refresh($wagmiConfig);
 		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
-		balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
 		if ($signerAddress) {
 			balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 		}

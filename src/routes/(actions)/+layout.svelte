@@ -3,15 +3,24 @@
 	import { page } from '$app/stores';
 	import balancesStore from '$lib/balancesStore';
 	import TransactionModal from '$lib/components/TransactionModal.svelte';
-	import { selectedCyToken } from '$lib/stores';
+	import { selectedCyToken, usdcAddress } from '$lib/stores';
 	import type { Hex } from 'viem';
 	import { base } from '$app/paths';
 	import Footer from '$lib/components/Footer.svelte';
 	import HrefButton from '$lib/components/HrefButton.svelte';
+	import { getContext } from 'svelte';
+	import type { DataFetcher } from 'sushi';
+
+	const dataFetcherStore = getContext<{
+		subscribe: (fn: (value: DataFetcher | undefined) => void) => () => void;
+	}>('dataFetcher');
 
 	$: if ($selectedCyToken && $signerAddress) {
 		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
+		if ($dataFetcherStore) {
+			balancesStore.refreshFooterStats($wagmiConfig, $usdcAddress, $dataFetcherStore);
+		}
 	}
 </script>
 
