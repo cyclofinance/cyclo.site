@@ -15,7 +15,7 @@
 			<div class="mb-8 flex flex-col gap-6">
 				<img src={logo} alt="Cyclo logo" class="mb-4 w-full max-w-[400px]" />
 				<h1 class="flex items-center gap-3 text-4xl font-bold tracking-wider">
-					LEVERAGE WITHOUT FEAR_
+					LEVERAGE WITHOUT FEAR_ XX
 				</h1>
 				<p class="mb-4 text-xl">
 					Access the power of leverage while keeping your collateral completely safe from
