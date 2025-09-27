@@ -62,10 +62,12 @@ describe('getSingleTokenReceipts', () => {
 
 		// Should have made 2 API calls due to pagination
 		expect(axios.get).toHaveBeenCalledTimes(2);
-		expect(axios.get).toHaveBeenNthCalledWith(1,
+		expect(axios.get).toHaveBeenNthCalledWith(
+			1,
 			`https://flare-explorer.flare.network/api/v2/addresses/${mockAddress}/nft?type=ERC-1155`
 		);
-		expect(axios.get).toHaveBeenNthCalledWith(2,
+		expect(axios.get).toHaveBeenNthCalledWith(
+			2,
 			`https://flare-explorer.flare.network/api/v2/addresses/${mockAddress}/nft?type=ERC-1155&items_count=50&token_contract_address_hash=${mockErc1155Address}&token_id=1000000000000000000&token_type=ERC-1155`
 		);
 
@@ -110,7 +112,7 @@ describe('getSingleTokenReceipts', () => {
 
 	it('calls progress callback during pagination', async () => {
 		const progressCallback = vi.fn();
-		
+
 		// Mock first page with next_page_params
 		vi.mocked(axios.get).mockResolvedValueOnce({
 			data: {

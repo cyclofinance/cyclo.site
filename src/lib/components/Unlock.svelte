@@ -13,17 +13,13 @@
 
 	let loading = true;
 	let progressMessage = '';
-	
+
 	const setLoading = (_loading: boolean) => {
 		loading = _loading;
 	};
-	
-	const setProgress = (message: string) => {
-		progressMessage = message;
-	};
 
 	$: if ($signerAddress) {
-		refreshAllReceipts($signerAddress, $wagmiConfig, setLoading, setProgress);
+		refreshAllReceipts($signerAddress, $wagmiConfig, setLoading);
 		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 	}
 </script>

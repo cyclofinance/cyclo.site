@@ -18,8 +18,6 @@ export const getSingleTokenReceipts = async (
 	config: Config,
 	onProgress?: (page: number, totalItems: number) => void
 ) => {
-	console.log('erc1155Address : ', erc1155Address);
-	
 	const getBalance = async (tokenId: bigint) => {
 		const res = await readErc1155BalanceOf(config, {
 			address: erc1155Address as Hex,
@@ -28,13 +26,15 @@ export const getSingleTokenReceipts = async (
 		return res;
 	};
 
-	const fetchPage = async (paginationParams?: PaginationParams): Promise<{items: Receipt[], nextPageParams?: PaginationParams}> => {
+	const fetchPage = async (
+		paginationParams?: PaginationParams
+	): Promise<{ items: Receipt[]; nextPageParams?: PaginationParams }> => {
 		let query: string = `https://flare-explorer.flare.network/api/v2/addresses/${address}/nft?type=ERC-1155`;
-		
+
 		// Add pagination parameters if provided
 		if (paginationParams) {
 			const params = new URLSearchParams();
-			
+
 			if (paginationParams.items_count) {
 				params.append('items_count', paginationParams.items_count.toString());
 			}
@@ -47,20 +47,20 @@ export const getSingleTokenReceipts = async (
 			if (paginationParams.token_type) {
 				params.append('token_type', paginationParams.token_type);
 			}
-			
+
 			if (params.toString()) {
 				query += `&${params.toString()}`;
 			}
 		}
 
 		const response = await axios.get(query);
-		
+
 		let pageData: Receipt[] = response.data.items.map((item: BlockScoutData) => ({
 			tokenId: item.id,
 			balance: item.value,
 			tokenAddress: item.token.address
 		}));
-		
+
 		pageData = pageData.filter((item: Receipt) => item.tokenAddress === erc1155Address);
 		pageData = pageData.map((item: Receipt) => ({
 			...item,
@@ -73,9 +73,9 @@ export const getSingleTokenReceipts = async (
 				balance: await getBalance(BigInt(item.tokenId))
 			}))
 		);
-		
+
 		pageData = pageData.filter((item: Receipt) => Number(item.balance) > 0);
-		
+
 		return {
 			items: pageData,
 			nextPageParams: response.data.next_page_params
@@ -91,20 +91,20 @@ export const getSingleTokenReceipts = async (
 		// Fetch all pages
 		while (pageCount < maxPages) {
 			console.log(`Fetching page ${pageCount + 1}...`);
-			
+
 			const result = await fetchPage(currentPageParams);
 			allData = [...allData, ...result.items];
-			
+
 			// Call progress callback if provided
 			if (onProgress) {
 				onProgress(pageCount + 1, allData.length);
 			}
-			
+
 			if (!result.nextPageParams) {
 				console.log(`No more pages. Total receipts fetched: ${allData.length}`);
 				break;
 			}
-			
+
 			currentPageParams = result.nextPageParams;
 			pageCount++;
 		}
