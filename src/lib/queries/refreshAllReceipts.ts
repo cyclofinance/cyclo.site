@@ -6,9 +6,19 @@ import { getSingleTokenReceipts } from '$lib/queries/getReceipts';
 export const refreshAllReceipts = async (
 	signerAddress: string,
 	config: Config,
-	setLoading: (loading: boolean) => void = () => {}
+	setLoading: (loading: boolean) => void = () => {},
+	setProgress?: (message: string) => void
 ): Promise<Receipt[]> => {
 	if (!signerAddress) return [];
+	console.log('signerAddress : ', signerAddress);
+	
+	// Progress callback for pagination
+	const createProgressCallback = (tokenName: string) => (page: number, totalItems: number) => {
+		if (setProgress) {
+			setProgress(`Fetching ${tokenName} receipts... Page ${page} (${totalItems} items)`);
+		}
+	};
+	
 	// Get receipts for both tokens
 	const [cysFLRReceipts, cyWETHReceipts] = await Promise.all([
 		getSingleTokenReceipts(signerAddress, tokens[0].receiptAddress, config),
