@@ -9,6 +9,7 @@ export const refreshAllReceipts = async (
 	setLoading: (loading: boolean) => void = () => {}
 ): Promise<Receipt[]> => {
 	if (!signerAddress) return [];
+
 	// Get receipts for both tokens
 	const [cysFLRReceipts, cyWETHReceipts] = await Promise.all([
 		getSingleTokenReceipts(signerAddress, tokens[0].receiptAddress, config),

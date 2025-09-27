@@ -34,19 +34,41 @@ describe('getSingleTokenReceipts', () => {
 		vi.clearAllMocks();
 	});
 
-	it('fetches and processes receipts correctly', async () => {
-		vi.mocked(axios.get).mockResolvedValue({
+	it('fetches and processes receipts correctly with pagination', async () => {
+		// Mock first page with next_page_params
+		vi.mocked(axios.get).mockResolvedValueOnce({
 			data: {
-				items: mockData
+				items: mockData,
+				next_page_params: {
+					items_count: 50,
+					token_contract_address_hash: mockErc1155Address,
+					token_id: '1000000000000000000',
+					token_type: 'ERC-1155'
+				}
 			}
 		});
 
-		vi.mocked(readErc1155BalanceOf).mockResolvedValueOnce(BigInt(1));
+		// Mock second page with no next_page_params (end of pagination)
+		vi.mocked(axios.get).mockResolvedValueOnce({
+			data: {
+				items: [],
+				next_page_params: null
+			}
+		});
+
+		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(1));
 
 		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
 
-		expect(axios.get).toHaveBeenCalledWith(
+		// Should have made 2 API calls due to pagination
+		expect(axios.get).toHaveBeenCalledTimes(2);
+		expect(axios.get).toHaveBeenNthCalledWith(
+			1,
 			`https://flare-explorer.flare.network/api/v2/addresses/${mockAddress}/nft?type=ERC-1155`
+		);
+		expect(axios.get).toHaveBeenNthCalledWith(
+			2,
+			`https://flare-explorer.flare.network/api/v2/addresses/${mockAddress}/nft?type=ERC-1155&items_count=50&token_contract_address_hash=${mockErc1155Address}&token_id=1000000000000000000&token_type=ERC-1155`
 		);
 
 		expect(readErc1155BalanceOf).toHaveBeenCalled();
@@ -64,7 +86,8 @@ describe('getSingleTokenReceipts', () => {
 	it('filters out items with zero balance', async () => {
 		vi.mocked(axios.get).mockResolvedValue({
 			data: {
-				items: mockData
+				items: mockData,
+				next_page_params: null
 			}
 		});
 
@@ -85,5 +108,38 @@ describe('getSingleTokenReceipts', () => {
 		expect(consoleErrorSpy).toHaveBeenCalled();
 
 		consoleErrorSpy.mockRestore();
+	});
+
+	it('calls progress callback during pagination', async () => {
+		const progressCallback = vi.fn();
+
+		// Mock first page with next_page_params
+		vi.mocked(axios.get).mockResolvedValueOnce({
+			data: {
+				items: mockData,
+				next_page_params: {
+					items_count: 50,
+					token_contract_address_hash: mockErc1155Address,
+					token_id: '1000000000000000000',
+					token_type: 'ERC-1155'
+				}
+			}
+		});
+
+		// Mock second page with no next_page_params (end of pagination)
+		vi.mocked(axios.get).mockResolvedValueOnce({
+			data: {
+				items: [],
+				next_page_params: null
+			}
+		});
+
+		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(1));
+
+		await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, progressCallback);
+
+		// Should have called progress callback for each page
+		expect(progressCallback).toHaveBeenCalledWith(1, 1); // First page
+		expect(progressCallback).toHaveBeenCalledWith(2, 1); // Second page
 	});
 });
