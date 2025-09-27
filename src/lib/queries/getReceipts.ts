@@ -86,10 +86,10 @@ export const getSingleTokenReceipts = async (
 		let allData: Receipt[] = [];
 		let currentPageParams: PaginationParams | undefined = undefined;
 		let pageCount = 0;
-		const maxPages = 50; // Safety limit to prevent infinite loops
 
-		// Fetch all pages
-		while (pageCount < maxPages) {
+		// Fetch all pages until there are no more pages
+		let hasMorePages = true;
+		while (hasMorePages) {
 			console.log(`Fetching page ${pageCount + 1}...`);
 
 			const result = await fetchPage(currentPageParams);
@@ -102,15 +102,11 @@ export const getSingleTokenReceipts = async (
 
 			if (!result.nextPageParams) {
 				console.log(`No more pages. Total receipts fetched: ${allData.length}`);
-				break;
+				hasMorePages = false;
+			} else {
+				currentPageParams = result.nextPageParams;
+				pageCount++;
 			}
-
-			currentPageParams = result.nextPageParams;
-			pageCount++;
-		}
-
-		if (pageCount >= maxPages) {
-			console.warn(`Reached maximum page limit (${maxPages}). There may be more data available.`);
 		}
 
 		console.log(`Final data count: ${allData.length}`);
