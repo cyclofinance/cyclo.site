@@ -12,6 +12,8 @@
 	import type { Hex } from 'viem';
 
 	let loading = true;
+	let progressMessage = '';
+
 	const setLoading = (_loading: boolean) => {
 		loading = _loading;
 	};
@@ -65,9 +67,14 @@
 
 		{#if loading}
 			<div
-				class=" flex w-full items-center justify-center text-center text-lg font-semibold text-white md:text-xl"
+				class=" flex w-full flex-col items-center justify-center text-center text-lg font-semibold text-white md:text-xl"
 			>
-				LOADING...
+				<div>LOADING...</div>
+				{#if progressMessage}
+					<div class="mt-2 text-sm text-gray-300">
+						{progressMessage}
+					</div>
+				{/if}
 			</div>
 		{:else if $myReceipts.length > 0}
 			<ReceiptsTable

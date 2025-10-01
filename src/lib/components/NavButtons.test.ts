@@ -60,6 +60,12 @@ describe('NavButtons Component', () => {
 
 		const rewardsButton = getByTestId('rewards-button');
 		expect(rewardsButton).toHaveAttribute('href', base + '/rewards');
+
+		const tradeButton = getByTestId('trade-button');
+		expect(tradeButton).toHaveAttribute('href', base + '/trade/dca');
+
+		const chartButton = getByTestId('chart-button');
+		expect(chartButton).toHaveAttribute('href', base + '/chart');
 	});
 
 	it('should show hamburger icon on mobile', () => {
@@ -85,6 +91,37 @@ describe('NavButtons Component', () => {
 
 		await waitFor(() => {
 			expect(screen.queryByTestId('docs-button-mobile')).not.toBeInTheDocument();
+		});
+	});
+
+	it('should display chart button in mobile menu', async () => {
+		render(NavButtons, { props: { launched: true } });
+
+		// Open mobile menu
+		const hamburger = screen.getByTestId('nav-hamburger');
+		await userEvent.click(hamburger);
+
+		// Check chart button is visible
+		await waitFor(() => {
+			expect(screen.getByTestId('chart-button-mobile')).toBeInTheDocument();
+		});
+	});
+
+	it('should display chart button in desktop navigation', () => {
+		render(NavButtons, { props: { launched: true } });
+		expect(screen.getByTestId('chart-button')).toBeInTheDocument();
+	});
+
+	it('should close mobile menu when chart link is clicked', async () => {
+		render(NavButtons, { props: { launched: true } });
+		const hamburger = screen.getByTestId('nav-hamburger');
+		await userEvent.click(hamburger);
+
+		const chartLink = screen.getByTestId('chart-button-mobile');
+		await userEvent.click(chartLink);
+
+		await waitFor(() => {
+			expect(screen.queryByTestId('chart-button-mobile')).not.toBeInTheDocument();
 		});
 	});
 });

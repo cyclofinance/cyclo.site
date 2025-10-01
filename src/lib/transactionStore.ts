@@ -267,11 +267,12 @@ const transactionStore = () => {
 			if (orders.length > 0) {
 				clearInterval(interval);
 				const orderHash = orders[0].order.orderHash;
+				const orderbookId = orders[0].order.orderbook.id;
 				const link = `
 				<a
 								target="_blank"
 								class="whitespace-pre-wrap break-words text-center hover:underline"
-								href="https://v2.raindex.finance/orders/flare-${orderHash}"
+								href="https://raindex.finance/orders/14-${orderbookId}-${orderHash}"
 								data-testid="raindex-link">Manage your order on Raindex</a
 							>
 				`;
