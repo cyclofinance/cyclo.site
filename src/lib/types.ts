@@ -16,7 +16,7 @@ export type Receipt = {
 
 export type BlockScoutData = {
 	token: {
-		address: string;
+		address_hash: string;
 	};
 	value: string;
 	id: string;

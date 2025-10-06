@@ -58,7 +58,7 @@ export const getSingleTokenReceipts = async (
 		let pageData: Receipt[] = response.data.items.map((item: BlockScoutData) => ({
 			tokenId: item.id,
 			balance: item.value,
-			tokenAddress: item.token.address
+			tokenAddress: item.token.address_hash
 		}));
 
 		pageData = pageData.filter((item: Receipt) => item.tokenAddress === erc1155Address);
