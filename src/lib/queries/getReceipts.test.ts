@@ -19,12 +19,12 @@ describe('getSingleTokenReceipts', () => {
 
 	const mockData: BlockScoutData[] = [
 		{
-			token: { address: mockErc1155Address },
+			token: { address_hash: mockErc1155Address },
 			id: '1000000000000000000',
 			value: '1'
 		},
 		{
-			token: { address: '0xAnotherERC1155Address' as Hex },
+			token: { address_hash: '0xAnotherERC1155Address' as Hex },
 			id: '2000000000000000000',
 			value: '0'
 		}
