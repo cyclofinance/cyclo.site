@@ -3,7 +3,7 @@
 	import transactionStore from '$lib/transactionStore';
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
-	import { cusdxAddress, selectedCyToken } from '$lib/stores';
+	import { selectedCyToken, usdcAddress } from '$lib/stores';
 	import { base } from '$app/paths';
 	import mintDia from '$lib/images/mint-dia.svg';
 	import mintMobile from '$lib/images/mint-mobile.svg';
@@ -14,6 +14,8 @@
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import { fade } from 'svelte/transition';
 	import { formatEther, formatUnits, parseEther } from 'ethers';
+	import type { DataFetcher } from 'sushi';
+	import { useDataFetcher } from '$lib/dataFetcher';
 	import Select from './Select.svelte';
 	import { tokens } from '$lib/stores';
 	import type { Hex } from 'viem';
@@ -21,6 +23,8 @@
 	export let amountToLock = '';
 	let disclaimerAcknowledged = false;
 	let disclaimerOpen = false;
+
+	const dataFetcher: DataFetcher = useDataFetcher();
 
 	enum ButtonStatus {
 		INSUFFICIENT_sFLR = 'INSUFFICIENT sFLR',
@@ -70,8 +74,9 @@
 		balancesStore.refreshDepositPreviewSwapValue(
 			$wagmiConfig,
 			$selectedCyToken,
-			$cusdxAddress,
-			assets
+			$usdcAddress,
+			assets,
+			dataFetcher
 		);
 	}
 	// Also refresh prices when selected token changes
@@ -235,11 +240,18 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				<span class="text-sm" data-testid="calculated-cysflr-usd"
-					>Current market value ~$ {amountToLock
-						? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
-						: '0'}</span
-				>
+				{#if $balancesStore.swapQuoteLoading}
+					<div class="flex items-center gap-2">
+						<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+						<span class="text-sm">Calculating market value...</span>
+					</div>
+				{:else}
+					<span class="text-sm" data-testid="calculated-cysflr-usd"
+						>Current market value ~$ {amountToLock
+							? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
+							: '0'}</span
+					>
+				{/if}
 			</div>
 		</div>
 
@@ -271,11 +283,18 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				<span class="text-sm" data-testid="calculated-cysflr-usd-mobile"
-					>Current market value ~$ {amountToLock
-						? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
-						: '0'}</span
-				>
+				{#if $balancesStore.swapQuoteLoading}
+					<div class="flex items-center gap-2">
+						<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
+						<span class="text-sm">Calculating market value...</span>
+					</div>
+				{:else}
+					<span class="text-sm" data-testid="calculated-cysflr-usd-mobile"
+						>Current market value ~$ {amountToLock
+							? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
+							: '0'}</span
+					>
+				{/if}
 			</div>
 		</div>
 
