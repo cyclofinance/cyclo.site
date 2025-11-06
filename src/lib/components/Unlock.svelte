@@ -37,11 +37,14 @@
 				<span>BALANCES</span>
 				<div class="flex flex-col gap-4 sm:items-end">
 					{#each ['cysFLR', 'cyWETH', 'cyFXRP'] as tokenName}
-						{@const tokenInfo = tokens.find(t => t.name === tokenName)}
+						{@const tokenInfo = tokens.find((t) => t.name === tokenName)}
 						<div class="flex flex-row gap-2" data-testid="{tokenName.toLowerCase()}-balance">
 							{#key $balancesStore.balances[tokenName]?.signerBalance}
 								<span in:fade={{ duration: 700 }}>
-									{formatUnits($balancesStore.balances[tokenName]?.signerBalance || 0n, tokenInfo?.decimals || 18)}
+									{formatUnits(
+										$balancesStore.balances[tokenName]?.signerBalance || 0n,
+										tokenInfo?.decimals || 18
+									)}
 								</span>
 							{/key}
 							<span>{tokenName}</span>

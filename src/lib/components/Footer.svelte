@@ -34,7 +34,7 @@
 				</div>
 			</div>
 			{#each ['cysFLR', 'cyWETH', 'cyFXRP'] as tokenName}
-				{@const tokenInfo = tokens.find(t => t.name === tokenName)}
+				{@const tokenInfo = tokens.find((t) => t.name === tokenName)}
 				<div class="flex flex-col gap-2 border-b border-white/20 pb-2 last:border-0">
 					<div class="font-bold">{tokenName}</div>
 					<div
@@ -43,7 +43,9 @@
 					>
 						<span>Current Lock Price ({tokenName} per {tokenName.slice(2)})</span>
 						<span
-							>{Number(formatEther($balancesStore.stats[tokenName]?.lockPrice || 0n)).toString()}</span
+							>{Number(
+								formatEther($balancesStore.stats[tokenName]?.lockPrice || 0n)
+							).toString()}</span
 						>
 					</div>
 					<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="price">
@@ -60,7 +62,9 @@
 							<span>Total {tokenName} supply</span>
 							<span>
 								{formatNumberWithAbbreviations(
-									Number(formatUnits($balancesStore.stats[tokenName].supply, tokenInfo?.decimals || 18))
+									Number(
+										formatUnits($balancesStore.stats[tokenName].supply, tokenInfo?.decimals || 18)
+									)
 								)}
 							</span>
 						</div>
@@ -85,9 +89,16 @@
 						<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="tvl">
 							<span>Total Value Locked</span>
 							<span>
-								{Number(formatUnits($balancesStore.stats[tokenName].underlyingTvl, tokenInfo?.decimals || 18))}
+								{Number(
+									formatUnits(
+										$balancesStore.stats[tokenName].underlyingTvl,
+										tokenInfo?.decimals || 18
+									)
+								)}
 								{tokenName.slice(2)}
-								/ $ {Number(formatUnits($balancesStore.stats[tokenName].usdTvl, tokenInfo?.decimals))}
+								/ $ {Number(
+									formatUnits($balancesStore.stats[tokenName].usdTvl, tokenInfo?.decimals)
+								)}
 							</span>
 						</div>
 					{/if}

@@ -42,7 +42,9 @@
 
 	const checkBalance = () => {
 		if (amountToLock) {
-			const bigNumValue = BigInt(parseUnits(amountToLock.toString(), $selectedCyToken.decimals).toString());
+			const bigNumValue = BigInt(
+				parseUnits(amountToLock.toString(), $selectedCyToken.decimals).toString()
+			);
 			assets = bigNumValue;
 			insufficientFunds =
 				($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n) < assets;
@@ -105,8 +107,9 @@
 				<div class="flex flex-row gap-4">
 					<span data-testid="your-balance">
 						{formatUnits(
-							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
-						,$selectedCyToken.decimals)}
+							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n,
+							$selectedCyToken.decimals
+						)}
 					</span>
 				</div>
 			</div>
@@ -228,7 +231,12 @@
 			>
 				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 					<span data-testid="calculated-cysflr"
-						>{!amountToLock ? '0' : formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}</span
+						>{!amountToLock
+							? '0'
+							: formatUnits(
+									$balancesStore.swapQuotes.cyTokenOutput,
+									$selectedCyToken.decimals
+								)}</span
 					>
 				{/key}
 				<span>{$selectedCyToken.name}</span>

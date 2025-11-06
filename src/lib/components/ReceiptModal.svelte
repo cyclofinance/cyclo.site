@@ -104,7 +104,9 @@
 		<span>TOTAL {token.underlyingSymbol} LOCKED</span>
 		<div class="flex flex-row gap-4">
 			{#key readableBalance}{#if readableBalance}
-					<span in:fade={{ duration: 700 }}>{formatUnits(receipt.totalsFlr ?? 0n, token.decimals)}</span>
+					<span in:fade={{ duration: 700 }}
+						>{formatUnits(receipt.totalsFlr ?? 0n, token.decimals)}</span
+					>
 				{/if}{/key}
 		</div>
 	</div>
@@ -163,7 +165,7 @@
 			/>
 			<p class="my-2 text-left text-xs font-light sm:text-right" data-testid="sflr-balance">
 				{receipt.token} Balance: {Number(
-					formatUnits(($balancesStore.balances[token.name]?.signerBalance || 0n), token.decimals)
+					formatUnits($balancesStore.balances[token.name]?.signerBalance || 0n, token.decimals)
 				)}
 			</p>
 		</div>

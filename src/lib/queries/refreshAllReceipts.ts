@@ -14,7 +14,7 @@ export const refreshAllReceipts = async (
 	const [cysFLRReceipts, cyWETHReceipts, cyFXRPReceipts] = await Promise.all([
 		getSingleTokenReceipts(signerAddress, tokens[0].receiptAddress, config),
 		getSingleTokenReceipts(signerAddress, tokens[1].receiptAddress, config),
-		getSingleTokenReceipts(signerAddress, tokens[2].receiptAddress, config),
+		getSingleTokenReceipts(signerAddress, tokens[2].receiptAddress, config)
 	]);
 
 	if (!cysFLRReceipts && !cyWETHReceipts && !cyFXRPReceipts) {
