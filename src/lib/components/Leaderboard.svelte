@@ -5,6 +5,10 @@
 	import { signerAddress } from 'svelte-wagmi';
 	import type { LeaderboardEntry } from '$lib/types';
 	import { formatEther, formatUnits } from 'viem';
+	import { tokens } from '$lib/stores';
+
+	$: cyFXRPInfo = tokens.find(t => t.name === 'cyFXRP');
+	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
 
 	let loading = true;
 	let error: string | null = null;
@@ -39,19 +43,21 @@
 			</div>
 		{:else}
 			<div class="space-y-2">
-				<div class="grid grid-cols-6 gap-8 text-sm text-gray-300">
+				<div class="grid grid-cols-8 gap-8 text-sm text-gray-300">
 					<div>Account</div>
 					<div>Net cysFLR</div>
 					<div>cysFLR rewards (rFLR)</div>
 					<div>Net cyWETH</div>
 					<div>cyWETH rewards (rFLR)</div>
+					<div>Net cyFXRP</div>
+					<div>cyFXRP rewards (rFLR)</div>
 					<div>Total Estimated rFLR</div>
 				</div>
 				{#if leaderboard?.length > 0}
 					{#each leaderboard as entry, i}
 						<a
 							href={`/rewards/${entry.account}`}
-							class="grid w-full grid-cols-6 gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
+							class="grid w-full grid-cols-8 gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
 								entry.account
 							)
 								? 'bg-white/10 hover:bg-white/20'
@@ -77,6 +83,15 @@
 								<span>{(+formatEther(entry.shares.cyWETH.rewardsAmount)).toFixed(4)}</span>
 								<span>
 									({(+formatUnits(entry.shares.cyWETH.percentageShare, 16)).toFixed(4)}%)
+								</span>
+							</div>
+							<div class="font-medium text-white">
+								{(+formatUnits(entry.eligibleBalances.cyFXRP, cyFXRPDecimals)).toFixed(4)}
+							</div>
+							<div class="font-medium text-white">
+								<span>{(+formatEther(entry.shares.cyFXRP.rewardsAmount)).toFixed(4)}</span>
+								<span>
+									({(+formatUnits(entry.shares.cyFXRP.percentageShare, 16)).toFixed(4)}%)
 								</span>
 							</div>
 							<div data-testid="total-rewards" class="font-medium text-white">

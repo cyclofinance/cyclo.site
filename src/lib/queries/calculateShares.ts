@@ -11,6 +11,7 @@ export const calculateShares = (
 	const shares: Shares = {
 		cysFLR: { percentageShare: BigInt(0), rewardsAmount: BigInt(0) },
 		cyWETH: { percentageShare: BigInt(0), rewardsAmount: BigInt(0) },
+		cyFXRP: { percentageShare: BigInt(0), rewardsAmount: BigInt(0) },
 		totalRewards: BigInt(0)
 	};
 
@@ -24,6 +25,7 @@ export const calculateShares = (
 	// Balances
 	const cysFLRBalance = BigInt(account.cysFLRBalance);
 	const cyWETHBalance = BigInt(account.cyWETHBalance);
+	const cyFXRPBalance = BigInt((account as any).cyFXRPBalance || 0);
 
 	// cysFLR shares
 	shares.cysFLR.percentageShare =
@@ -33,13 +35,22 @@ export const calculateShares = (
 	shares.cyWETH.percentageShare =
 		cyWETHBalance > 0 ? (cyWETHBalance * ONE) / BigInt(eligibleTotals.totalEligibleCyWETH) : 0n;
 
+	// cyFXRP shares
+	shares.cyFXRP.percentageShare =
+		cyFXRPBalance > 0 && (eligibleTotals as any).totalEligibleCyFXRP
+			? (cyFXRPBalance * ONE) / BigInt((eligibleTotals as any).totalEligibleCyFXRP)
+			: 0n;
+
 	// cysFLR rewards
 	shares.cysFLR.rewardsAmount = (shares.cysFLR.percentageShare * rewardsPools.cysFlr) / ONE;
 
 	// cyWETH rewards
 	shares.cyWETH.rewardsAmount = (shares.cyWETH.percentageShare * rewardsPools.cyWeth) / ONE;
 
-	shares.totalRewards = shares.cysFLR.rewardsAmount + shares.cyWETH.rewardsAmount;
+	// cyFXRP rewards
+	shares.cyFXRP.rewardsAmount = (shares.cyFXRP.percentageShare * rewardsPools.cyFxrp) / ONE;
+
+	shares.totalRewards = shares.cysFLR.rewardsAmount + shares.cyWETH.rewardsAmount + shares.cyFXRP.rewardsAmount;
 
 	return shares;
 };

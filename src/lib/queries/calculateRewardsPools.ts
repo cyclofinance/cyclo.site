@@ -9,14 +9,18 @@ export const calculateRewardsPools = (
 		(BigInt(eligibleTotals.totalEligibleSum) * ONE) / BigInt(eligibleTotals.totalEligibleCysFLR);
 	const cyWETHInverseFraction =
 		(BigInt(eligibleTotals.totalEligibleSum) * ONE) / BigInt(eligibleTotals.totalEligibleCyWETH);
+	const cyFXRPInverseFraction =
+		(BigInt(eligibleTotals.totalEligibleSum) * ONE) / BigInt((eligibleTotals as any).totalEligibleCyFXRP || 1);
 
-	const sum = cysFLRInverseFraction + cyWETHInverseFraction;
+	const sum = cysFLRInverseFraction + cyWETHInverseFraction + cyFXRPInverseFraction;
 
 	const cysFlr = (cysFLRInverseFraction * TOTAL_REWARD) / sum;
 	const cyWeth = (cyWETHInverseFraction * TOTAL_REWARD) / sum;
+	const cyFxrp = (cyFXRPInverseFraction * TOTAL_REWARD) / sum;
 
 	return {
 		cysFlr,
-		cyWeth
+		cyWeth,
+		cyFxrp
 	};
 };

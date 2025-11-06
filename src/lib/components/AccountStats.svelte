@@ -1,12 +1,16 @@
 <script lang="ts">
 	import type { AccountStats } from '$lib/types';
 	import { formatEther, formatUnits } from 'viem';
+	import { tokens } from '$lib/stores';
 
 	export let stats: AccountStats;
 
+	$: cyFXRPInfo = tokens.find(t => t.name === 'cyFXRP');
+	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
+
 	$: isEligible =
 		stats?.eligibleBalances &&
-		(stats.eligibleBalances.cyWETH > 0 || stats.eligibleBalances.cysFLR > 0);
+		(stats.eligibleBalances.cyWETH > 0 || stats.eligibleBalances.cysFLR > 0 || stats.eligibleBalances.cyFXRP > 0);
 </script>
 
 {#if !isEligible}
@@ -16,7 +20,7 @@
 	</div>
 {/if}
 
-<div class="grid grid-cols-1 gap-8 sm:grid-cols-5 sm:gap-8">
+<div class="grid grid-cols-1 gap-8 sm:grid-cols-7 sm:gap-8">
 	<div class="space-y-1">
 		<div class="text-sm text-gray-300">Net cysFLR</div>
 		<div class="break-words font-mono text-white" data-testid="net-cysflr-value">
@@ -48,6 +52,23 @@
 			>
 			<span data-testid="cyweth-rewards-percentage"
 				>({formatUnits(stats.shares.cyWETH.percentageShare, 16)}%)</span
+			>
+		</div>
+	</div>
+	<div class="space-y-1">
+		<div class="text-sm text-gray-300">Net cyFXRP</div>
+		<div class="break-words font-mono text-white" data-testid="net-cyfxrp-value">
+			{formatUnits(stats.eligibleBalances.cyFXRP, cyFXRPDecimals)}
+		</div>
+	</div>
+	<div class="space-y-1">
+		<div class="text-sm text-gray-300">cyFXRP rewards</div>
+		<div class="flex flex-col gap-y-2 break-words font-mono text-white">
+			<span data-testid="cyfxrp-rewards-value"
+				>{formatEther(stats.shares.cyFXRP.rewardsAmount)}</span
+			>
+			<span data-testid="cyfxrp-rewards-percentage"
+				>({formatUnits(stats.shares.cyFXRP.percentageShare, 16)}%)</span
 			>
 		</div>
 	</div>

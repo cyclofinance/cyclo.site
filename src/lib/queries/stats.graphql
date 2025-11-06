@@ -4,6 +4,7 @@ query Stats {
 		totalEligibleSum
 		totalEligibleCysFLR
 		totalEligibleCyWETH
+		totalEligibleCyFXRP
 	}
 	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
 		id

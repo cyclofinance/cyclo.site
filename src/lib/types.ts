@@ -47,6 +47,7 @@ export type InitiateLockTransactionArgs = {
 export type RewardsPools = {
 	cysFlr: bigint;
 	cyWeth: bigint;
+	cyFxrp: bigint;
 };
 
 export type Share = {
@@ -57,6 +58,7 @@ export type Share = {
 export type Shares = {
 	cysFLR: Share;
 	cyWETH: Share;
+	cyFXRP: Share;
 	totalRewards: bigint;
 };
 
@@ -65,6 +67,7 @@ export type AccountStats = {
 	eligibleBalances: {
 		cysFLR: bigint;
 		cyWETH: bigint;
+		cyFXRP: bigint;
 	};
 	shares: Shares;
 	transfers: {
@@ -79,8 +82,10 @@ export type GlobalStats = {
 	eligibleHolders: number;
 	totalEligibleCysFLR: bigint;
 	totalEligibleCyWETH: bigint;
+	totalEligibleCyFXRP: bigint;
 	totalEligibleSum: bigint;
 	rewardsPools: RewardsPools;
 	cysFLRApy: bigint;
 	cyWETHApy: bigint;
+	cyFXRPApy: bigint;
 };

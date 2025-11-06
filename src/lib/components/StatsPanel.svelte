@@ -3,8 +3,13 @@
 	import Card from './Card.svelte';
 	import { fetchStats } from '$lib/queries/fetchStats';
 	import { formatEther } from 'ethers';
+	import { formatUnits } from 'viem';
 	import type { GlobalStats } from '$lib/types';
 	import { TOTAL_REWARD } from '$lib/constants';
+	import { tokens } from '$lib/stores';
+
+	$: cyFXRPInfo = tokens.find(t => t.name === 'cyFXRP');
+	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
 
 	let loading = true;
 	let error: string | null = null;
@@ -49,6 +54,12 @@
 							~{Number(formatEther(stats.cyWETHApy)).toFixed(4)}%
 						</div>
 					</div>
+					<div class="flex items-baseline gap-2">
+						<div class="text-sm text-gray-300">cyFXRP:</div>
+						<div class="font-mono text-3xl font-bold text-white">
+							~{Number(formatEther(stats.cyFXRPApy)).toFixed(4)}%
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -69,6 +80,7 @@
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					<div>cysFLR: {Number(formatEther(stats.totalEligibleCysFLR)).toFixed(2)}</div>
 					<div>cyWETH: {Number(formatEther(stats.totalEligibleCyWETH)).toFixed(2)}</div>
+					<div>cyFXRP: {Number(formatUnits(stats.totalEligibleCyFXRP, cyFXRPDecimals)).toFixed(2)}</div>
 				</div>
 			</div>
 
@@ -81,6 +93,7 @@
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					<div>cysFLR: {Number(formatEther(stats.rewardsPools.cysFlr)).toLocaleString()}</div>
 					<div>cyWETH: {Number(formatEther(stats.rewardsPools.cyWeth)).toLocaleString()}</div>
+					<div>cyFXRP: {Number(formatEther(stats.rewardsPools.cyFxrp)).toLocaleString()}</div>
 				</div>
 			</div>
 		</div>

@@ -3,11 +3,13 @@ query AccountStatus($account: ID!) {
 		id
 		totalEligibleCyWETH
 		totalEligibleCysFLR
+		totalEligibleCyFXRP
 		totalEligibleSum
 	}
 	account(id: $account) {
 		cysFLRBalance
 		cyWETHBalance
+		cyFXRPBalance
 		totalCyBalance
 		transfersIn {
 			fromIsApprovedSource
