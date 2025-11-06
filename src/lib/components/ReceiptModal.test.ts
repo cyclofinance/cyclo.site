@@ -85,6 +85,13 @@ describe('ReceiptModal Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -93,6 +100,10 @@ describe('ReceiptModal Component', () => {
 					signerUnderlyingBalance: BigInt(0)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
@@ -132,6 +143,13 @@ describe('ReceiptModal Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -140,6 +158,10 @@ describe('ReceiptModal Component', () => {
 					signerUnderlyingBalance: BigInt(0)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
@@ -181,6 +203,13 @@ describe('ReceiptModal Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -189,6 +218,10 @@ describe('ReceiptModal Component', () => {
 					signerUnderlyingBalance: BigInt(1000000000000000000)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
@@ -228,6 +261,13 @@ describe('ReceiptModal Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -238,6 +278,10 @@ describe('ReceiptModal Component', () => {
 				cysFLR: {
 					signerBalance: BigInt(1000000000000000000),
 					signerUnderlyingBalance: BigInt(1000000000000000000)
+				},
+				cyFXRP: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			{
@@ -282,6 +326,13 @@ describe('ReceiptModal Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -292,6 +343,10 @@ describe('ReceiptModal Component', () => {
 				cysFLR: {
 					signerBalance: mockCysFlrBalance,
 					signerUnderlyingBalance: mockCysFlrBalance
+				},
+				cyFXRP: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			{
@@ -348,6 +403,13 @@ describe('ReceiptModal Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -358,6 +420,10 @@ describe('ReceiptModal Component', () => {
 				cysFLR: {
 					signerBalance: mockCysFlrBalance,
 					signerUnderlyingBalance: mockCysFlrBalance
+				},
+				cyFXRP: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			{

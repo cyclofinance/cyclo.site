@@ -36,6 +36,13 @@ describe('Footer.svelte', () => {
 					supply: BigInt(1e18),
 					underlyingTvl: BigInt(3000),
 					usdTvl: BigInt(3000)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -46,6 +53,10 @@ describe('Footer.svelte', () => {
 				cysFLR: {
 					signerBalance: BigInt(100),
 					signerUnderlyingBalance: BigInt(100)
+				},
+				cyFXRP: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			{
@@ -90,6 +101,13 @@ describe('Footer.svelte', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -98,6 +116,10 @@ describe('Footer.svelte', () => {
 					signerUnderlyingBalance: BigInt(0)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
@@ -134,6 +156,13 @@ describe('Footer.svelte', () => {
 					supply: BigInt(1),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -142,6 +171,10 @@ describe('Footer.svelte', () => {
 					signerUnderlyingBalance: BigInt(0)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}

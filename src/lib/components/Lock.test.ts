@@ -58,6 +58,13 @@ describe('Lock Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -68,6 +75,10 @@ describe('Lock Component', () => {
 				cysFLR: {
 					signerBalance: BigInt(9876000000000000000n),
 					signerUnderlyingBalance: BigInt(9876000000000000000n)
+				},
+				cyFXRP: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			{
@@ -106,6 +117,13 @@ describe('Lock Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -114,6 +132,10 @@ describe('Lock Component', () => {
 					signerUnderlyingBalance: BigInt(0)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
@@ -168,6 +190,13 @@ describe('Lock Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -176,6 +205,10 @@ describe('Lock Component', () => {
 					signerUnderlyingBalance: BigInt(0)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
@@ -211,6 +244,13 @@ describe('Lock Component', () => {
 					supply: BigInt(0),
 					underlyingTvl: BigInt(0),
 					usdTvl: BigInt(0)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -219,6 +259,10 @@ describe('Lock Component', () => {
 					signerUnderlyingBalance: BigInt(0)
 				},
 				cysFLR: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
@@ -270,6 +314,13 @@ describe('Lock Component', () => {
 					supply: BigInt(1000000000000000000),
 					underlyingTvl: BigInt(1000000000000000000),
 					usdTvl: BigInt(1000000000000000000)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -279,6 +330,10 @@ describe('Lock Component', () => {
 				},
 				cysFLR: {
 					signerBalance: BigInt(1000000000000000000),
+					signerUnderlyingBalance: BigInt(0)
+				},
+				cyFXRP: {
+					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
 				}
 			},
