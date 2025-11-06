@@ -54,6 +54,13 @@ const initialState: StatsState = {
 			lockPrice: BigInt(0),
 			underlyingTvl: BigInt(0),
 			usdTvl: BigInt(0)
+		},
+		cyFXRP: {
+			supply: BigInt(0),
+			price: BigInt(0),
+			lockPrice: BigInt(0),
+			underlyingTvl: BigInt(0),
+			usdTvl: BigInt(0)
 		}
 	},
 	balances: {
@@ -62,6 +69,10 @@ const initialState: StatsState = {
 			signerUnderlyingBalance: BigInt(0)
 		},
 		cyWETH: {
+			signerBalance: BigInt(0),
+			signerUnderlyingBalance: BigInt(0)
+		},
+		cyFXRP: {
 			signerBalance: BigInt(0),
 			signerUnderlyingBalance: BigInt(0)
 		}
@@ -204,6 +215,13 @@ const balancesStore = () => {
 				lockPrice: BigInt(0),
 				underlyingTvl: BigInt(0),
 				usdTvl: BigInt(0)
+			},
+			cyFXRP: {
+				supply: BigInt(0),
+				price: BigInt(0),
+				lockPrice: BigInt(0),
+				underlyingTvl: BigInt(0),
+				usdTvl: BigInt(0)
 			}
 		},
 		balances: {
@@ -212,6 +230,10 @@ const balancesStore = () => {
 				signerUnderlyingBalance: BigInt(0)
 			},
 			cyWETH: {
+				signerBalance: BigInt(0),
+				signerUnderlyingBalance: BigInt(0)
+			},
+			cyFXRP: {
 				signerBalance: BigInt(0),
 				signerUnderlyingBalance: BigInt(0)
 			}
@@ -350,7 +372,7 @@ const balancesStore = () => {
 			return stats;
 		};
 
-		const [cysFLRStats, cyWETHStats] = await Promise.all(
+		const [cysFLRStats, cyWETHStats, cyFXRPStats] = await Promise.all(
 			tokens.map(async (token) => await getTokenStats(token))
 		);
 
@@ -365,6 +387,10 @@ const balancesStore = () => {
 				cyWETH: {
 					...state.stats.cyWETH,
 					...cyWETHStats
+				},
+				cyFXRP: {
+					...state.stats.cyFXRP,
+					...cyFXRPStats
 				}
 			}
 		}));

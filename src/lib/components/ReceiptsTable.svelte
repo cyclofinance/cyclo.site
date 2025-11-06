@@ -11,6 +11,7 @@
 	} from 'flowbite-svelte';
 	import type { CyToken, Receipt as ReceiptType } from '$lib/types';
 	import { formatEther } from 'ethers';
+	import { formatUnits } from 'viem';
 
 	import ReceiptModal from '$lib/components/ReceiptModal.svelte';
 	import Card from './Card.svelte';
@@ -39,8 +40,8 @@
 		return {
 			...receipt,
 			totalsFlr: totalsFlr,
-			readableFlrPerReceipt: Number(formatEther(flrPerReceipt)).toFixed(5),
-			readableTotalsFlr: Number(formatEther(totalsFlr)).toFixed(5)
+			readableFlrPerReceipt: Number(formatUnits(flrPerReceipt, token.decimals)).toFixed(5),
+			readableTotalsFlr: Number(formatUnits(totalsFlr, token.decimals)).toFixed(5)
 		};
 	});
 </script>
@@ -64,7 +65,7 @@
 						{receipt.readableTotalsFlr}
 					</TableBodyCell>
 					<TableBodyCell data-testid={`number-held-${index}`}>
-						{Number(formatEther(receipt.balance)).toFixed(5)}
+						{Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
 					</TableBodyCell>
 					<TableBodyCell data-testid={`locked-price-${index}`}>
 						{Number(formatEther(receipt.tokenId)).toFixed(5)}

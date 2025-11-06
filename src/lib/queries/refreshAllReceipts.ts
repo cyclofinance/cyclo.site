@@ -10,13 +10,14 @@ export const refreshAllReceipts = async (
 ): Promise<Receipt[]> => {
 	if (!signerAddress) return [];
 
-	// Get receipts for both tokens
-	const [cysFLRReceipts, cyWETHReceipts] = await Promise.all([
+	// Get receipts for all tokens
+	const [cysFLRReceipts, cyWETHReceipts, cyFXRPReceipts] = await Promise.all([
 		getSingleTokenReceipts(signerAddress, tokens[0].receiptAddress, config),
-		getSingleTokenReceipts(signerAddress, tokens[1].receiptAddress, config)
+		getSingleTokenReceipts(signerAddress, tokens[1].receiptAddress, config),
+		getSingleTokenReceipts(signerAddress, tokens[2].receiptAddress, config),
 	]);
 
-	if (!cysFLRReceipts && !cyWETHReceipts) {
+	if (!cysFLRReceipts && !cyWETHReceipts && !cyFXRPReceipts) {
 		setLoading(false);
 		myReceipts.set([]);
 		return [];
@@ -25,7 +26,8 @@ export const refreshAllReceipts = async (
 	// Add token identifier to each receipt
 	const allReceipts = [
 		...(cysFLRReceipts?.map((r) => ({ ...r, token: 'cysFLR' })) || []),
-		...(cyWETHReceipts?.map((r) => ({ ...r, token: 'cyWETH' })) || [])
+		...(cyWETHReceipts?.map((r) => ({ ...r, token: 'cyWETH' })) || []),
+		...(cyFXRPReceipts?.map((r) => ({ ...r, token: 'cyFXRP' })) || [])
 	];
 
 	setLoading(false);

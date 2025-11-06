@@ -16,7 +16,7 @@
 	import { formatEther, formatUnits, parseEther } from 'ethers';
 	import Select from './Select.svelte';
 	import { tokens } from '$lib/stores';
-	import type { Hex } from 'viem';
+	import { parseUnits, type Hex } from 'viem';
 
 	export let amountToLock = '';
 	let disclaimerAcknowledged = false;
@@ -42,7 +42,7 @@
 
 	const checkBalance = () => {
 		if (amountToLock) {
-			const bigNumValue = BigInt(parseEther(amountToLock.toString()).toString());
+			const bigNumValue = BigInt(parseUnits(amountToLock.toString(), $selectedCyToken.decimals).toString());
 			assets = bigNumValue;
 			insufficientFunds =
 				($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n) < assets;
@@ -104,9 +104,9 @@
 
 				<div class="flex flex-row gap-4">
 					<span data-testid="your-balance">
-						{formatEther(
+						{formatUnits(
 							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
-						)}
+						,$selectedCyToken.decimals)}
 					</span>
 				</div>
 			</div>
@@ -169,7 +169,7 @@
 						const balance =
 							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n;
 						assets = balance;
-						amountToLock = Number(formatEther(balance)).toString();
+						amountToLock = Number(formatUnits(balance, $selectedCyToken.decimals)).toString();
 					}}
 					bind:amount={amountToLock}
 					maxValue={$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n}
@@ -181,8 +181,9 @@
 						class="my-2 text-left text-xs font-light sm:text-right"
 						data-testid="underlying-balance"
 					>
-						{$selectedCyToken.underlyingSymbol} Balance: {formatEther(
-							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
+						{$selectedCyToken.underlyingSymbol} Balance: {formatUnits(
+							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n,
+							$selectedCyToken.decimals
 						)}
 					</p>
 				{:else}
@@ -227,7 +228,7 @@
 			>
 				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 					<span data-testid="calculated-cysflr"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+						>{!amountToLock ? '0' : formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}</span
 					>
 				{/key}
 				<span>{$selectedCyToken.name}</span>

@@ -2,7 +2,7 @@
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
 	import { refreshAllReceipts } from '$lib/queries/refreshAllReceipts';
-	import { formatEther } from 'ethers';
+	import { formatUnits } from 'viem';
 	import ReceiptsTable from '$lib/components/ReceiptsTable.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import balancesStore from '$lib/balancesStore';
@@ -36,14 +36,15 @@
 			>
 				<span>BALANCES</span>
 				<div class="flex flex-col gap-4 sm:items-end">
-					{#each ['cysFLR', 'cyWETH'] as token}
-						<div class="flex flex-row gap-2" data-testid="{token.toLowerCase()}-balance">
-							{#key $balancesStore.balances[token]?.signerBalance}
+					{#each ['cysFLR', 'cyWETH', 'cyFXRP'] as tokenName}
+						{@const tokenInfo = tokens.find(t => t.name === tokenName)}
+						<div class="flex flex-row gap-2" data-testid="{tokenName.toLowerCase()}-balance">
+							{#key $balancesStore.balances[tokenName]?.signerBalance}
 								<span in:fade={{ duration: 700 }}>
-									{formatEther($balancesStore.balances[token]?.signerBalance || 0n)}
+									{formatUnits($balancesStore.balances[tokenName]?.signerBalance || 0n, tokenInfo?.decimals || 18)}
 								</span>
 							{/key}
-							<span>{token}</span>
+							<span>{tokenName}</span>
 						</div>
 					{/each}
 				</div>

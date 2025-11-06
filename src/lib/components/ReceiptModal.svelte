@@ -5,7 +5,8 @@
 	import transactionStore from '$lib/transactionStore';
 	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
 	import { readContract } from '@wagmi/core';
-	import { formatEther, parseEther } from 'ethers';
+	import { formatEther } from 'ethers';
+	import { formatUnits, parseUnits } from 'viem';
 	import burnDia from '$lib/images/burn-dia.svg';
 	import mobileBurnLine from '$lib/images/mobile-burn-line.svg';
 	import mobileBurnDia from '$lib/images/mobile-burn.svg';
@@ -31,7 +32,7 @@
 	let shouldCallContract = false;
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
-	const readableBalance = Number(formatEther(receipt.balance));
+	const readableBalance = Number(formatUnits(receipt.balance, token.decimals));
 	const tokenId = receipt.tokenId;
 
 	const checkBalance = async () => {
@@ -103,7 +104,7 @@
 		<span>TOTAL {token.underlyingSymbol} LOCKED</span>
 		<div class="flex flex-row gap-4">
 			{#key readableBalance}{#if readableBalance}
-					<span in:fade={{ duration: 700 }}>{formatEther(receipt.totalsFlr ?? 0n)}</span>
+					<span in:fade={{ duration: 700 }}>{formatUnits(receipt.totalsFlr ?? 0n, token.decimals)}</span>
 				{/if}{/key}
 		</div>
 	</div>
@@ -144,7 +145,7 @@
 						return;
 					}
 					try {
-						amountToRedeem = parseEther(readableAmountToRedeem.toString());
+						amountToRedeem = parseUnits(readableAmountToRedeem.toString(), token.decimals);
 						shouldCallContract = true;
 					} catch {
 						amountToRedeem = BigInt(0);
@@ -156,13 +157,13 @@
 				maxButton
 				on:setValueToMax={() => {
 					amountToRedeem = maxRedeemable;
-					readableAmountToRedeem = Number(formatEther(maxRedeemable)).toString();
+					readableAmountToRedeem = Number(formatUnits(maxRedeemable, token.decimals)).toString();
 					shouldCallContract = true;
 				}}
 			/>
 			<p class="my-2 text-left text-xs font-light sm:text-right" data-testid="sflr-balance">
 				{receipt.token} Balance: {Number(
-					formatEther(($balancesStore.balances[token.name]?.signerBalance || 0n).toString())
+					formatUnits(($balancesStore.balances[token.name]?.signerBalance || 0n), token.decimals)
 				)}
 			</p>
 		</div>
@@ -181,7 +182,7 @@
 
 		<div class="flex flex-row items-center gap-2 overflow-ellipsis">
 			<span class="flex overflow-ellipsis" data-testid="flr-to-receive">
-				{formatEther(sFlrToReceive)}
+				{formatUnits(sFlrToReceive, token.decimals)}
 				{token.underlyingSymbol}
 			</span>
 		</div>
@@ -201,7 +202,7 @@
 			<img src={mobileBurnDia} alt="diagram" class="h-32" />
 			<div class="flex flex-row items-center gap-2 overflow-ellipsis">
 				<span class="flex overflow-ellipsis" data-testid="flr-to-receive-mobile">
-					{formatEther(sFlrToReceive)}
+					{formatUnits(sFlrToReceive, token.decimals)}
 					{token.underlyingSymbol}
 				</span>
 			</div>

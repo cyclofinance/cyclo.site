@@ -37,6 +37,15 @@ export const tokens: CyToken[] = [
 		underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex, // weth
 		underlyingSymbol: 'WETH',
 		receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex
+	},
+	{
+		name: 'cyFXRP',
+		symbol: 'cyFXRP',
+		decimals: 6,
+		address: '0x0Eb1dFC9f47f48b75dEb8DE45549BA017D6663c5' as Hex,
+		underlyingAddress: '0xAd552A648C74D49E10027AB8a618A3ad4901c5bE' as Hex, // fxrp
+		underlyingSymbol: 'FXRP',
+		receiptAddress: '0xEf307A3EE59A6a140227EE98a95367D1F7cc8DE7' as Hex
 	}
 ];
 
