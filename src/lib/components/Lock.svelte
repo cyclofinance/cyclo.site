@@ -13,7 +13,7 @@
 	import { Modal } from 'flowbite-svelte';
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import { fade } from 'svelte/transition';
-	import { formatEther, formatUnits, parseEther } from 'ethers';
+	import { formatEther, formatUnits } from 'ethers';
 	import Select from './Select.svelte';
 	import { tokens } from '$lib/stores';
 	import { parseUnits, type Hex } from 'viem';
