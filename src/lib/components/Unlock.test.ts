@@ -96,6 +96,13 @@ describe('Unlock Component', () => {
 					supply: BigInt(1),
 					underlyingTvl: BigInt(1),
 					usdTvl: BigInt(1000000)
+				},
+				cyFXRP: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
 				}
 			},
 			{
@@ -106,6 +113,10 @@ describe('Unlock Component', () => {
 				cysFLR: {
 					signerBalance: BigInt(1000000000000000000),
 					signerUnderlyingBalance: BigInt(1000000000000000000)
+				},
+				cyFXRP: {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			{
@@ -131,7 +142,8 @@ describe('Unlock Component', () => {
 		await waitFor(() => {
 			const balanceText = screen.getByTestId('cysflr-balance');
 			expect(balanceText).toBeInTheDocument();
-			expect(balanceText).toHaveTextContent('1.0');
+			expect(balanceText).toHaveTextContent('1');
+			expect(balanceText).toHaveTextContent('cysFLR');
 		});
 	});
 

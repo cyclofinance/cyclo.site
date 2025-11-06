@@ -40,11 +40,13 @@ type SwapQuotes = {
 type Balances = {
 	cyWETH: BalanceData;
 	cysFLR: BalanceData;
+	cyFXRP: BalanceData;
 };
 
 type Stats = {
 	cyWETH: StatsData;
 	cysFLR: StatsData;
+	cyFXRP: StatsData;
 };
 
 type MockBalances = {
@@ -64,6 +66,10 @@ const mockBalancesWritable = writable<MockBalances>({
 		cysFLR: {
 			signerBalance: BigInt(100),
 			signerUnderlyingBalance: BigInt(100)
+		},
+		cyFXRP: {
+			signerBalance: BigInt(100),
+			signerUnderlyingBalance: BigInt(100)
 		}
 	},
 	stats: {
@@ -75,6 +81,13 @@ const mockBalancesWritable = writable<MockBalances>({
 			usdTvl: BigInt(1000)
 		},
 		cysFLR: {
+			lockPrice: BigInt(1),
+			price: BigInt(1),
+			supply: BigInt(1000000),
+			underlyingTvl: BigInt(1000),
+			usdTvl: BigInt(1000)
+		},
+		cyFXRP: {
 			lockPrice: BigInt(1),
 			price: BigInt(1),
 			supply: BigInt(1000000),
