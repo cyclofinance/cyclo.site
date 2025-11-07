@@ -5,12 +5,14 @@
 
 	export let stats: AccountStats;
 
-	$: cyFXRPInfo = tokens.find(t => t.name === 'cyFXRP');
+	$: cyFXRPInfo = tokens.find((t) => t.name === 'cyFXRP');
 	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
 
 	$: isEligible =
 		stats?.eligibleBalances &&
-		(stats.eligibleBalances.cyWETH > 0 || stats.eligibleBalances.cysFLR > 0 || stats.eligibleBalances.cyFXRP > 0);
+		(stats.eligibleBalances.cyWETH > 0 ||
+			stats.eligibleBalances.cysFLR > 0 ||
+			stats.eligibleBalances.cyFXRP > 0);
 </script>
 
 {#if !isEligible}

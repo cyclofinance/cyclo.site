@@ -8,6 +8,7 @@ const eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']> = {
 	id: 'SINGLETON',
 	totalEligibleCyWETH: '1000000000000000000000',
 	totalEligibleCysFLR: '2000000000000000000000',
+	totalEligibleCyFXRP: '0',
 	totalEligibleSum: '3000000000000000000000'
 };
 

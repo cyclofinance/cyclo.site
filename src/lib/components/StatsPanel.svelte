@@ -8,7 +8,7 @@
 	import { TOTAL_REWARD } from '$lib/constants';
 	import { tokens } from '$lib/stores';
 
-	$: cyFXRPInfo = tokens.find(t => t.name === 'cyFXRP');
+	$: cyFXRPInfo = tokens.find((t) => t.name === 'cyFXRP');
 	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
 
 	let loading = true;
@@ -80,7 +80,9 @@
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					<div>cysFLR: {Number(formatEther(stats.totalEligibleCysFLR)).toFixed(2)}</div>
 					<div>cyWETH: {Number(formatEther(stats.totalEligibleCyWETH)).toFixed(2)}</div>
-					<div>cyFXRP: {Number(formatUnits(stats.totalEligibleCyFXRP, cyFXRPDecimals)).toFixed(2)}</div>
+					<div>
+						cyFXRP: {Number(formatUnits(stats.totalEligibleCyFXRP, cyFXRPDecimals)).toFixed(2)}
+					</div>
 				</div>
 			</div>
 

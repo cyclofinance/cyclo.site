@@ -57,4 +57,3 @@ export const getcyFXRPwFLRPrice = async () => {
 	const wFLRcyFXRPPrice = (cyFXRPUSDCPrice * 10n ** 12n) / wFLRUSDCPrice;
 	return wFLRcyFXRPPrice;
 };
-

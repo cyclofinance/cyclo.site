@@ -57,7 +57,8 @@ export const calculateShares = (
 	// cyFXRP rewards
 	shares.cyFXRP.rewardsAmount = (shares.cyFXRP.percentageShare * rewardsPools.cyFxrp) / ONE;
 
-	shares.totalRewards = shares.cysFLR.rewardsAmount + shares.cyWETH.rewardsAmount + shares.cyFXRP.rewardsAmount;
+	shares.totalRewards =
+		shares.cysFLR.rewardsAmount + shares.cyWETH.rewardsAmount + shares.cyFXRP.rewardsAmount;
 
 	return shares;
 };

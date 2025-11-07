@@ -7,7 +7,7 @@ export const calculateRewardsPools = (
 ): RewardsPools => {
 	const totalEligibleCysFLR = BigInt(eligibleTotals.totalEligibleCysFLR || 0);
 	const totalEligibleCyWETH = BigInt(eligibleTotals.totalEligibleCyWETH || 0);
-	const totalEligibleCyFXRP = BigInt((eligibleTotals as any).totalEligibleCyFXRP || 0);
+	const totalEligibleCyFXRP = BigInt(eligibleTotals.totalEligibleCyFXRP || 0);
 	const totalEligibleSum = BigInt(eligibleTotals.totalEligibleSum || 0);
 
 	// Return zero rewards if no eligible totals
@@ -19,15 +19,12 @@ export const calculateRewardsPools = (
 		};
 	}
 
-	const cysFLRInverseFraction = totalEligibleCysFLR > 0n
-		? (totalEligibleSum * ONE) / totalEligibleCysFLR
-		: 0n;
-	const cyWETHInverseFraction = totalEligibleCyWETH > 0n
-		? (totalEligibleSum * ONE) / totalEligibleCyWETH
-		: 0n;
-	const cyFXRPInverseFraction = totalEligibleCyFXRP > 0n
-		? (totalEligibleSum * ONE) / totalEligibleCyFXRP
-		: 0n;
+	const cysFLRInverseFraction =
+		totalEligibleCysFLR > 0n ? (totalEligibleSum * ONE) / totalEligibleCysFLR : 0n;
+	const cyWETHInverseFraction =
+		totalEligibleCyWETH > 0n ? (totalEligibleSum * ONE) / totalEligibleCyWETH : 0n;
+	const cyFXRPInverseFraction =
+		totalEligibleCyFXRP > 0n ? (totalEligibleSum * ONE) / totalEligibleCyFXRP : 0n;
 
 	const sum = cysFLRInverseFraction + cyWETHInverseFraction + cyFXRPInverseFraction;
 
