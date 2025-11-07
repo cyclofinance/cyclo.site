@@ -30,9 +30,7 @@ export async function fetchStats(): Promise<GlobalStats> {
 
 	const totalEligibleCysFLR = BigInt(data.eligibleTotals?.totalEligibleCysFLR ?? 0);
 	const totalEligibleCyWETH = BigInt(data.eligibleTotals?.totalEligibleCyWETH ?? 0);
-	const totalEligibleCyFXRP = BigInt(
-		(data.eligibleTotals as any)?.totalEligibleCyFXRP ?? 0
-	);
+	const totalEligibleCyFXRP = BigInt(data.eligibleTotals?.totalEligibleCyFXRP ?? 0);
 	const totalEligibleSum = BigInt(data.eligibleTotals?.totalEligibleSum ?? 0);
 	const eligibleHolders = (data.accounts ?? []).length;
 

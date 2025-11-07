@@ -25,7 +25,7 @@ export const calculateShares = (
 	// Balances
 	const cysFLRBalance = BigInt(account.cysFLRBalance);
 	const cyWETHBalance = BigInt(account.cyWETHBalance);
-	const cyFXRPBalance = BigInt((account as any).cyFXRPBalance || 0);
+	const cyFXRPBalance = BigInt(account.cyFXRPBalance || 0);
 
 	// cysFLR shares
 	const totalEligibleCysFLR = BigInt(eligibleTotals.totalEligibleCysFLR || 0);
@@ -42,7 +42,7 @@ export const calculateShares = (
 			: 0n;
 
 	// cyFXRP shares
-	const totalEligibleCyFXRP = BigInt((eligibleTotals as any).totalEligibleCyFXRP || 0);
+	const totalEligibleCyFXRP = BigInt(eligibleTotals.totalEligibleCyFXRP || 0);
 	shares.cyFXRP.percentageShare =
 		cyFXRPBalance > 0n && totalEligibleCyFXRP > 0n
 			? (cyFXRPBalance * ONE) / totalEligibleCyFXRP

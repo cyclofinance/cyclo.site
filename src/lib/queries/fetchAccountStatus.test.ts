@@ -67,7 +67,8 @@ describe('fetchAccountStatus', () => {
 			account,
 			eligibleBalances: {
 				cysFLR: 100n * ONE,
-				cyWETH: 200n * ONE
+				cyWETH: 200n * ONE,
+				cyFXRP: 0n
 			},
 			shares: calculateShares(mockData.data.account, mockData.data.eligibleTotals),
 			transfers: {

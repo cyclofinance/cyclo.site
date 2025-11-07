@@ -31,7 +31,7 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 		eligibleBalances: {
 			cysFLR: BigInt(accountData.cysFLRBalance),
 			cyWETH: BigInt(accountData.cyWETHBalance),
-			cyFXRP: BigInt((accountData as any).cyFXRPBalance || 0)
+			cyFXRP: BigInt(accountData.cyFXRPBalance || 0)
 		},
 		shares,
 		transfers: {

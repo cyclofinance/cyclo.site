@@ -22,7 +22,8 @@ describe('calculateRewardsPools', () => {
 
 		expect(rewardsPools).toEqual({
 			cysFlr,
-			cyWeth
+			cyWeth,
+			cyFxrp: 0n
 		});
 	});
 });

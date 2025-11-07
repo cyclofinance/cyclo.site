@@ -54,7 +54,8 @@ describe('fetchTopRewards', () => {
 				account: '0x123',
 				eligibleBalances: {
 					cysFLR: ONE,
-					cyWETH: 2n * ONE
+					cyWETH: 2n * ONE,
+					cyFXRP: 0n
 				},
 				shares: calculateShares(
 					mockResponse.data.accountsByCyBalance[0],
@@ -65,7 +66,8 @@ describe('fetchTopRewards', () => {
 				account: '0x456',
 				eligibleBalances: {
 					cysFLR: ONE / 2n,
-					cyWETH: ONE
+					cyWETH: ONE,
+					cyFXRP: 0n
 				},
 				shares: calculateShares(
 					mockResponse.data.accountsByCyBalance[1],
