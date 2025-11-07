@@ -1,7 +1,7 @@
 import type { Token } from './types';
 import type { Hex } from 'viem';
 export const SUBGRAPH_URL =
-	'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-rewards/0.31/gn';
+	'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-11-06-4bb37cce25d383df/gn';
 
 export const ONE = 10n ** 18n;
 

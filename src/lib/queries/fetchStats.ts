@@ -37,9 +37,20 @@ export async function fetchStats(): Promise<GlobalStats> {
 	const eligibleHolders = (data.accounts ?? []).length;
 
 	// Get prices in FLR terms
-	const cysFLRwFLRPrice = await getcysFLRwFLRPrice();
-	const cyWETHwFLRPrice = await getcyWETHwFLRPrice();
-	const cyFXRPwFLRPrice = await getcyFXRPwFLRPrice();
+	// If price fetching fails (e.g., no liquidity pool), default to 1:1 price (1n * ONE)
+	// This will result in APY being calculated but may be inaccurate if price fetch fails
+	const cysFLRwFLRPrice = await getcysFLRwFLRPrice().catch((error) => {
+		console.error('Failed to fetch cysFLR/wFLR price:', error);
+		return ONE; // Default to 1:1 if price fetch fails
+	});
+	const cyWETHwFLRPrice = await getcyWETHwFLRPrice().catch((error) => {
+		console.error('Failed to fetch cyWETH/wFLR price:', error);
+		return ONE; // Default to 1:1 if price fetch fails
+	});
+	const cyFXRPwFLRPrice = await getcyFXRPwFLRPrice().catch((error) => {
+		console.error('Failed to fetch cyFXRP/wFLR price:', error);
+		return ONE; // Default to 1:1 if price fetch fails
+	});
 
 	if (!data.eligibleTotals) throw 'No eligible totals';
 

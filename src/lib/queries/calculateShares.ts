@@ -28,17 +28,24 @@ export const calculateShares = (
 	const cyFXRPBalance = BigInt((account as any).cyFXRPBalance || 0);
 
 	// cysFLR shares
+	const totalEligibleCysFLR = BigInt(eligibleTotals.totalEligibleCysFLR || 0);
 	shares.cysFLR.percentageShare =
-		cysFLRBalance > 0 ? (cysFLRBalance * ONE) / BigInt(eligibleTotals.totalEligibleCysFLR) : 0n;
+		cysFLRBalance > 0n && totalEligibleCysFLR > 0n
+			? (cysFLRBalance * ONE) / totalEligibleCysFLR
+			: 0n;
 
 	// cyWETH shares
+	const totalEligibleCyWETH = BigInt(eligibleTotals.totalEligibleCyWETH || 0);
 	shares.cyWETH.percentageShare =
-		cyWETHBalance > 0 ? (cyWETHBalance * ONE) / BigInt(eligibleTotals.totalEligibleCyWETH) : 0n;
+		cyWETHBalance > 0n && totalEligibleCyWETH > 0n
+			? (cyWETHBalance * ONE) / totalEligibleCyWETH
+			: 0n;
 
 	// cyFXRP shares
+	const totalEligibleCyFXRP = BigInt((eligibleTotals as any).totalEligibleCyFXRP || 0);
 	shares.cyFXRP.percentageShare =
-		cyFXRPBalance > 0 && (eligibleTotals as any).totalEligibleCyFXRP
-			? (cyFXRPBalance * ONE) / BigInt((eligibleTotals as any).totalEligibleCyFXRP)
+		cyFXRPBalance > 0n && totalEligibleCyFXRP > 0n
+			? (cyFXRPBalance * ONE) / totalEligibleCyFXRP
 			: 0n;
 
 	// cysFLR rewards
