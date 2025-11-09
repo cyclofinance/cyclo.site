@@ -1,12 +1,15 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import AccountStatus from './AccountStatus.svelte';
+import { get } from 'svelte/store';
 import { tokens } from '$lib/stores';
 import type { AccountStats } from '$lib/types';
 
 vi.mock('$lib/queries/fetchAccountStatus', () => ({
 	fetchAccountStatus: vi.fn()
 }));
+
+const tokenList = get(tokens);
 
 const mockStats: AccountStats = {
 	account: '0x1234567890123456789012345678901234567890',
@@ -38,7 +41,7 @@ const mockStats: AccountStats = {
 				fromIsApprovedSource: true,
 				transactionHash: 'hash1',
 				blockTimestamp: '1000',
-				tokenAddress: tokens[0].address,
+				tokenAddress: tokenList[0]?.address ?? '0x0',
 				from: { id: '0x1234567890123456789012345678901234567890' },
 				to: { id: '0x2345678901234567890123456789012345678901' },
 				value: '100000000000000000000'
@@ -51,7 +54,7 @@ const mockStats: AccountStats = {
 				fromIsApprovedSource: false,
 				transactionHash: 'hash2',
 				blockTimestamp: '2000',
-				tokenAddress: tokens[1].address,
+				tokenAddress: tokenList[1]?.address ?? '0x0',
 				from: { id: '0x2345678901234567890123456789012345678901' },
 				to: { id: '0x1234567890123456789012345678901234567890' },
 				value: '200000000000000000000'

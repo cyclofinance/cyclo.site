@@ -52,15 +52,18 @@ describe('transactionStore.handleDeployDca', () => {
 	const mockOptions = {
 		selectedCyToken: {
 			symbol: 'cyTEST',
-			address: '0xabc123' as `0x${string}`,
+			address: '0x0000000000000000000000000000000000abc123' as `0x${string}`,
 			name: 'Cyclo TEST',
 			decimals: 18,
 			underlyingSymbol: 'TEST',
-			underlyingAddress: '0xdef456' as `0x${string}`,
-			receiptAddress: '0xfed789' as `0x${string}`
+			underlyingAddress: '0x0000000000000000000000000000000000def456' as `0x${string}`,
+			receiptAddress: '0x0000000000000000000000000000000000fed789' as `0x${string}`,
+			chainId: 14,
+			networkKey: 'flare',
+			networkName: 'Flare'
 		},
 		selectedToken: {
-			address: '0xdef456' as `0x${string}`,
+			address: '0x0000000000000000000000000000000000def456' as `0x${string}`,
 			symbol: 'TEST',
 			name: 'Test Token',
 			decimals: 18
@@ -69,7 +72,7 @@ describe('transactionStore.handleDeployDca', () => {
 		selectedPeriodUnit: 'Days' as const,
 		selectedPeriod: '1',
 		selectedAmountToken: {
-			address: '0xdef456' as `0x${string}`,
+			address: '0x0000000000000000000000000000000000def456' as `0x${string}`,
 			symbol: 'TEST',
 			name: 'Test Token',
 			decimals: 18

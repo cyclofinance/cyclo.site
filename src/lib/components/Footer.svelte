@@ -3,16 +3,16 @@
 	import balancesStore from '$lib/balancesStore';
 	import { formatNumberWithAbbreviations } from '$lib/methods';
 	import { Spinner } from 'flowbite-svelte';
-	import { tokens } from '$lib/stores';
+import { tokens } from '$lib/stores';
 
 	function calculateMarketCap(price: bigint, supply: bigint): bigint {
 		return (price * supply) / BigInt(1e6);
 	}
 
-	$: globalTvl =
-		($balancesStore.stats.cysFLR?.usdTvl || 0n) +
-		($balancesStore.stats.cyWETH?.usdTvl || 0n) +
-		($balancesStore.stats.cyFXRP?.usdTvl || 0n);
+	$: globalTvl = $tokens.reduce(
+		(total, token) => total + ($balancesStore.stats[token.name]?.usdTvl || 0n),
+		0n
+	);
 </script>
 
 <footer
@@ -33,37 +33,38 @@
 					<span>$ {Number(formatUnits(globalTvl, 18))}</span>
 				</div>
 			</div>
-			{#each ['cysFLR', 'cyWETH', 'cyFXRP'] as tokenName}
-				{@const tokenInfo = tokens.find((t) => t.name === tokenName)}
+			{#each $tokens as token (token.address)}
 				<div class="flex flex-col gap-2 border-b border-white/20 pb-2 last:border-0">
-					<div class="font-bold">{tokenName}</div>
+					<div class="font-bold">{token.symbol}</div>
 					<div
 						class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
 						data-testId="lock-price"
 					>
-						<span>Current Lock Price ({tokenName} per {tokenName.slice(2)})</span>
+						<span>
+							Current Lock Price ({token.symbol} per {token.underlyingSymbol})
+						</span>
 						<span
 							>{Number(
-								formatEther($balancesStore.stats[tokenName]?.lockPrice || 0n)
+								formatEther($balancesStore.stats[token.name]?.lockPrice || 0n)
 							).toString()}</span
 						>
 					</div>
 					<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="price">
-						<span>Current {tokenName} Price</span>
+						<span>Current {token.symbol} Price</span>
 						<span>
-							$ {Number(formatUnits($balancesStore.stats[tokenName]?.price || 0n, 6))}
+							$ {Number(formatUnits($balancesStore.stats[token.name]?.price || 0n, 6))}
 						</span>
 					</div>
-					{#if $balancesStore.stats[tokenName]?.supply}
+					{#if $balancesStore.stats[token.name]?.supply}
 						<div
 							class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
 							data-testId="supply"
 						>
-							<span>Total {tokenName} supply</span>
+							<span>Total {token.symbol} supply</span>
 							<span>
 								{formatNumberWithAbbreviations(
 									Number(
-										formatUnits($balancesStore.stats[tokenName].supply, tokenInfo?.decimals || 18)
+										formatUnits($balancesStore.stats[token.name].supply, token.decimals)
 									)
 								)}
 							</span>
@@ -71,33 +72,33 @@
 					{/if}
 					<div
 						class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
-						data-testId={`market-cap-${tokenName}`}
+						data-testId={`market-cap-${token.name}`}
 					>
-						<span>{tokenName} Market Cap</span>
+						<span>{token.symbol} Market Cap</span>
 						<span>
 							$ {Number(
 								formatEther(
 									calculateMarketCap(
-										$balancesStore.stats[tokenName]?.price || 0n,
-										$balancesStore.stats[tokenName]?.supply || 0n
+										$balancesStore.stats[token.name]?.price || 0n,
+										$balancesStore.stats[token.name]?.supply || 0n
 									)
 								)
 							)}
 						</span>
 					</div>
-					{#if $balancesStore.stats[tokenName]?.underlyingTvl}
+					{#if $balancesStore.stats[token.name]?.underlyingTvl}
 						<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="tvl">
 							<span>Total Value Locked</span>
 							<span>
 								{Number(
 									formatUnits(
-										$balancesStore.stats[tokenName].underlyingTvl,
-										tokenInfo?.decimals || 18
+										$balancesStore.stats[token.name].underlyingTvl,
+										token.decimals
 									)
 								)}
-								{tokenName.slice(2)}
+								{token.underlyingSymbol}
 								/ $ {Number(
-									formatUnits($balancesStore.stats[tokenName].usdTvl, tokenInfo?.decimals)
+									formatUnits($balancesStore.stats[token.name].usdTvl, token.decimals)
 								)}
 							</span>
 						</div>

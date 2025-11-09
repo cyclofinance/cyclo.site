@@ -1,4 +1,10 @@
-import { cusdxAddress, quoterAddress, usdcAddress, wFLRAddress, tokens } from '$lib/stores';
+import {
+	cusdxAddress,
+	quoterAddress,
+	usdcAddress,
+	wrappedNativeAddress,
+	tokens
+} from '$lib/stores';
 import { createConfig, http, simulateContract } from '@wagmi/core';
 import { get } from 'svelte/store';
 import { quoterAbi } from '../../generated';
@@ -14,6 +20,13 @@ export const getcyFXRPwFLRPrice = async () => {
 	});
 
 	// First get the USDC per cyFXRP price (cyFXRP has 6 decimals)
+	const tokenList = get(tokens);
+	const cyFXRPTokens = tokenList.filter((token) => token.name === 'cyFXRP');
+
+	if (!cyFXRPTokens.length) {
+		throw new Error('cyFXRP token configuration is missing for the active network.');
+	}
+
 	const cyFXRPUSDCPrice = (
 		await simulateContract(config, {
 			address: get(quoterAddress),
@@ -21,7 +34,7 @@ export const getcyFXRPwFLRPrice = async () => {
 			functionName: 'quoteExactInputSingle',
 			args: [
 				{
-					tokenIn: tokens[2].address,
+					tokenIn: cyFXRPTokens[0].address,
 					tokenOut: get(cusdxAddress),
 					amountIn: BigInt(1e6), // cyFXRP has 6 decimals
 					fee: 10000,
@@ -40,7 +53,7 @@ export const getcyFXRPwFLRPrice = async () => {
 			functionName: 'quoteExactInputSingle',
 			args: [
 				{
-					tokenIn: get(wFLRAddress),
+					tokenIn: get(wrappedNativeAddress),
 					tokenOut: get(usdcAddress),
 					amountIn: BigInt(1e18),
 					fee: 3000,

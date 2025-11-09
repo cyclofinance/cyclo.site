@@ -3,7 +3,7 @@
 	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
 	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
-	import { tokens } from '$lib/stores';
+import { tokens } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
 	import { formatEther } from 'viem';
@@ -14,6 +14,11 @@
 	let loading = true;
 	let error: string | null = null;
 	let stats: AccountStats | null = null;
+
+const resolveTokenLabel = (address: string) => {
+	const tokenMatch = $tokens.find((token) => isAddressEqual(address, token.address));
+	return tokenMatch?.name ?? 'Unknown';
+};
 
 	onMount(async () => {
 		try {
@@ -79,13 +84,7 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-2 truncate pl-4 font-mono text-white">
-								<span class="text-xs text-gray-300"
-									>{isAddressEqual(transfer.tokenAddress, tokens[0].address)
-										? 'cysFLR'
-										: isAddressEqual(transfer.tokenAddress, tokens[1].address)
-											? 'cyWETH'
-											: 'Unknown'}</span
-								>
+								<span class="text-xs text-gray-300">{resolveTokenLabel(transfer.tokenAddress)}</span>
 								<span>{formatEther(transfer.value)}</span>
 							</div>
 						</a>

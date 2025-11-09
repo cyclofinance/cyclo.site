@@ -45,9 +45,9 @@
 	>
 		<span>CHART</span>
 		<Select
-			options={tokens}
+			options={$tokens}
 			bind:selected={$selectedCyToken}
-			getOptionLabel={(option) => option.name}
+			getOptionLabel={(option) => `${option.symbol} · ${option.networkName}`}
 			dataTestId="chart-token-select"
 		/>
 	</div>

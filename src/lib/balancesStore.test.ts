@@ -116,12 +116,15 @@ describe('balancesStore', () => {
 
 		const mockToken: CyToken = {
 			name: 'cysFLR',
-			address: '0xcdef1234abcdef5678',
-			underlyingAddress: '0xabcd1234',
+		address: '0x00000000000000000000000000000000cdef1234',
+		underlyingAddress: '0x000000000000000000000000000000000abc1234',
 			underlyingSymbol: 'sFLR',
-			receiptAddress: '0xeeff5678',
+		receiptAddress: '0x0000000000000000000000000000000000eeff56',
 			symbol: 'cysFLR',
-			decimals: 18
+		decimals: 18,
+		chainId: 14,
+		networkKey: 'flare',
+		networkName: 'Flare'
 		};
 
 		await refreshPrices(mockWagmiConfigStore as unknown as Config, mockToken);

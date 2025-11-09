@@ -4,6 +4,10 @@ import { formatEther } from 'ethers';
 import { readErc1155BalanceOf } from '../../generated';
 import type { Config } from '@wagmi/core';
 import type { Hex } from 'viem';
+import { get } from 'svelte/store';
+import { receiptSource } from '$lib/stores';
+import type { ReceiptSource as StoreReceiptSource } from '$lib/stores';
+import { env as publicEnv } from '$env/dynamic/public';
 
 interface PaginationParams {
 	items_count?: number;
@@ -12,16 +16,30 @@ interface PaginationParams {
 	token_type?: string;
 }
 
-export const getSingleTokenReceipts = async (
-	address: string,
-	erc1155Address: string,
-	config: Config,
-	onProgress?: (page: number, totalItems: number) => void
+type ReceiptFetchOptions = {
+	onProgress?: (page: number, totalItems: number) => void;
+	source?: StoreReceiptSource;
+};
+
+type ReceiptFetchContext = {
+	address: string;
+	erc1155Address: Hex;
+	config: Config;
+	onProgress?: (page: number, totalItems: number) => void;
+};
+
+const ensureTrailingSlash = (value: string) => (value.endsWith('/') ? value : `${value}/`);
+
+const fetchReceiptsFromBlockscout = async (
+	{ address, erc1155Address, config, onProgress }: ReceiptFetchContext,
+	source: Extract<StoreReceiptSource, { type: 'blockscout' }>
 ) => {
+	const baseUrl = ensureTrailingSlash(source.baseUrl);
+
 	const getBalance = async (tokenId: bigint) => {
 		const res = await readErc1155BalanceOf(config, {
 			address: erc1155Address as Hex,
-			args: [address as Hex, tokenId as bigint]
+			args: [address as Hex, tokenId]
 		});
 		return res;
 	};
@@ -29,88 +47,200 @@ export const getSingleTokenReceipts = async (
 	const fetchPage = async (
 		paginationParams?: PaginationParams
 	): Promise<{ items: Receipt[]; nextPageParams?: PaginationParams }> => {
-		let query: string = `https://flare-explorer.flare.network/api/v2/addresses/${address}/nft?type=ERC-1155`;
+		const url = new URL(`api/v2/addresses/${address}/nft`, baseUrl);
+		url.searchParams.set('type', 'ERC-1155');
 
-		// Add pagination parameters if provided
 		if (paginationParams) {
-			const params = new URLSearchParams();
-
 			if (paginationParams.items_count) {
-				params.append('items_count', paginationParams.items_count.toString());
+				url.searchParams.set('items_count', paginationParams.items_count.toString());
 			}
 			if (paginationParams.token_contract_address_hash) {
-				params.append('token_contract_address_hash', paginationParams.token_contract_address_hash);
+				url.searchParams.set('token_contract_address_hash', paginationParams.token_contract_address_hash);
 			}
 			if (paginationParams.token_id) {
-				params.append('token_id', paginationParams.token_id);
+				url.searchParams.set('token_id', paginationParams.token_id);
 			}
 			if (paginationParams.token_type) {
-				params.append('token_type', paginationParams.token_type);
-			}
-
-			if (params.toString()) {
-				query += `&${params.toString()}`;
+				url.searchParams.set('token_type', paginationParams.token_type);
 			}
 		}
 
-		const response = await axios.get(query);
+		const response = await axios.get(url.toString());
 
-		let pageData: Receipt[] = response.data.items.map((item: BlockScoutData) => ({
-			tokenId: item.id,
-			balance: item.value,
-			tokenAddress: item.token.address_hash
-		}));
+		const pageData = await Promise.all(
+			response.data.items
+				.filter(
+					(item: BlockScoutData) =>
+						item.token.address_hash?.toLowerCase() === erc1155Address.toLowerCase()
+				)
+				.map(async (item: BlockScoutData) => {
+					const tokenIdBigInt = BigInt(item.id);
+					const balance = await getBalance(tokenIdBigInt);
 
-		pageData = pageData.filter((item: Receipt) => item.tokenAddress === erc1155Address);
-		pageData = pageData.map((item: Receipt) => ({
-			...item,
-			readableTokenId: formatEther(item.tokenId)
-		}));
+					if (balance <= 0n) return null;
 
-		pageData = await Promise.all(
-			pageData.map(async (item: Receipt) => ({
-				...item,
-				balance: await getBalance(BigInt(item.tokenId))
-			}))
+					return {
+						chainId: source.chainId.toString(),
+						tokenAddress: erc1155Address,
+						tokenId: item.id,
+						balance,
+						readableTokenId: formatEther(tokenIdBigInt)
+					} satisfies Receipt;
+				})
 		);
 
-		pageData = pageData.filter((item: Receipt) => Number(item.balance) > 0);
+		const filteredPageData = pageData.filter((item): item is Receipt => item !== null);
 
 		return {
-			items: pageData,
+			items: filteredPageData,
 			nextPageParams: response.data.next_page_params
 		};
 	};
 
-	try {
-		let allData: Receipt[] = [];
-		let currentPageParams: PaginationParams | undefined = undefined;
-		let pageCount = 0;
+	let allData: Receipt[] = [];
+	let currentPageParams: PaginationParams | undefined = undefined;
+	let pageCount = 0;
+	let hasMorePages = true;
 
-		// Fetch all pages until there are no more pages
-		let hasMorePages = true;
-		while (hasMorePages) {
-			console.log(`Fetching page ${pageCount + 1}...`);
+	while (hasMorePages) {
+		const result = await fetchPage(currentPageParams);
+		allData = [...allData, ...result.items];
 
-			const result = await fetchPage(currentPageParams);
-			allData = [...allData, ...result.items];
-
-			// Call progress callback if provided
-			if (onProgress) {
-				onProgress(pageCount + 1, allData.length);
-			}
-
-			if (!result.nextPageParams) {
-				console.log(`No more pages. Total receipts fetched: ${allData.length}`);
-				hasMorePages = false;
-			} else {
-				currentPageParams = result.nextPageParams;
-				pageCount++;
-			}
+		if (onProgress) {
+			onProgress(pageCount + 1, allData.length);
 		}
 
-		console.log(`Final data count: ${allData.length}`);
-		return allData;
+		if (!result.nextPageParams) {
+			hasMorePages = false;
+		} else {
+			currentPageParams = result.nextPageParams;
+			pageCount++;
+		}
+	}
+
+	return allData;
+};
+
+type EtherscanResponse = {
+	status: string;
+	message: string;
+	result: Array<{
+		contractAddress: string;
+		tokenID: string;
+	}>;
+};
+
+const fetchReceiptsFromEtherscan = async (
+	{ address, erc1155Address, config, onProgress }: ReceiptFetchContext,
+	source: Extract<StoreReceiptSource, { type: 'etherscan' }>
+) => {
+	const pageSize = source.pageSize ?? 100;
+	const apiKey = publicEnv.PUBLIC_ETHERSCAN_API_KEY;
+	const lowerCaseContract = erc1155Address.toLowerCase();
+
+	const getBalance = async (tokenId: bigint) => {
+		const res = await readErc1155BalanceOf(config, {
+			address: erc1155Address as Hex,
+			args: [address as Hex, tokenId]
+		});
+		return res;
+	};
+
+	let page = 1;
+	let allData: Receipt[] = [];
+	let totalItems = 0;
+	const seenTokenIds = new Set<string>();
+	let continuePaging = true;
+
+	while (continuePaging) {
+		const params: Record<string, string | number | undefined> = {
+			module: 'account',
+			action: 'token1155tx',
+			address,
+			contractaddress: erc1155Address,
+			chainid: source.chainId,
+			page,
+			offset: pageSize,
+			sort: 'asc'
+		};
+
+		if (apiKey) {
+			params.apikey = apiKey;
+		}
+
+		const { data } = await axios.get<EtherscanResponse>(source.baseUrl, {
+			params
+		});
+
+		if (!data || data.status !== '1' || !Array.isArray(data.result) || data.result.length === 0) {
+			break;
+		}
+
+		const pageReceipts: Receipt[] = [];
+
+		for (const item of data.result) {
+			if (item.contractAddress?.toLowerCase() !== lowerCaseContract) continue;
+			if (seenTokenIds.has(item.tokenID)) continue;
+
+			seenTokenIds.add(item.tokenID);
+
+			const tokenIdBigInt = BigInt(item.tokenID);
+			const balance = await getBalance(tokenIdBigInt);
+
+			if (balance <= 0n) continue;
+
+			pageReceipts.push({
+				chainId: source.chainId.toString(),
+				tokenAddress: erc1155Address,
+				tokenId: item.tokenID,
+				balance,
+				readableTokenId: formatEther(tokenIdBigInt)
+			});
+		}
+
+		totalItems += pageReceipts.length;
+		allData = [...allData, ...pageReceipts];
+
+		if (onProgress) {
+			onProgress(page, totalItems);
+		}
+
+		if (data.result.length < pageSize) {
+			continuePaging = false;
+		} else {
+			page += 1;
+		}
+	}
+
+	return allData;
+};
+
+export const getSingleTokenReceipts = async (
+	address: string,
+	erc1155Address: Hex,
+	config: Config,
+	options: ReceiptFetchOptions = {}
+) => {
+	const { onProgress, source } = options;
+	const activeSource = source ?? get(receiptSource);
+
+	try {
+		const context: ReceiptFetchContext = {
+			address,
+			erc1155Address,
+			config,
+			onProgress
+		};
+
+		if (activeSource.type === 'blockscout') {
+			return await fetchReceiptsFromBlockscout(context, activeSource);
+		}
+
+		if (activeSource.type === 'etherscan') {
+			return await fetchReceiptsFromEtherscan(context, activeSource);
+		}
+
+		throw new Error(`Unsupported receipt source type: ${(activeSource as { type: string }).type}`);
 	} catch (error) {
 		console.error('error getting receipts', error);
 		return null;

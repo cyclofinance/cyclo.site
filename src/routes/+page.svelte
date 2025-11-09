@@ -2,11 +2,22 @@
 	import logo from '$lib/images/logo-white.svg';
 	import { ArrowsRepeatCountOutline, LockOpenOutline, LockOutline } from 'flowbite-svelte-icons';
 	import { base } from '$app/paths';
+	import { tokens } from '$lib/stores';
 	let loadingDots = '.';
 	function updateLoadingDots() {
 		loadingDots = loadingDots.length >= 3 ? '.' : loadingDots + '.';
 	}
 	setInterval(updateLoadingDots, 500);
+
+	const formatList = (items: string[]): string => {
+		if (items.length === 0) return '';
+		if (items.length === 1) return items[0];
+		if (items.length === 2) return `${items[0]} or ${items[1]}`;
+		return `${items.slice(0, -1).join(', ')}, or ${items.at(-1)}`;
+	};
+
+	$: collateralSymbols = [...new Set($tokens.map((token) => token.underlyingSymbol))];
+	$: supportedCollateral = formatList(collateralSymbols);
 </script>
 
 <main class="min-h-screen bg-[#1C02B8] p-4 font-mono text-white">
@@ -120,7 +131,9 @@
 				<ul class="space-y-4">
 					<li class="flex items-start gap-3">
 						<LockOutline size="lg" class="mt-1 text-green-300" />
-						<span>Lock your collateral (sFLR or WETH) to mint cy* tokens</span>
+						<span>
+							Lock your collateral ({supportedCollateral || 'supported assets'}) to mint cy* tokens
+						</span>
 					</li>
 					<li class="flex items-start gap-3">
 						<ArrowsRepeatCountOutline size="lg" class="mt-1 text-green-300" />

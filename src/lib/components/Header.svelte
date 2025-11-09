@@ -1,10 +1,11 @@
 <script lang="ts">
-	import WalletConnect from './WalletConnect.svelte';
-	import logo from '$lib/images/logo-white.svg';
-	import spiralLogo from '$lib/images/spiral-logo.svg';
-	import { base } from '$app/paths';
-	import SocialLinks from './SocialLinks.svelte';
-	import NavButtons from './NavButtons.svelte';
+import WalletConnect from './WalletConnect.svelte';
+import logo from '$lib/images/logo-white.svg';
+import spiralLogo from '$lib/images/spiral-logo.svg';
+import { base } from '$app/paths';
+import SocialLinks from './SocialLinks.svelte';
+import NavButtons from './NavButtons.svelte';
+import NetworkSwitcher from './NetworkSwitcher.svelte';
 
 	export let launched: boolean;
 </script>
@@ -20,6 +21,7 @@
 		<NavButtons {launched} />
 	</div>
 	<div class="flex items-center justify-center gap-4">
+		<NetworkSwitcher />
 		<SocialLinks />
 		<WalletConnect />
 	</div>

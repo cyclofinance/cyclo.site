@@ -36,18 +36,20 @@
 			>
 				<span>BALANCES</span>
 				<div class="flex flex-col gap-4 sm:items-end">
-					{#each ['cysFLR', 'cyWETH', 'cyFXRP'] as tokenName}
-						{@const tokenInfo = tokens.find((t) => t.name === tokenName)}
-						<div class="flex flex-row gap-2" data-testid="{tokenName.toLowerCase()}-balance">
-							{#key $balancesStore.balances[tokenName]?.signerBalance}
+					{#each $tokens as token (token.address)}
+						<div
+							class="flex flex-row gap-2"
+							data-testid="{token.name.toLowerCase()}-balance"
+						>
+							{#key $balancesStore.balances[token.name]?.signerBalance}
 								<span in:fade={{ duration: 700 }}>
 									{formatUnits(
-										$balancesStore.balances[tokenName]?.signerBalance || 0n,
-										tokenInfo?.decimals || 18
+										$balancesStore.balances[token.name]?.signerBalance || 0n,
+										token.decimals
 									)}
 								</span>
 							{/key}
-							<span>{tokenName}</span>
+							<span>{token.symbol}</span>
 						</div>
 					{/each}
 				</div>
@@ -56,7 +58,7 @@
 
 		<!-- Tabs for different token receipts -->
 		<div class="flex gap-4 text-white">
-			{#each tokens as token}
+			{#each $tokens as token (token.address)}
 				<button
 					data-testid="{token.name}-button"
 					class="w-24 sm:w-32 {$selectedCyToken.name === token.name

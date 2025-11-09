@@ -23,7 +23,6 @@
 	let disclaimerOpen = false;
 
 	enum ButtonStatus {
-		INSUFFICIENT_sFLR = 'INSUFFICIENT sFLR',
 		READY = 'LOCK'
 	}
 
@@ -92,9 +91,9 @@
 		>
 			<span>SELECT TOKEN</span>
 			<Select
-				options={tokens}
+				options={$tokens}
 				bind:selected={$selectedCyToken}
-				getOptionLabel={(option) => option.name}
+				getOptionLabel={(option) => `${option.symbol} · ${option.networkName}`}
 			/>
 		</div>
 
@@ -344,7 +343,7 @@
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
 				Cyclo relies on oracles to determine the ${$selectedCyToken.underlyingSymbol}/USD price.
-				These are maintained by Flare Networks (and Sceptre in the case of sFLR).
+				These are maintained by providers on {$selectedCyToken.networkName}.
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>

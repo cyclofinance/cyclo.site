@@ -8,7 +8,7 @@
 	import { TOTAL_REWARD } from '$lib/constants';
 	import { tokens } from '$lib/stores';
 
-	$: cyFXRPInfo = tokens.find((t) => t.name === 'cyFXRP');
+	$: cyFXRPInfo = $tokens.find((t) => t.name === 'cyFXRP');
 	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
 
 	let loading = true;

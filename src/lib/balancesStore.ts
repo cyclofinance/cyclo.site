@@ -37,51 +37,48 @@ interface StatsState {
 	};
 }
 
-const initialState: StatsState = {
+const buildEmptyStats = (tokenList: CyToken[]) =>
+	tokenList.reduce(
+		(acc, token) => ({
+			...acc,
+			[token.name]: createEmptyStatsEntry()
+		}),
+		{} as StatsState['stats']
+	);
+
+const buildEmptyBalances = (tokenList: CyToken[]) =>
+	tokenList.reduce(
+		(acc, token) => ({
+			...acc,
+			[token.name]: {
+				signerBalance: BigInt(0),
+				signerUnderlyingBalance: BigInt(0)
+			}
+		}),
+		{} as StatsState['balances']
+	);
+
+const createEmptyStatsEntry = () => ({
+	supply: BigInt(0),
+	price: BigInt(0),
+	lockPrice: BigInt(0),
+	underlyingTvl: BigInt(0),
+	usdTvl: BigInt(0)
+});
+
+const createInitialState = (tokenList: CyToken[]): StatsState => ({
 	status: 'Checking',
 	statsLoading: true,
-	stats: {
-		cysFLR: {
-			supply: BigInt(0),
-			price: BigInt(0),
-			lockPrice: BigInt(0),
-			underlyingTvl: BigInt(0),
-			usdTvl: BigInt(0)
-		},
-		cyWETH: {
-			supply: BigInt(0),
-			price: BigInt(0),
-			lockPrice: BigInt(0),
-			underlyingTvl: BigInt(0),
-			usdTvl: BigInt(0)
-		},
-		cyFXRP: {
-			supply: BigInt(0),
-			price: BigInt(0),
-			lockPrice: BigInt(0),
-			underlyingTvl: BigInt(0),
-			usdTvl: BigInt(0)
-		}
-	},
-	balances: {
-		cysFLR: {
-			signerBalance: BigInt(0),
-			signerUnderlyingBalance: BigInt(0)
-		},
-		cyWETH: {
-			signerBalance: BigInt(0),
-			signerUnderlyingBalance: BigInt(0)
-		},
-		cyFXRP: {
-			signerBalance: BigInt(0),
-			signerUnderlyingBalance: BigInt(0)
-		}
-	},
+	stats: buildEmptyStats(tokenList),
+	balances: buildEmptyBalances(tokenList),
 	swapQuotes: {
 		cyTokenOutput: BigInt(0),
 		cusdxOutput: BigInt(0)
 	}
-};
+});
+
+let tokenCache = get(tokens);
+let initialState: StatsState = createInitialState(tokenCache);
 
 const getDepositPreviewSwapValue = async (
 	config: Config,
@@ -94,14 +91,18 @@ const getDepositPreviewSwapValue = async (
 		const { result: depositPreviewValue } =
 			await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
 				address: selectedToken.address,
+				chainId: selectedToken.chainId,
 				args: [depositAmount, 0n],
 				account: ZeroAddress as `0x${string}`,
 				blockNumber: blockNumber
 			});
 
-		if (selectedToken.name === 'cysFLR') {
+		const quoterAddr = get(quoterAddress);
+
+		if (selectedToken.name === 'cysFLR' && quoterAddr !== ZeroAddress && valueToken !== ZeroAddress) {
 			const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
-				address: get(quoterAddress),
+				address: quoterAddr,
+				chainId: selectedToken.chainId,
 				args: [
 					{
 						tokenIn: selectedToken.address,
@@ -127,9 +128,19 @@ const getCyTokenUsdPrice = async (
 	cusdxAddress: Hex,
 	selectedToken: CyToken
 ) => {
+	if (
+		!selectedToken?.chainId ||
+		quoterAddress === ZeroAddress ||
+		cusdxAddress === ZeroAddress ||
+		selectedToken.address === ZeroAddress
+	) {
+		return 0n;
+	}
+
 	try {
 		const data = await simulateQuoterQuoteExactOutputSingle(config, {
 			address: quoterAddress,
+			chainId: selectedToken.chainId,
 			args: [
 				{
 					tokenIn: cusdxAddress,
@@ -147,6 +158,7 @@ const getCyTokenUsdPrice = async (
 			// try 10000 as the fee
 			const data = await simulateQuoterQuoteExactOutputSingle(config, {
 				address: quoterAddress,
+				chainId: selectedToken.chainId,
 				args: [
 					{
 						tokenIn: cusdxAddress,
@@ -169,6 +181,7 @@ const getCyTokenUsdPrice = async (
 const getLockPrice = async (config: Config, selectedToken: CyToken) => {
 	const { result } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
 		address: selectedToken.address,
+		chainId: selectedToken.chainId,
 		args: [BigInt(1e18), 0n],
 		account: ZeroAddress as `0x${string}`
 	});
@@ -177,7 +190,8 @@ const getLockPrice = async (config: Config, selectedToken: CyToken) => {
 
 const getcysFLRSupply = async (config: Config, selectedToken: CyToken) => {
 	const data = await readErc20TotalSupply(config, {
-		address: selectedToken.address
+		address: selectedToken.address,
+		chainId: selectedToken.chainId
 	});
 	return data;
 };
@@ -191,6 +205,7 @@ const getUnderlyingBalanceLockedInCysToken = async (
 ) => {
 	const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(config, {
 		address: underlyingAddress,
+		chainId: selectedToken.chainId,
 		args: [selectedToken.address],
 		blockNumber: currentBlock
 	});
@@ -198,52 +213,15 @@ const getUnderlyingBalanceLockedInCysToken = async (
 };
 
 const balancesStore = () => {
-	const { subscribe, set, update } = writable<StatsState>({
-		status: 'Checking',
-		statsLoading: true,
-		stats: {
-			cysFLR: {
-				supply: BigInt(0),
-				price: BigInt(0),
-				lockPrice: BigInt(0),
-				underlyingTvl: BigInt(0),
-				usdTvl: BigInt(0)
-			},
-			cyWETH: {
-				supply: BigInt(0),
-				price: BigInt(0),
-				lockPrice: BigInt(0),
-				underlyingTvl: BigInt(0),
-				usdTvl: BigInt(0)
-			},
-			cyFXRP: {
-				supply: BigInt(0),
-				price: BigInt(0),
-				lockPrice: BigInt(0),
-				underlyingTvl: BigInt(0),
-				usdTvl: BigInt(0)
-			}
-		},
-		balances: {
-			cysFLR: {
-				signerBalance: BigInt(0),
-				signerUnderlyingBalance: BigInt(0)
-			},
-			cyWETH: {
-				signerBalance: BigInt(0),
-				signerUnderlyingBalance: BigInt(0)
-			},
-			cyFXRP: {
-				signerBalance: BigInt(0),
-				signerUnderlyingBalance: BigInt(0)
-			}
-		},
-		swapQuotes: {
-			cyTokenOutput: BigInt(0),
-			cusdxOutput: BigInt(0)
-		}
+	const { subscribe, set, update } = writable<StatsState>(initialState);
+
+	tokens.subscribe((currentTokens) => {
+		tokenCache = currentTokens;
+		initialState = createInitialState(tokenCache);
+		set(initialState);
 	});
-	const reset = () => set(initialState);
+
+	const reset = () => set(createInitialState(tokenCache));
 
 	const refreshPrices = async (config: Config, selectedToken: CyToken) => {
 		if (!selectedToken?.address) return;
@@ -260,21 +238,24 @@ const balancesStore = () => {
 			)
 		]);
 
-		update((state) => ({
-			...state,
-			status: 'Ready',
-			stats: {
-				...state.stats,
-				[selectedToken.name]: {
-					...state.stats[selectedToken.name],
-					price: state.stats[selectedToken.name].price,
-					lockPrice,
-					supply: cysFlrSupply,
-					underlyingTvl: underlyingBalanceLockedInCysToken,
-					usdTvl: (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
+		update((state) => {
+			const previousStatsEntry = state.stats[selectedToken.name] ?? createEmptyStatsEntry();
+			return {
+				...state,
+				status: 'Ready',
+				stats: {
+					...state.stats,
+					[selectedToken.name]: {
+						...previousStatsEntry,
+						price: previousStatsEntry.price,
+						lockPrice,
+						supply: cysFlrSupply,
+						underlyingTvl: underlyingBalanceLockedInCysToken,
+						usdTvl: (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
+					}
 				}
-			}
-		}));
+			};
+		});
 	};
 
 	const refreshBalances = async (config: Config, signerAddress: Hex) => {
@@ -282,28 +263,38 @@ const balancesStore = () => {
 			update((state) => ({ ...state, status: 'Checking' }));
 
 			await Promise.all(
-				tokens.map(async (token: CyToken) => {
+				tokenCache.map(async (token: CyToken) => {
 					const [underlyingBalance, balance] = await Promise.all([
 						readErc20BalanceOf(config, {
 							address: token.underlyingAddress,
+							chainId: token.chainId,
 							args: [signerAddress]
 						}),
 						readErc20BalanceOf(config, {
 							address: token.address,
+							chainId: token.chainId,
 							args: [signerAddress]
 						})
 					]);
 
-					update((state) => ({
-						...state,
-						balances: {
-							...state.balances,
-							[token.name]: {
-								signerBalance: balance,
-								signerUnderlyingBalance: underlyingBalance
+					update((state) => {
+						const previousBalancesEntry =
+							state.balances[token.name] ?? {
+								signerBalance: BigInt(0),
+								signerUnderlyingBalance: BigInt(0)
+							};
+						return {
+							...state,
+							balances: {
+								...state.balances,
+								[token.name]: {
+									...previousBalancesEntry,
+									signerBalance: balance,
+									signerUnderlyingBalance: underlyingBalance
+								}
 							}
-						}
-					}));
+						};
+					});
 				})
 			);
 
@@ -372,28 +363,31 @@ const balancesStore = () => {
 			return stats;
 		};
 
-		const [cysFLRStats, cyWETHStats, cyFXRPStats] = await Promise.all(
-			tokens.map(async (token) => await getTokenStats(token))
+		const tokenStatsEntries = await Promise.all(
+			tokenCache.map(async (token) => ({
+				tokenName: token.name,
+				stats: await getTokenStats(token)
+			}))
 		);
 
-		update((state) => ({
-			...state,
-			statsLoading: false,
-			stats: {
-				cysFLR: {
-					...state.stats.cysFLR,
-					...cysFLRStats
-				},
-				cyWETH: {
-					...state.stats.cyWETH,
-					...cyWETHStats
-				},
-				cyFXRP: {
-					...state.stats.cyFXRP,
-					...cyFXRPStats
-				}
-			}
-		}));
+		update((state) => {
+			const nextStats = tokenStatsEntries.reduce(
+				(acc, { tokenName, stats }) => ({
+					...acc,
+					[tokenName]: {
+						...(state.stats[tokenName] || createEmptyStatsEntry()),
+						...stats
+					}
+				}),
+				{} as StatsState['stats']
+			);
+
+			return {
+				...state,
+				statsLoading: false,
+				stats: nextStats
+			};
+		});
 	};
 
 	return {

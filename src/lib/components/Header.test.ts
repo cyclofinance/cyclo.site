@@ -13,6 +13,9 @@ describe('Header.svelte', () => {
 		const logo = screen.getByAltText('Cyclo logo');
 		expect(logo).toBeInTheDocument();
 
+		const networkSwitcher = screen.getByTestId('network-switcher');
+		expect(networkSwitcher).toBeInTheDocument();
+
 		const walletConnectComponent = screen.getByTestId('wallet-connect');
 		expect(walletConnectComponent).toBeInTheDocument();
 	});

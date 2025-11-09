@@ -1,26 +1,27 @@
 <script lang="ts">
 	import '../app.css';
-	import { defaultConfig, signerAddress, wagmiConfig } from 'svelte-wagmi';
+	import { defaultConfig, signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
 	import { injected, walletConnect } from '@wagmi/connectors';
 	import Header from '$lib/components/Header.svelte';
-	import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
-	import { browser } from '$app/environment';
-	import { PUBLIC_LAUNCHED } from '$env/static/public';
-	import { flare } from '@wagmi/core/chains';
-	import { cusdxAddress, quoterAddress, selectedCyToken } from '$lib/stores';
+import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
+import { PUBLIC_LAUNCHED } from '$env/static/public';
+	import { flare, arbitrum } from '@wagmi/core/chains';
+	import { cusdxAddress, quoterAddress, selectedCyToken, setActiveNetworkByChainId } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
 	import { onDestroy } from 'svelte';
 	import type { Hex } from 'viem';
 	import DataFetcherProvider from '$lib/components/DataFetcherProvider.svelte';
 
-	let intervalId: ReturnType<typeof setInterval>;
+let intervalId: ReturnType<typeof setInterval>;
+let lastChainId: number | null = null;
+const isBrowser = typeof window !== 'undefined';
 	const initWallet = async () => {
 		const erckit = defaultConfig({
 			autoConnect: true,
 			appName: 'cyclo',
 			walletConnectProjectId: PUBLIC_WALLETCONNECT_ID,
-			chains: [flare],
+			chains: [flare, arbitrum],
 			connectors: [injected(), walletConnect({ projectId: PUBLIC_WALLETCONNECT_ID })]
 		});
 		await erckit.init();
@@ -36,8 +37,17 @@
 		}
 	};
 
-	$: if (browser && window.navigator) {
+	$: if (isBrowser && window.navigator) {
 		initWallet();
+	}
+
+	$: if (isBrowser) {
+		if ($chainId && $chainId !== lastChainId) {
+			lastChainId = $chainId;
+			setActiveNetworkByChainId($chainId);
+		} else if (!$chainId && lastChainId !== null) {
+			lastChainId = null;
+		}
 	}
 
 	const startGettingPricesAndBalances = () => {

@@ -12,6 +12,12 @@ vi.mock('../../generated', () => ({
 	readErc1155BalanceOf: vi.fn()
 }));
 
+vi.mock('$env/dynamic/public', () => ({
+	env: {
+		PUBLIC_ETHERSCAN_API_KEY: 'test-etherscan-key'
+	}
+}));
+
 describe('getSingleTokenReceipts', () => {
 	const mockAddress = '0xMockAddress' as Hex;
 	const mockErc1155Address = '0xMockERC1155Address' as Hex;
@@ -58,7 +64,13 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(1));
 
-		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, {
+			source: {
+				type: 'blockscout',
+				baseUrl: 'https://flare-explorer.flare.network',
+				chainId: 14
+			}
+		});
 
 		// Should have made 2 API calls due to pagination
 		expect(axios.get).toHaveBeenCalledTimes(2);
@@ -75,6 +87,7 @@ describe('getSingleTokenReceipts', () => {
 
 		expect(result).toEqual([
 			{
+				chainId: '14',
 				tokenAddress: mockErc1155Address,
 				tokenId: '1000000000000000000',
 				balance: BigInt(1),
@@ -93,7 +106,13 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(0));
 
-		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, {
+			source: {
+				type: 'blockscout',
+				baseUrl: 'https://flare-explorer.flare.network',
+				chainId: 14
+			}
+		});
 		expect(result).toEqual([]);
 	});
 
@@ -102,7 +121,13 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(axios.get).mockRejectedValue(new Error('Network error'));
 
-		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, {
+			source: {
+				type: 'blockscout',
+				baseUrl: 'https://flare-explorer.flare.network',
+				chainId: 14
+			}
+		});
 
 		expect(result).toBeNull();
 		expect(consoleErrorSpy).toHaveBeenCalled();
@@ -136,10 +161,85 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(1));
 
-		await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, progressCallback);
+		await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, {
+			source: {
+				type: 'blockscout',
+				baseUrl: 'https://flare-explorer.flare.network',
+				chainId: 14
+			},
+			onProgress: progressCallback
+		});
 
 		// Should have called progress callback for each page
 		expect(progressCallback).toHaveBeenCalledWith(1, 1); // First page
 		expect(progressCallback).toHaveBeenCalledWith(2, 1); // Second page
+	});
+});
+
+describe('getSingleTokenReceipts (etherscan)', () => {
+	const mockAddress = '0xMockAddress' as Hex;
+	const mockErc1155Address = '0xMockERC1155Address' as Hex;
+	const mockConfig = {} as Config;
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('fetches receipts from etherscan API with pagination', async () => {
+		vi.mocked(axios.get).mockResolvedValueOnce({
+			data: {
+				status: '1',
+				message: 'OK',
+				result: [
+					{
+						contractAddress: mockErc1155Address,
+						tokenID: '1000000000000000000'
+					}
+				]
+			}
+		});
+
+		vi.mocked(axios.get).mockResolvedValueOnce({
+			data: {
+				status: '1',
+				message: 'OK',
+				result: []
+			}
+		});
+
+		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(1));
+
+		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, {
+			source: {
+				type: 'etherscan',
+				baseUrl: 'https://api.etherscan.io/v2/api',
+				chainId: 42161,
+				pageSize: 100
+			}
+		});
+
+		expect(axios.get).toHaveBeenCalledWith('https://api.etherscan.io/v2/api', {
+			params: expect.objectContaining({
+				module: 'account',
+				action: 'token1155tx',
+				address: mockAddress,
+				contractaddress: mockErc1155Address,
+				chainid: 42161,
+				page: 1,
+				offset: 100,
+				sort: 'asc',
+				apikey: 'test-etherscan-key'
+			})
+		});
+
+		expect(result).toEqual([
+			{
+				chainId: '42161',
+				tokenAddress: mockErc1155Address,
+				tokenId: '1000000000000000000',
+				balance: BigInt(1),
+				readableTokenId: formatEther('1000000000000000000')
+			}
+		]);
 	});
 });

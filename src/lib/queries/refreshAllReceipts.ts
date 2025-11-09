@@ -1,6 +1,7 @@
 import type { Config } from '@wagmi/core';
 import type { Receipt } from '$lib/types';
 import { myReceipts, tokens } from '$lib/stores';
+import { get } from 'svelte/store';
 import { getSingleTokenReceipts } from '$lib/queries/getReceipts';
 
 export const refreshAllReceipts = async (
@@ -10,25 +11,16 @@ export const refreshAllReceipts = async (
 ): Promise<Receipt[]> => {
 	if (!signerAddress) return [];
 
-	// Get receipts for all tokens
-	const [cysFLRReceipts, cyWETHReceipts, cyFXRPReceipts] = await Promise.all([
-		getSingleTokenReceipts(signerAddress, tokens[0].receiptAddress, config),
-		getSingleTokenReceipts(signerAddress, tokens[1].receiptAddress, config),
-		getSingleTokenReceipts(signerAddress, tokens[2].receiptAddress, config)
-	]);
+	const tokenList = get(tokens);
 
-	if (!cysFLRReceipts && !cyWETHReceipts && !cyFXRPReceipts) {
-		setLoading(false);
-		myReceipts.set([]);
-		return [];
-	}
+	const receiptCollections = await Promise.all(
+		tokenList.map(async (token) => {
+			const receipts = await getSingleTokenReceipts(signerAddress, token.receiptAddress, config);
+			return receipts?.map((receipt) => ({ ...receipt, token: token.name })) ?? [];
+		})
+	);
 
-	// Add token identifier to each receipt
-	const allReceipts = [
-		...(cysFLRReceipts?.map((r) => ({ ...r, token: 'cysFLR' })) || []),
-		...(cyWETHReceipts?.map((r) => ({ ...r, token: 'cyWETH' })) || []),
-		...(cyFXRPReceipts?.map((r) => ({ ...r, token: 'cyFXRP' })) || [])
-	];
+	const allReceipts = receiptCollections.flat();
 
 	setLoading(false);
 	myReceipts.set(allReceipts);

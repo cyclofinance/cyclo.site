@@ -1,4 +1,10 @@
-import { cusdxAddress, quoterAddress, usdcAddress, wFLRAddress, tokens } from '$lib/stores';
+import {
+	cusdxAddress,
+	quoterAddress,
+	usdcAddress,
+	wrappedNativeAddress,
+	tokens
+} from '$lib/stores';
 import { createConfig, http, simulateContract } from '@wagmi/core';
 import { get } from 'svelte/store';
 import { quoterAbi } from '../../generated';
@@ -13,6 +19,13 @@ export const getcysFLRwFLRPrice = async () => {
 		}
 	});
 	// first get the cUSDX per cysFLR price
+	const tokenList = get(tokens);
+	const [primaryToken] = tokenList;
+
+	if (!primaryToken) {
+		throw new Error('No tokens configured for the active network.');
+	}
+
 	const cysFLRcUSDXPrice = (
 		await simulateContract(config, {
 			address: get(quoterAddress),
@@ -20,7 +33,7 @@ export const getcysFLRwFLRPrice = async () => {
 			functionName: 'quoteExactInputSingle',
 			args: [
 				{
-					tokenIn: tokens[0].address,
+					tokenIn: primaryToken.address,
 					tokenOut: get(cusdxAddress),
 					amountIn: BigInt(1e18),
 					fee: 3000,
@@ -39,7 +52,7 @@ export const getcysFLRwFLRPrice = async () => {
 			functionName: 'quoteExactInputSingle',
 			args: [
 				{
-					tokenIn: get(wFLRAddress),
+					tokenIn: get(wrappedNativeAddress),
 					tokenOut: get(usdcAddress),
 					amountIn: BigInt(1e18),
 					fee: 3000,
