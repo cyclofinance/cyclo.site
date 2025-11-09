@@ -31,17 +31,6 @@ vi.mock('@rainlanguage/orderbook/js_api', () => ({
 	getTransactionAddOrders: vi.fn()
 }));
 
-vi.mock('svelte/store', async () => {
-	const actual = await vi.importActual('svelte/store');
-	return {
-		...actual,
-		get: vi.fn().mockImplementation((store) => {
-			if (store === transactionStore) return transactionStore;
-			return mockWagmiConfigStore;
-		})
-	};
-});
-
 // Add this back
 vi.mock('@wagmi/core', () => ({
 	sendTransaction: vi.fn(),

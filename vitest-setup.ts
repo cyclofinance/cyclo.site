@@ -1,9 +1,14 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
-import {  web3ModalStore } from './src/lib/mocks/mockStores';
+import { web3ModalStore } from './src/lib/mocks/mockStores';
 
-const { mockWagmiConfigStore, mockSignerAddressStore, mockChainIdStore, mockConnectedStore, mockWrongNetworkStore } =
-	await vi.hoisted(() => import('./src/lib/mocks/mockStores'));
+const {
+	mockWagmiConfigStore,
+	mockSignerAddressStore,
+	mockChainIdStore,
+	mockConnectedStore,
+	mockWrongNetworkStore
+} = await vi.hoisted(() => import('./src/lib/mocks/mockStores'));
 
 vi.mock('svelte-wagmi', async () => {
 	return {
@@ -15,13 +20,19 @@ vi.mock('svelte-wagmi', async () => {
 	};
 });
 
-vi.mock('$lib/stores', async (importOriginal) => {
-
+vi.mock('$lib/stores', async () => {
+	const actual = await vi.importActual<typeof import('./src/lib/stores')>('./src/lib/stores');
 	return {
-		...await importOriginal() as object,
+		...actual,
 		wrongNetwork: mockWrongNetworkStore
-	}}
-)
+	};
+});
+
+vi.mock('$env/dynamic/public', () => ({
+	env: {
+		PUBLIC_ETHERSCAN_API_KEY: 'test-etherscan-key'
+	}
+}));
 
 vi.mock('$app/stores', async () => {
 	const { readable, writable } = await import('svelte/store');
