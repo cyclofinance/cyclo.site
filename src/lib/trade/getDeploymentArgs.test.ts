@@ -85,7 +85,8 @@ describe('getDcaDeploymentArgs', () => {
 		selectedBaseline: '1.5',
 		inputVaultId: '0x1234567890123456789012345678901234567890' as `0x${string}`,
 		outputVaultId: '0x1234567890123456789012345678901234567890' as `0x${string}`,
-		depositAmount: BigInt(1000000000000000000)
+		depositAmount: BigInt(1000000000000000000),
+		selectedNetworkKey: 'flare'
 	};
 
 	const mockDataFetcher = new DataFetcher(flare.id);

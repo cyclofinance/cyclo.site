@@ -3,7 +3,7 @@
 	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
 	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
-import { tokens } from '$lib/stores';
+	import { tokens, explorerBaseUrl } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
 	import { formatEther } from 'viem';
@@ -15,10 +15,10 @@ import { tokens } from '$lib/stores';
 	let error: string | null = null;
 	let stats: AccountStats | null = null;
 
-const resolveTokenLabel = (address: string) => {
-	const tokenMatch = $tokens.find((token) => isAddressEqual(address, token.address));
-	return tokenMatch?.name ?? 'Unknown';
-};
+	const resolveTokenLabel = (address: string) => {
+		const tokenMatch = $tokens.find((token) => isAddressEqual(address, token.address));
+		return tokenMatch?.name ?? 'Unknown';
+	};
 
 	onMount(async () => {
 		try {
@@ -57,14 +57,14 @@ const resolveTokenLabel = (address: string) => {
 				<h2 class="text-xl font-semibold text-white">Transfer History</h2>
 				<div class="space-y-2">
 					{#each [...stats.transfers.in, ...stats.transfers.out].sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp)) as transfer}
-						<a
-							href={`https://flarescan.com/tx/${transfer.transactionHash}`}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="flex items-center justify-between rounded py-2 {transfer.fromIsApprovedSource
-								? 'border-success bg-base-200 border-l-4'
-								: 'bg-base-200'} hover:bg-base-300"
-						>
+							<a
+								href={`${$explorerBaseUrl}tx/${transfer.transactionHash}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="flex items-center justify-between rounded py-2 {transfer.fromIsApprovedSource
+									? 'border-success bg-base-200 border-l-4'
+									: 'bg-base-200'} hover:bg-base-300"
+							>
 							<div class="space-y-1">
 								<div class="text-sm">
 									{#if getAddress(transfer.from.id) === getAddress(account)}

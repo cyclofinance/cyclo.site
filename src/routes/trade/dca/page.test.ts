@@ -23,27 +23,56 @@ vi.mock('sushi/router', () => ({
 }));
 
 // Mock the actual tokens that are being used in the component
-vi.mock('$lib/constants', () => ({
-	tokens: [
+vi.mock('$lib/constants', () => {
+	const mockTokens = [
 		{
 			address: '0xfbda5f676cb37624f28265a144a48b0d6e87d3b6',
 			symbol: 'USDC.e',
 			name: 'Bridged USDC (Stargate)',
 			decimals: 6
 		}
-	]
-}));
+	];
+	return {
+		tokens: mockTokens,
+		tokensForNetwork: vi.fn().mockReturnValue(mockTokens),
+		networkTokenConfigs: [
+			{
+				key: 'flare',
+				displayName: 'Flare',
+				tokens: mockTokens
+			}
+		]
+	};
+});
 
-vi.mock('$lib/stores', () => ({
-	tokens: [
-		{
-			address: '0xdef4560000000000000000000000000000000000',
-			symbol: 'TEST',
-			name: 'Test Token',
-			decimals: 18
+vi.mock('$lib/stores', () => {
+	const createStore = (value: unknown) => ({
+		subscribe: (fn: (val: unknown) => void) => {
+			fn(value);
+			return () => {};
 		}
-	]
-}));
+	});
+
+	return {
+		activeNetworkKey: createStore('flare'),
+		tokens: createStore([
+			{
+				address: '0xdef4560000000000000000000000000000000000',
+				symbol: 'TEST',
+				name: 'Test Token',
+				decimals: 18
+			}
+		]),
+		tradingTokens: createStore([
+			{
+				address: '0xfbda5f676cb37624f28265a144a48b0d6e87d3b6',
+				symbol: 'USDC.e',
+				name: 'Bridged USDC (Stargate)',
+				decimals: 6
+			}
+		])
+	};
+});
 
 describe('DCA Page', () => {
 	const mockDataFetcher = {

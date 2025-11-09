@@ -5,6 +5,7 @@ import type { Hex } from 'viem';
 import type { Receipt } from './types';
 import { flare } from '@wagmi/core/chains';
 import type { CyToken } from './types';
+import { tokensForNetwork } from '$lib/constants';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Hex;
 
@@ -37,6 +38,9 @@ type NetworkConfig = {
 	addresses: NetworkAddresses;
 	tokens: CyToken[];
 	receiptSource: ReceiptSource;
+	orderbookSubgraphUrl: string;
+	rewardsSubgraphUrl: string;
+	explorerBaseUrl: string;
 };
 
 const networkConfigs: NetworkConfig[] = [
@@ -55,6 +59,11 @@ const networkConfigs: NetworkConfig[] = [
 			baseUrl: 'https://flare-explorer.flare.network',
 			chainId: flare.id
 		},
+		orderbookSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
+		rewardsSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-11-06-4bb37cce25d383df/gn',
+		explorerBaseUrl: 'https://flarescan.com/',
 		tokens: [
 			{
 				name: 'cysFLR',
@@ -63,8 +72,7 @@ const networkConfigs: NetworkConfig[] = [
 				address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
 				underlyingAddress: '0x12e605bc104e93B45e1aD99F9e555f659051c2BB' as Hex, // sFlr
 				underlyingSymbol: 'sFLR',
-				receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,
-				chainId: flare.id,
+				receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,				chainId: flare.id,
 				networkKey: 'flare',
 				networkName: 'Flare'
 			},
@@ -110,6 +118,11 @@ const networkConfigs: NetworkConfig[] = [
 			chainId: arbitrum.id,
 			pageSize: 100
 		},
+		orderbookSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn',
+		rewardsSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/cyclo-rewards-arbitrum/0.0.1/gn',
+		explorerBaseUrl: 'https://arbiscan.io/',
 		tokens: [
 			{
 				name: 'cyWETH',
@@ -142,6 +155,23 @@ export const activeNetworkConfig = derived(activeNetworkKey, (key) => resolveNet
 export const targetNetwork = derived(activeNetworkConfig, (config) => config.chain);
 
 export const tokens = derived(activeNetworkConfig, (config) => config.tokens);
+
+export const tradingTokens = derived(activeNetworkKey, (key) => tokensForNetwork(key));
+
+export const orderbookSubgraphUrl = derived(
+	activeNetworkConfig,
+	(config) => config.orderbookSubgraphUrl
+);
+
+export const rewardsSubgraphUrl = derived(
+	activeNetworkConfig,
+	(config) => config.rewardsSubgraphUrl
+);
+
+export const explorerBaseUrl = derived(
+	activeNetworkConfig,
+	(config) => config.explorerBaseUrl
+);
 
 export const receiptSource = derived(activeNetworkConfig, (config) => config.receiptSource);
 

@@ -9,7 +9,7 @@ import {
 	writeErc20PriceOracleReceiptVaultRedeem
 } from '../generated';
 import balancesStore from './balancesStore';
-import { myReceipts } from './stores';
+import { myReceipts, orderbookSubgraphUrl } from './stores';
 import { refreshAllReceipts } from './queries/refreshAllReceipts';
 import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from './types';
@@ -242,6 +242,8 @@ const transactionStore = () => {
 		awaitWalletConfirmation(`Preparing strategy...`);
 
 		const { deploymentArgs, outputToken } = await getDcaDeploymentArgs(options, dataFetcher);
+		const pollingSubgraphUrl = get(orderbookSubgraphUrl);
+		const networkChainId = options.selectedCyToken.chainId;
 
 		if (deploymentArgs.approvals.length > 0) {
 			awaitWalletConfirmation(`Awaiting wallet confirmation to approve ${outputToken.symbol}...`);
@@ -260,10 +262,7 @@ const transactionStore = () => {
 
 		// Poll for the order to be added to the orderbook
 		const interval = setInterval(async () => {
-			const orders = await getTransactionAddOrders(
-				'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
-				hash
-			);
+			const orders = await getTransactionAddOrders(pollingSubgraphUrl, hash);
 			if (orders.length > 0) {
 				clearInterval(interval);
 				const orderHash = orders[0].order.orderHash;
@@ -272,7 +271,7 @@ const transactionStore = () => {
 				<a
 								target="_blank"
 								class="whitespace-pre-wrap break-words text-center hover:underline"
-								href="https://raindex.finance/orders/14-${orderbookId}-${orderHash}"
+								href="https://raindex.finance/orders/${networkChainId}-${orderbookId}-${orderHash}"
 								data-testid="raindex-link">Manage your order on Raindex</a
 							>
 				`;

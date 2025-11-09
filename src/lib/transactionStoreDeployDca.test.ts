@@ -78,7 +78,11 @@ describe('transactionStore.handleDeployDca', () => {
 			decimals: 18
 		},
 		selectedAmount: BigInt(1000000000000000000), // 1 TEST
-		selectedBaseline: '1.5'
+		selectedBaseline: '1.5',
+		depositAmount: BigInt(1000000000000000000),
+		inputVaultId: undefined,
+		outputVaultId: undefined,
+		selectedNetworkKey: 'flare'
 	};
 
 	const mockDataFetcher = new DataFetcher(flare.id);
