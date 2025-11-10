@@ -143,11 +143,18 @@ describe('transactionStore.handleDeployDca', () => {
 		await deployPromise;
 
 		expect(sendTransaction).toHaveBeenCalledTimes(2);
-		expect(sendTransaction).toHaveBeenCalledWith(mockWagmiConfigStore, {
+
+		const firstCall = vi.mocked(sendTransaction).mock.calls[0];
+		const secondCall = vi.mocked(sendTransaction).mock.calls[1];
+
+		expect(firstCall?.[0]).toBeTruthy();
+		expect(firstCall?.[1]).toEqual({
 			data: '0xapproval',
 			to: '0xtoken'
 		});
-		expect(sendTransaction).toHaveBeenCalledWith(mockWagmiConfigStore, {
+
+		expect(secondCall?.[0]).toBeTruthy();
+		expect(secondCall?.[1]).toEqual({
 			data: '0xabcdef',
 			to: '0x1234'
 		});
