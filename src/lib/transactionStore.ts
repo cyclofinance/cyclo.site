@@ -1,7 +1,13 @@
 import { get, writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import type { Config } from '@wagmi/core';
-import { sendTransaction, waitForTransactionReceipt } from '@wagmi/core';
+import { encodeFunctionData } from 'viem';
+import {
+	readContract,
+	readContracts,
+	sendTransaction,
+	waitForTransactionReceipt
+} from '@wagmi/core';
 import {
 	readErc20Allowance,
 	writeErc20Approve,
@@ -17,6 +23,14 @@ import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { wagmiConfig } from 'svelte-wagmi';
 import { getDcaDeploymentArgs, type DcaDeploymentArgs } from './trade/getDeploymentArgs';
 import type { DataFetcher } from 'sushi';
+import {
+	DEFAULT_PYTH_ADDR,
+	extractParsedTimes,
+	extractPublishTime,
+	fetchUpdateBlobs,
+	PYTH_UPDATE_ABI,
+	toU64
+} from './pyth';
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 export const ONE = BigInt('1000000000000000000');
@@ -281,11 +295,74 @@ const transactionStore = () => {
 		}, 2000);
 	};
 
+	const handlePythPriceUpdate = async (
+		pythContractAddress: `0x${string}` = DEFAULT_PYTH_ADDR,
+		priceIds: `0x${string}`[]
+	): Promise<`0x${string}`> => {
+		const config = get(wagmiConfig);
+		if (!config) throw new Error('Wagmi config not found');
+		if (!priceIds?.length) throw new Error('No priceIds provided');
+
+		const { updateData, parsed } = await fetchUpdateBlobs(priceIds);
+
+		const parsedMap = extractParsedTimes({ parsed }); // keep same extractor
+		const publishTimes: bigint[] = Array(priceIds.length).fill(0n);
+		const fallbackIdxs: number[] = [];
+
+		for (let i = 0; i < priceIds.length; i++) {
+			const key = priceIds[i].toLowerCase();
+			if (parsedMap[key] !== undefined) {
+				publishTimes[i] = toU64(parsedMap[key]);
+			} else {
+				fallbackIdxs.push(i);
+			}
+		}
+
+		if (fallbackIdxs.length) {
+			// batch fallback via readContracts
+			const contracts = fallbackIdxs.map((idx) => ({
+				abi: PYTH_UPDATE_ABI,
+				address: pythContractAddress,
+				functionName: 'getPriceUnsafe' as const,
+				args: [priceIds[idx]]
+			}));
+			const results = await readContracts(config, { contracts });
+			results.forEach((r, k) => {
+				const pt = extractPublishTime(r.result);
+				publishTimes[fallbackIdxs[k]] = toU64(pt + 1n);
+			});
+		}
+
+		// 3) Exact fee
+		const fee = (await readContract(config, {
+			abi: PYTH_UPDATE_ABI,
+			address: pythContractAddress,
+			functionName: 'getUpdateFee',
+			args: [updateData]
+		})) as bigint;
+
+		const data = encodeFunctionData({
+			abi: PYTH_UPDATE_ABI,
+			functionName: 'updatePriceFeedsIfNecessary',
+			args: [updateData, priceIds, publishTimes]
+		}) as Hex;
+
+		// 5) Submit
+		const hash = await sendTransaction(config, {
+			to: pythContractAddress,
+			data,
+			value: fee
+		});
+
+		return hash;
+	};
+
 	return {
 		subscribe,
 		reset,
 		handleLockTransaction,
 		handleUnlockTransaction,
+		handlePythPriceUpdate,
 		checkingWalletAllowance,
 		awaitWalletConfirmation,
 		awaitApprovalTx,

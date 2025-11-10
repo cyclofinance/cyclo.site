@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Card from '$lib/components/Card.svelte';
 	import transactionStore from '$lib/transactionStore';
+	import { RefreshOutline } from 'flowbite-svelte-icons';
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
 	import { cusdxAddress, selectedCyToken } from '$lib/stores';
@@ -17,6 +18,7 @@
 	import Select from './Select.svelte';
 	import { tokens } from '$lib/stores';
 	import { parseUnits, type Hex } from 'viem';
+	import { arbitrum } from '@wagmi/core/chains';
 
 	export let amountToLock = '';
 	let disclaimerAcknowledged = false;
@@ -66,6 +68,15 @@
 			assets: assets
 		});
 	};
+
+	const refreshSelectedTokenData = async () => {
+		if ($selectedCyToken?.symbol === 'cyWETH' && $selectedCyToken?.chainId === arbitrum.id) {
+			transactionStore.handlePythPriceUpdate('0xff1a0f4744e8582DF1aE09D5611b887B6a12925C', [
+				'0x9d4294bbcd1174d6f2003ec365831e64cc31d9f6f15a2b85399db8d5000960f6'
+			]);
+		}
+	};
+	let refreshing = false;
 
 	$: if (assets || amountToLock) {
 		balancesStore.refreshDepositPreviewSwapValue(
@@ -126,17 +137,30 @@
 					data-testid="price-ratio-link">How does Cyclo use the FTSO?</a
 				>
 			</div>
-			{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-				<div in:fade>
-					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-						<span
-							in:fade={{ duration: 700 }}
-							class="flex flex-row items-center gap-2"
-							data-testid="price-ratio"
-							>{Number(
+			<div in:fade class="flex items-center gap-2">
+				{#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+					<span
+						in:fade={{ duration: 700 }}
+						class="flex flex-row items-center gap-2"
+						data-testid="price-ratio"
+					>
+						{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+							{Number(
 								formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)
 							).toString()}
-
+						{:else}
+							Stale or Incorrect price
+						{/if}
+						{#if $selectedCyToken?.chainId === arbitrum.id}
+							<button
+								class="refresh-button rounded border border-white/40 px-2 py-1 text-xs font-medium text-white transition hover:border-white hover:text-white/80 disabled:opacity-60"
+								on:click={refreshSelectedTokenData}
+								disabled={refreshing}
+								type="button"
+							>
+								<RefreshOutline class="h-4 w-4" />
+							</button>
+						{:else}
 							<svg width="20" height="20" viewBox="0 0 100 100">
 								<circle cx="50" cy="50" r="45" stroke="none" stroke-width="10" fill="none" />
 								<circle
@@ -149,11 +173,11 @@
 									fill="none"
 									stroke-dasharray="282 282"
 								/>
-							</svg></span
-						>
-					{/key}
-				</div>
-			{/if}
+							</svg>
+						{/if}
+					</span>
+				{/key}
+			</div>
 		</div>
 
 		<div
@@ -217,8 +241,14 @@
 					class="flex w-1/4 flex-col items-center justify-center pb-12 pl-6 pr-2 text-center text-white"
 				>
 					<img src={ftso} alt="ftso" class="w-1/2" />
-					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-						{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}
+					{#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+						<span class="text-sm">
+							{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+								{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}
+							{:else}
+								Stale or Incorrect price
+							{/if}
+						</span>
 					{/key}
 				</div>
 				<img src={mintDia} alt="diagram" class="w-1/2" />
@@ -228,14 +258,15 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-					<span data-testid="calculated-cysflr"
-						>{!amountToLock
-							? '0'
-							: formatUnits(
-									$balancesStore.swapQuotes.cyTokenOutput,
-									$selectedCyToken.decimals
-								)}</span
+				{#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+					<span class="text-base" data-testid="calculated-cysflr"
+						>{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+							{!amountToLock
+								? '0'
+								: formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}
+						{:else}
+							Stale Price / Incorrect price
+						{/if}</span
 					>
 				{/key}
 				<span>{$selectedCyToken.name}</span>
@@ -269,9 +300,13 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white md:text-2xl"
 			>
-				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-					<span data-testid="calculated-cysflr-mobile"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+				{#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+					<span class="text-base" data-testid="calculated-cysflr-mobile"
+						>{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+							{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}
+						{:else}
+							Stale Price / Incorrect price
+						{/if}}</span
 					>
 				{/key}
 				<span>{$selectedCyToken.name}</span>
@@ -399,5 +434,9 @@
 		100% {
 			stroke-dasharray: 282 0;
 		}
+	}
+	.refresh-icon {
+		width: 20px;
+		height: 20px;
 	}
 </style>
