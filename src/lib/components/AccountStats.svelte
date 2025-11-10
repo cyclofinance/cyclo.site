@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { AccountStats } from '$lib/types';
 	import { formatEther, formatUnits } from 'viem';
-import { tokens } from '$lib/stores';
+	import { tokens } from '$lib/stores';
 
 	export let stats: AccountStats;
 
-$: cyFXRPInfo = $tokens.find((t) => t.name === 'cyFXRP');
+	$: cyFXRPInfo = $tokens.find((t) => t.name === 'cyFXRP');
 	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
 
 	$: isEligible =

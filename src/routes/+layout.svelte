@@ -3,19 +3,24 @@
 	import { defaultConfig, signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
 	import { injected, walletConnect } from '@wagmi/connectors';
 	import Header from '$lib/components/Header.svelte';
-import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
-import { PUBLIC_LAUNCHED } from '$env/static/public';
+	import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
+	import { PUBLIC_LAUNCHED } from '$env/static/public';
 	import { flare, arbitrum } from '@wagmi/core/chains';
-	import { cusdxAddress, quoterAddress, selectedCyToken, setActiveNetworkByChainId } from '$lib/stores';
+	import {
+		cusdxAddress,
+		quoterAddress,
+		selectedCyToken,
+		setActiveNetworkByChainId
+	} from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
 	import { onDestroy } from 'svelte';
 	import type { Hex } from 'viem';
 	import DataFetcherProvider from '$lib/components/DataFetcherProvider.svelte';
 
-let intervalId: ReturnType<typeof setInterval>;
-let lastChainId: number | null = null;
-const isBrowser = typeof window !== 'undefined';
+	let intervalId: ReturnType<typeof setInterval>;
+	let lastChainId: number | null = null;
+	const isBrowser = typeof window !== 'undefined';
 	const initWallet = async () => {
 		const erckit = defaultConfig({
 			autoConnect: true,

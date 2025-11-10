@@ -16,7 +16,9 @@
 	let stats: AccountStats | null = null;
 
 	const resolveTokenLabel = (address: string) => {
-		const tokenMatch = $tokens.find((token) => isAddressEqual(address, token.address));
+		const tokenMatch = $tokens.find((token) =>
+			isAddressEqual(address as `0x${string}`, token.address)
+		);
 		return tokenMatch?.name ?? 'Unknown';
 	};
 
@@ -57,14 +59,14 @@
 				<h2 class="text-xl font-semibold text-white">Transfer History</h2>
 				<div class="space-y-2">
 					{#each [...stats.transfers.in, ...stats.transfers.out].sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp)) as transfer}
-							<a
-								href={`${$explorerBaseUrl}tx/${transfer.transactionHash}`}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="flex items-center justify-between rounded py-2 {transfer.fromIsApprovedSource
-									? 'border-success bg-base-200 border-l-4'
-									: 'bg-base-200'} hover:bg-base-300"
-							>
+						<a
+							href={`${$explorerBaseUrl}tx/${transfer.transactionHash}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="flex items-center justify-between rounded py-2 {transfer.fromIsApprovedSource
+								? 'border-success bg-base-200 border-l-4'
+								: 'bg-base-200'} hover:bg-base-300"
+						>
 							<div class="space-y-1">
 								<div class="text-sm">
 									{#if getAddress(transfer.from.id) === getAddress(account)}
@@ -84,7 +86,8 @@
 								</div>
 							</div>
 							<div class="flex items-center gap-2 truncate pl-4 font-mono text-white">
-								<span class="text-xs text-gray-300">{resolveTokenLabel(transfer.tokenAddress)}</span>
+								<span class="text-xs text-gray-300">{resolveTokenLabel(transfer.tokenAddress)}</span
+								>
 								<span>{formatEther(transfer.value)}</span>
 							</div>
 						</a>

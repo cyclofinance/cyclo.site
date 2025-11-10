@@ -72,7 +72,8 @@ const networkConfigs: NetworkConfig[] = [
 				address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
 				underlyingAddress: '0x12e605bc104e93B45e1aD99F9e555f659051c2BB' as Hex, // sFlr
 				underlyingSymbol: 'sFLR',
-				receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,				chainId: flare.id,
+				receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,
+				chainId: flare.id,
 				networkKey: 'flare',
 				networkName: 'Flare'
 			},
@@ -168,10 +169,7 @@ export const rewardsSubgraphUrl = derived(
 	(config) => config.rewardsSubgraphUrl
 );
 
-export const explorerBaseUrl = derived(
-	activeNetworkConfig,
-	(config) => config.explorerBaseUrl
-);
+export const explorerBaseUrl = derived(activeNetworkConfig, (config) => config.explorerBaseUrl);
 
 export const receiptSource = derived(activeNetworkConfig, (config) => config.receiptSource);
 
@@ -210,7 +208,9 @@ tokens.subscribe((tokenList) => {
 	if (!tokenList.length) return;
 	const isCurrentInList = current
 		? tokenList.some(
-				(token) => token.address.toLowerCase() === current.address.toLowerCase() && token.chainId === current.chainId
+				(token) =>
+					token.address.toLowerCase() === current.address.toLowerCase() &&
+					token.chainId === current.chainId
 			)
 		: false;
 	if (!isCurrentInList) {

@@ -99,7 +99,11 @@ const getDepositPreviewSwapValue = async (
 
 		const quoterAddr = get(quoterAddress);
 
-		if (selectedToken.name === 'cysFLR' && quoterAddr !== ZeroAddress && valueToken !== ZeroAddress) {
+		if (
+			selectedToken.name === 'cysFLR' &&
+			quoterAddr !== ZeroAddress &&
+			valueToken !== ZeroAddress
+		) {
 			const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
 				address: quoterAddr,
 				chainId: selectedToken.chainId,
@@ -278,11 +282,10 @@ const balancesStore = () => {
 					]);
 
 					update((state) => {
-						const previousBalancesEntry =
-							state.balances[token.name] ?? {
-								signerBalance: BigInt(0),
-								signerUnderlyingBalance: BigInt(0)
-							};
+						const previousBalancesEntry = state.balances[token.name] ?? {
+							signerBalance: BigInt(0),
+							signerUnderlyingBalance: BigInt(0)
+						};
 						return {
 							...state,
 							balances: {

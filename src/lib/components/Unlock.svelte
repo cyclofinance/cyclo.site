@@ -37,10 +37,7 @@
 				<span>BALANCES</span>
 				<div class="flex flex-col gap-4 sm:items-end">
 					{#each $tokens as token (token.address)}
-						<div
-							class="flex flex-row gap-2"
-							data-testid="{token.name.toLowerCase()}-balance"
-						>
+						<div class="flex flex-row gap-2" data-testid="{token.name.toLowerCase()}-balance">
 							{#key $balancesStore.balances[token.name]?.signerBalance}
 								<span in:fade={{ duration: 700 }}>
 									{formatUnits(

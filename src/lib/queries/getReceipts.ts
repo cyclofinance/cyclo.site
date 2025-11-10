@@ -55,7 +55,10 @@ const fetchReceiptsFromBlockscout = async (
 				url.searchParams.set('items_count', paginationParams.items_count.toString());
 			}
 			if (paginationParams.token_contract_address_hash) {
-				url.searchParams.set('token_contract_address_hash', paginationParams.token_contract_address_hash);
+				url.searchParams.set(
+					'token_contract_address_hash',
+					paginationParams.token_contract_address_hash
+				);
 			}
 			if (paginationParams.token_id) {
 				url.searchParams.set('token_id', paginationParams.token_id);

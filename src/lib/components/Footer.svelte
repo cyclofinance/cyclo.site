@@ -3,7 +3,7 @@
 	import balancesStore from '$lib/balancesStore';
 	import { formatNumberWithAbbreviations } from '$lib/methods';
 	import { Spinner } from 'flowbite-svelte';
-import { tokens } from '$lib/stores';
+	import { tokens } from '$lib/stores';
 
 	function calculateMarketCap(price: bigint, supply: bigint): bigint {
 		return (price * supply) / BigInt(1e6);
@@ -63,9 +63,7 @@ import { tokens } from '$lib/stores';
 							<span>Total {token.symbol} supply</span>
 							<span>
 								{formatNumberWithAbbreviations(
-									Number(
-										formatUnits($balancesStore.stats[token.name].supply, token.decimals)
-									)
+									Number(formatUnits($balancesStore.stats[token.name].supply, token.decimals))
 								)}
 							</span>
 						</div>
@@ -91,15 +89,10 @@ import { tokens } from '$lib/stores';
 							<span>Total Value Locked</span>
 							<span>
 								{Number(
-									formatUnits(
-										$balancesStore.stats[token.name].underlyingTvl,
-										token.decimals
-									)
+									formatUnits($balancesStore.stats[token.name].underlyingTvl, token.decimals)
 								)}
 								{token.underlyingSymbol}
-								/ $ {Number(
-									formatUnits($balancesStore.stats[token.name].usdTvl, token.decimals)
-								)}
+								/ $ {Number(formatUnits($balancesStore.stats[token.name].usdTvl, token.decimals))}
 							</span>
 						</div>
 					{/if}

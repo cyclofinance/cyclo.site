@@ -3,7 +3,6 @@ import transactionStore from './transactionStore';
 import { getDcaDeploymentArgs, type DcaDeploymentArgs } from './trade/getDeploymentArgs';
 import { sendTransaction } from '@wagmi/core';
 import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
-import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 import { flare } from '@wagmi/core/chains';
 import { DataFetcher } from 'sushi';
 // Mock the dependencies, not the module under test

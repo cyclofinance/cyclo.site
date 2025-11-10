@@ -73,9 +73,7 @@
 	$: resolvedSelectedToken = selectedToken;
 	$: resolvedCyToken = selectedCyToken;
 	$: resolvedAmountToken =
-		selectedBuyOrSell === 'Buy'
-			? resolvedSelectedToken
-			: resolvedCyToken ?? resolvedSelectedToken;
+		selectedBuyOrSell === 'Buy' ? resolvedSelectedToken : resolvedCyToken ?? resolvedSelectedToken;
 	$: depositAmount = chooseOverrideDepositAmount ? overrideDepositAmount : selectedAmount;
 
 	// errors
@@ -201,13 +199,13 @@
 			<span class="text-sm text-gray-200"
 				>Amount to {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'}
 				<InfoTooltip
-					>The number of tokens you will {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'} every period of
-					time defined below. This creates a streaming budget over time.
+					>The number of tokens you will {selectedBuyOrSell == 'Buy' ? 'spend' : 'sell'} every period
+					of time defined below. This creates a streaming budget over time.
 				</InfoTooltip></span
 			>
 			{#if amountToken}
 				<TradeAmountInput
-					amountToken={amountToken}
+					{amountToken}
 					bind:amount={selectedAmount}
 					dataTestId="amount-input"
 					validate={validateSelectedAmount}
@@ -245,14 +243,16 @@
 		<!-- lowest price to spend or receive -->
 		<div class="flex flex-col gap-2" data-testid="baseline-container">
 			<div class="text-sm text-gray-200">
-				{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${baseToken?.symbol ?? ''} per ${cyToken?.symbol ?? ''}`})
+				{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${
+					baseToken?.symbol ?? ''
+				} per ${cyToken?.symbol ?? ''}`})
 				<InfoTooltip
 					>The {selectedBuyOrSell == 'Buy' ? 'highest' : 'lowest'} price at which the strategy will {selectedBuyOrSell ==
 					'Buy'
 						? 'buy'
-						: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but note
-					the budget set above is still accruing, meaning the strategy will attempt to "catch up" when
-					the market comes back within range.
+						: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but
+					note the budget set above is still accruing, meaning the strategy will attempt to "catch
+					up" when the market comes back within range.
 				</InfoTooltip>
 			</div>
 
@@ -291,7 +291,7 @@
 						{#if chooseOverrideDepositAmount}
 							{#if amountToken}
 								<TradeAmountInput
-									amountToken={amountToken}
+									{amountToken}
 									bind:amount={overrideDepositAmount}
 									dataTestId="deposit-amount-input"
 									validate={validateOverrideDepositAmount}

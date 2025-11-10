@@ -7,9 +7,9 @@
 	import { signerAddress } from 'svelte-wagmi';
 	import { selectedCyToken, tokens } from '$lib/stores';
 
-$: if ($tokens.length > 0) {
-	$selectedCyToken = $tokens[0];
-}
+	$: if ($tokens.length > 0) {
+		$selectedCyToken = $tokens[0];
+	}
 </script>
 
 <div class="mx-auto max-w-7xl space-y-8 px-4 py-8">
