@@ -128,10 +128,10 @@ const networkConfigs: NetworkConfig[] = [
 				name: 'cyWETH',
 				symbol: 'cyWETH',
 				decimals: 18,
-				address: '0x4070D04f9D10093F9fbcbdfa075Df06892C90401' as Hex,
+				address: '0x41583d4ab43fB05Eb649fFFD01fA145e037Df613' as Hex,
 				underlyingAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
 				underlyingSymbol: 'WETH',
-				receiptAddress: '0x6EEdB55bC2E9B92F04B4EE3dc9FCF0834c223f25' as Hex,
+				receiptAddress: '0xBbe6114Ba8157F0b628d4aa5d1b9Bace6401c939' as Hex,
 				chainId: arbitrum.id,
 				networkKey: 'arbitrum',
 				networkName: 'Arbitrum One'
