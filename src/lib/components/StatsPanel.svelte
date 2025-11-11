@@ -8,9 +8,6 @@
 	import { TOTAL_REWARD } from '$lib/constants';
 	import { tokens } from '$lib/stores';
 
-	$: cyFXRPInfo = tokens.find((t) => t.name === 'cyFXRP');
-	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
-
 	let loading = true;
 	let error: string | null = null;
 	let stats: GlobalStats | null = null;
@@ -78,10 +75,10 @@
 					{Number(formatEther(stats.totalEligibleSum)).toFixed(2).toLocaleString()}
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
-					<div>cysFLR: {Number(formatEther(stats.totalEligibleCysFLR)).toFixed(2)}</div>
-					<div>cyWETH: {Number(formatEther(stats.totalEligibleCyWETH)).toFixed(2)}</div>
+					<div>cysFLR: {Number(formatUnits(stats.totalEligibleCysFLR, tokens.find((t) => t.name === 'cysFLR')?.decimals || 18)).toFixed(2)}</div>
+					<div>cyWETH: {Number(formatUnits(stats.totalEligibleCyWETH, tokens.find((t) => t.name === 'cyWETH')?.decimals || 18)).toFixed(2)}</div>
 					<div>
-						cyFXRP: {Number(formatUnits(stats.totalEligibleCyFXRP, cyFXRPDecimals)).toFixed(2)}
+						cyFXRP: {Number(formatUnits(stats.totalEligibleCyFXRP, tokens.find((t) => t.name === 'cyFXRP')?.decimals || 18)).toFixed(2)}
 					</div>
 				</div>
 			</div>
