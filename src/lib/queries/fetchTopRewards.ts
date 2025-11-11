@@ -1,11 +1,13 @@
 import { type TopAccountsQuery } from '../../generated-graphql';
 import TopAccounts from '$lib/queries/top-rewards.graphql?raw';
-import { SUBGRAPH_URL } from '$lib/constants';
+import { get } from 'svelte/store';
+import { rewardsSubgraphUrl } from '$lib/stores';
 import type { LeaderboardEntry } from '$lib/types';
 import { calculateShares } from './calculateShares';
 
 export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
-	const response = await fetch(SUBGRAPH_URL, {
+	const rewardsSg = get(rewardsSubgraphUrl);
+	const response = await fetch(rewardsSg, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({

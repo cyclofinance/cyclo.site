@@ -3,7 +3,9 @@ import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
 import { getcyFXRPwFLRPrice } from './cyFXRPwFLRQuote';
-import { ONE, SUBGRAPH_URL } from '$lib/constants';
+import { ONE } from '$lib/constants';
+import { get } from 'svelte/store';
+import { rewardsSubgraphUrl } from '$lib/stores';
 import { calculateRewardsPools } from './calculateRewardsPools';
 import type { GlobalStats } from '$lib/types';
 
@@ -19,7 +21,8 @@ export const calculateApy = (rewardPool: bigint, totalEligible: bigint, price: b
 };
 
 export async function fetchStats(): Promise<GlobalStats> {
-	const response = await fetch(SUBGRAPH_URL, {
+	const rewardsSg = get(rewardsSubgraphUrl);
+	const response = await fetch(rewardsSg, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({

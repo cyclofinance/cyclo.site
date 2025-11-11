@@ -2,7 +2,6 @@ import type { Config } from '@wagmi/core';
 import type { Receipt } from '$lib/types';
 import { myReceipts, tokens, rewardsSubgraphUrl } from '$lib/stores';
 import { get } from 'svelte/store';
-import { SUBGRAPH_URL } from '$lib/constants';
 import AccountReceipts from '$lib/queries/account-receipts.graphql?raw';
 import { type AccountReceiptsQuery } from '../../generated-graphql';
 
