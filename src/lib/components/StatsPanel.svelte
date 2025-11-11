@@ -22,6 +22,12 @@
 			loading = false;
 		}
 	});
+
+	$: tokenDecimalsByName = Object.fromEntries(
+		($tokens ?? []).map((token) => [token.name, token.decimals])
+	) as Record<string, number>;
+
+	const getTokenDecimals = (tokenName: string) => tokenDecimalsByName[tokenName] ?? 18;
 </script>
 
 <Card>
@@ -77,26 +83,17 @@
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					<div>
 						cysFLR: {Number(
-							formatUnits(
-								stats.totalEligibleCysFLR,
-								tokens.find((t) => t.name === 'cysFLR')?.decimals || 18
-							)
+							formatUnits(stats.totalEligibleCysFLR, getTokenDecimals('cysFLR'))
 						).toFixed(2)}
 					</div>
 					<div>
 						cyWETH: {Number(
-							formatUnits(
-								stats.totalEligibleCyWETH,
-								tokens.find((t) => t.name === 'cyWETH')?.decimals || 18
-							)
+							formatUnits(stats.totalEligibleCyWETH, getTokenDecimals('cyWETH'))
 						).toFixed(2)}
 					</div>
 					<div>
 						cyFXRP: {Number(
-							formatUnits(
-								stats.totalEligibleCyFXRP,
-								tokens.find((t) => t.name === 'cyFXRP')?.decimals || 18
-							)
+							formatUnits(stats.totalEligibleCyFXRP, getTokenDecimals('cyFXRP'))
 						).toFixed(2)}
 					</div>
 				</div>
