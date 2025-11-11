@@ -75,10 +75,29 @@
 					{Number(formatEther(stats.totalEligibleSum)).toFixed(2).toLocaleString()}
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
-					<div>cysFLR: {Number(formatUnits(stats.totalEligibleCysFLR, tokens.find((t) => t.name === 'cysFLR')?.decimals || 18)).toFixed(2)}</div>
-					<div>cyWETH: {Number(formatUnits(stats.totalEligibleCyWETH, tokens.find((t) => t.name === 'cyWETH')?.decimals || 18)).toFixed(2)}</div>
 					<div>
-						cyFXRP: {Number(formatUnits(stats.totalEligibleCyFXRP, tokens.find((t) => t.name === 'cyFXRP')?.decimals || 18)).toFixed(2)}
+						cysFLR: {Number(
+							formatUnits(
+								stats.totalEligibleCysFLR,
+								tokens.find((t) => t.name === 'cysFLR')?.decimals || 18
+							)
+						).toFixed(2)}
+					</div>
+					<div>
+						cyWETH: {Number(
+							formatUnits(
+								stats.totalEligibleCyWETH,
+								tokens.find((t) => t.name === 'cyWETH')?.decimals || 18
+							)
+						).toFixed(2)}
+					</div>
+					<div>
+						cyFXRP: {Number(
+							formatUnits(
+								stats.totalEligibleCyFXRP,
+								tokens.find((t) => t.name === 'cyFXRP')?.decimals || 18
+							)
+						).toFixed(2)}
 					</div>
 				</div>
 			</div>

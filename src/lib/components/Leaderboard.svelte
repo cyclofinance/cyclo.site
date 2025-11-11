@@ -65,7 +65,10 @@
 								{entry.account.slice(0, 6)}...{entry.account.slice(-4)}
 							</div>
 							<div class=" font-medium text-white">
-								{(+formatUnits(entry.eligibleBalances.cysFLR, tokens.find((t) => t.name === 'cysFLR')?.decimals || 18)).toFixed(4)}
+								{(+formatUnits(
+									entry.eligibleBalances.cysFLR,
+									tokens.find((t) => t.name === 'cysFLR')?.decimals || 18
+								)).toFixed(4)}
 							</div>
 							<div class="flex flex-col gap-y-2 font-medium text-white">
 								<span>{(+formatEther(entry.shares.cysFLR.rewardsAmount)).toFixed(4)}</span>
@@ -74,7 +77,10 @@
 								</span>
 							</div>
 							<div class="font-medium text-white">
-								{(+formatUnits(entry.eligibleBalances.cyWETH, tokens.find((t) => t.name === 'cyWETH')?.decimals || 18)).toFixed(4)}
+								{(+formatUnits(
+									entry.eligibleBalances.cyWETH,
+									tokens.find((t) => t.name === 'cyWETH')?.decimals || 18
+								)).toFixed(4)}
 							</div>
 							<div class="font-medium text-white">
 								<span>{(+formatEther(entry.shares.cyWETH.rewardsAmount)).toFixed(4)}</span>
@@ -83,7 +89,10 @@
 								</span>
 							</div>
 							<div class="font-medium text-white">
-								{(+formatUnits(entry.eligibleBalances.cyFXRP, tokens.find((t) => t.name === 'cyFXRP')?.decimals || 18)).toFixed(4)}
+								{(+formatUnits(
+									entry.eligibleBalances.cyFXRP,
+									tokens.find((t) => t.name === 'cyFXRP')?.decimals || 18
+								)).toFixed(4)}
 							</div>
 							<div class="font-medium text-white">
 								<span>{(+formatEther(entry.shares.cyFXRP.rewardsAmount)).toFixed(4)}</span>
