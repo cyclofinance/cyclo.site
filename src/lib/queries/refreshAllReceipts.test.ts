@@ -1,6 +1,5 @@
 import { vi, it, expect, beforeEach, describe } from 'vitest';
 import { refreshAllReceipts } from './refreshAllReceipts';
-import type { Config } from '@wagmi/core';
 
 vi.mock('$lib/stores', () => ({
 	myReceipts: vi.fn()
@@ -17,8 +16,6 @@ const setLoading = (_loading: boolean) => {
 };
 
 describe('getSingleTokenReceipts', () => {
-	let config: Config;
-
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});

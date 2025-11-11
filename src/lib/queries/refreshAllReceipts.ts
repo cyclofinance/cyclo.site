@@ -1,4 +1,3 @@
-import type { Config } from '@wagmi/core';
 import type { Receipt } from '$lib/types';
 import { myReceipts, tokens, rewardsSubgraphUrl } from '$lib/stores';
 import { get } from 'svelte/store';
@@ -90,8 +89,7 @@ export const refreshAllReceipts = async (
 	} as const;
 
 	const receiptCollections = tokenList.map((token) => {
-		const balances =
-			receiptBalanceMap[token.name as keyof typeof receiptBalanceMap] ?? [];
+		const balances = receiptBalanceMap[token.name as keyof typeof receiptBalanceMap] ?? [];
 
 		return balances.map((receiptBalance) => ({
 			chainId: token.chainId.toString(),

@@ -77,14 +77,14 @@ vi.mock('$lib/store', async () => {
 });
 
 describe('Unlock Component', () => {
-beforeEach(async () => {
+	beforeEach(async () => {
 		vi.clearAllMocks();
 		const store = await import('$lib/stores');
 		store.myReceipts.set([]);
-	vi.mocked(refreshAllReceipts).mockImplementation(async (_signerAddress, setLoading) => {
-		if (setLoading) setLoading(false);
-		return [];
-	});
+		vi.mocked(refreshAllReceipts).mockImplementation(async (_signerAddress, setLoading) => {
+			if (setLoading) setLoading(false);
+			return [];
+		});
 		mockBalancesStore.mockSetSubscribeValue(
 			'Ready',
 			false,
