@@ -298,7 +298,7 @@ const transactionStore = () => {
 	const handlePythPriceUpdate = async (
 		pythContractAddress: `0x${string}` = DEFAULT_PYTH_ADDR,
 		priceIds: `0x${string}`[]
-	): Promise<`0x${string}`> => {
+	) => {
 		const config = get(wagmiConfig);
 		if (!config) throw new Error('Wagmi config not found');
 		if (!priceIds?.length) throw new Error('No priceIds provided');
@@ -347,6 +347,7 @@ const transactionStore = () => {
 			args: [updateData, priceIds, publishTimes]
 		}) as Hex;
 
+		awaitWalletConfirmation(`Awaiting wallet confirmation to update oracle price..`);
 		// 5) Submit
 		const hash = await sendTransaction(config, {
 			to: pythContractAddress,
@@ -354,7 +355,7 @@ const transactionStore = () => {
 			value: fee
 		});
 
-		return hash;
+		return transactionSuccess(hash, `Oracle price updated successfully`);
 	};
 
 	return {
