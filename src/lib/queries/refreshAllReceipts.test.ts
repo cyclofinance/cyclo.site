@@ -24,7 +24,7 @@ describe('getSingleTokenReceipts', () => {
 	});
 
 	it('should return empty array if signerAddress is not provided', async () => {
-		const result = await refreshAllReceipts('', config, setLoading);
+		const result = await refreshAllReceipts('', setLoading);
 		expect(result).toEqual([]);
 	});
 });

@@ -138,7 +138,7 @@ const transactionStore = () => {
 			// UPDATE BALANCES AND RECEIPTS
 			try {
 				await balancesStore.refreshBalances(config, signerAddress as Hex);
-				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}
@@ -221,7 +221,7 @@ const transactionStore = () => {
 			// UPDATE BALANCES AND RECEIPTS
 			try {
 				await balancesStore.refreshBalances(config, signerAddress as Hex);
-				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}
