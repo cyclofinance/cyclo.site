@@ -77,11 +77,14 @@ vi.mock('$lib/store', async () => {
 });
 
 describe('Unlock Component', () => {
-	beforeEach(async () => {
+beforeEach(async () => {
 		vi.clearAllMocks();
 		const store = await import('$lib/stores');
 		store.myReceipts.set([]);
-		vi.mocked(refreshAllReceipts).mockResolvedValue([]);
+	vi.mocked(refreshAllReceipts).mockImplementation(async (_signerAddress, setLoading) => {
+		if (setLoading) setLoading(false);
+		return [];
+	});
 		mockBalancesStore.mockSetSubscribeValue(
 			'Ready',
 			false,
@@ -164,7 +167,7 @@ describe('Unlock Component', () => {
 		mockConnectedStore.mockSetSubscribeValue(true);
 
 		const { refreshAllReceipts } = await import('$lib/queries/refreshAllReceipts');
-		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, config, setLoading) => {
+		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, setLoading) => {
 			const store = await import('$lib/stores');
 			store.myReceipts.set(receipts);
 			if (setLoading) setLoading(false);
@@ -181,7 +184,7 @@ describe('Unlock Component', () => {
 	});
 
 	it('should show "NO RECEIPTS FOUND" message when no receipts are available', async () => {
-		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, setLoading) => {
 			if (setLoading) setLoading(false);
 			return Promise.resolve([]);
 		});
@@ -194,7 +197,7 @@ describe('Unlock Component', () => {
 	});
 
 	it('should display correct token name when a different token is selected', async () => {
-		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, config, setLoading) => {
+		vi.mocked(refreshAllReceipts).mockImplementation((signerAddress, setLoading) => {
 			if (setLoading) setLoading(false);
 			return Promise.resolve([]);
 		});
