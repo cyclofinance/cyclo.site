@@ -19,7 +19,7 @@
 	};
 
 	$: if ($signerAddress) {
-		refreshAllReceipts($signerAddress, $wagmiConfig, setLoading);
+		refreshAllReceipts($signerAddress, setLoading);
 		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 	}
 </script>

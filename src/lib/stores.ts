@@ -62,7 +62,7 @@ const networkConfigs: NetworkConfig[] = [
 		orderbookSubgraphUrl:
 			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
 		rewardsSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-11-06-4bb37cce25d383df/gn',
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-11-09-5d92e84888be7ea7/gn',
 		explorerBaseUrl: 'https://flarescan.com/',
 		tokens: [
 			{
@@ -122,17 +122,41 @@ const networkConfigs: NetworkConfig[] = [
 		orderbookSubgraphUrl:
 			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn',
 		rewardsSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/cyclo-rewards-arbitrum/0.0.1/gn',
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-11-12-8202/gn',
 		explorerBaseUrl: 'https://arbiscan.io/',
 		tokens: [
 			{
-				name: 'cyWETH',
-				symbol: 'cyWETH',
+				name: 'cyWETH.pyth',
+				symbol: 'cyWETH.pyth',
 				decimals: 18,
-				address: '0x41583d4ab43fB05Eb649fFFD01fA145e037Df613' as Hex,
+				address: '0x28C7747D7eA25ED3dDCd075c6CCC3634313a0F59' as Hex,
 				underlyingAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
 				underlyingSymbol: 'WETH',
-				receiptAddress: '0xBbe6114Ba8157F0b628d4aa5d1b9Bace6401c939' as Hex,
+				receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319' as Hex,
+				chainId: arbitrum.id,
+				networkKey: 'arbitrum',
+				networkName: 'Arbitrum One'
+			},
+			{
+				name: 'cyWBTC.pyth',
+				symbol: 'cyWBTC.pyth',
+				decimals: 8,
+				address: '0x229917ac2842Eaab42060a1A9213CA78e01b572a' as Hex,
+				underlyingAddress: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f' as Hex,
+				underlyingSymbol: 'WBTC',
+				receiptAddress: '0x922A293D4d0af30D67A51e5510a487916a2bb494' as Hex,
+				chainId: arbitrum.id,
+				networkKey: 'arbitrum',
+				networkName: 'Arbitrum One'
+			},
+			{
+				name: 'cycbBTC.pyth',
+				symbol: 'cycbBTC.pyth',
+				decimals: 8,
+				address: '0x9fC9dA918552df0DAd6C00051351e335656da100' as Hex,
+				underlyingAddress: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf' as Hex,
+				underlyingSymbol: 'cbBTC',
+				receiptAddress: '0x3a5eDe5AE4EC55F61c4aFf2CDfC920b5029Abf05' as Hex,
 				chainId: arbitrum.id,
 				networkKey: 'arbitrum',
 				networkName: 'Arbitrum One'

@@ -1,14 +1,16 @@
 import { type AccountStatusQuery } from '../../generated-graphql';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
-import { SUBGRAPH_URL } from '$lib/constants';
 import type { AccountStats } from '$lib/types';
+import { get } from 'svelte/store';
+import { rewardsSubgraphUrl } from '$lib/stores';
 import { calculateShares } from './calculateShares';
 import { isHex } from 'viem';
 
 export async function fetchAccountStatus(account: string): Promise<AccountStats> {
 	if (!isHex(account)) throw 'Invalid account';
 
-	const response = await fetch(SUBGRAPH_URL, {
+	const rewardsSg = get(rewardsSubgraphUrl);
+	const response = await fetch(rewardsSg, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
