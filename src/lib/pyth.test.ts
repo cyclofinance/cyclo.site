@@ -113,7 +113,8 @@ describe('pyth helpers', () => {
 
 			const { updateData } = await fetchUpdateBlobs(['0x1234']);
 
-			expect(updateData).toEqual(['0xAQID']);
+			// Base64 'AQID' decodes to bytes [1, 2, 3] = hex '0x010203'
+			expect(updateData).toEqual(['0x010203']);
 			expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(2);
 		});
 

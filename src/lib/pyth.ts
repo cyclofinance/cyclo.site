@@ -1,4 +1,4 @@
-import { bytesToHex } from 'viem';
+import { bytesToHex, isHex } from 'viem';
 
 export const PYTH_UPDATE_ABI = [
 	{
@@ -585,11 +585,18 @@ const coerceHexArray = (value: unknown): `0x${string}`[] => {
 	const result: `0x${string}`[] = [];
 	for (const item of value) {
 		if (typeof item === 'string' && item.length) {
-			result.push((item.startsWith('0x') ? item : `0x${item}`) as `0x${string}`);
+			// Normalize to 0x-prefixed hex string and validate
+			const hex = item.startsWith('0x') ? item : `0x${item}`;
+			if (isHex(hex)) {
+				result.push(hex);
+			}
 		} else if (item && typeof item === 'object' && 'data' in (item as Record<string, unknown>)) {
 			const candidate = (item as { data?: string }).data;
 			if (typeof candidate === 'string' && candidate.length) {
-				result.push((candidate.startsWith('0x') ? candidate : `0x${candidate}`) as `0x${string}`);
+				const hex = candidate.startsWith('0x') ? candidate : `0x${candidate}`;
+				if (isHex(hex)) {
+					result.push(hex);
+				}
 			}
 		}
 	}
@@ -599,12 +606,23 @@ const coerceHexArray = (value: unknown): `0x${string}`[] => {
 const normalizeIdsNo0x = (ids: `0x${string}`[]): string[] =>
 	ids.map((id) => (id.startsWith('0x') ? id.slice(2) : id).toLowerCase());
 
+/**
+ * Converts a base64 string to a hex string with 0x prefix.
+ * Uses Buffer in Node.js and atob in browser environments.
+ */
 function b64ToHex0x(b64: string): `0x${string}` {
-	const bin =
-		typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
-	const arr = new Uint8Array(bin.length);
-	for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-	return bytesToHex(arr) as `0x${string}`;
+	let bytes: Uint8Array;
+	if (typeof Buffer !== 'undefined') {
+		// Node.js: Buffer.from returns a Uint8Array-compatible Buffer
+		bytes = Buffer.from(b64, 'base64');
+	} else if (typeof atob === 'function') {
+		// Browser: decode base64 and convert to bytes
+		const binary = atob(b64);
+		bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+	} else {
+		throw new Error('Base64 decoding not available in this environment');
+	}
+	return bytesToHex(bytes);
 }
 
 export const toU64 = (n: bigint) => (n < 0n ? 0n : n > U64_MAX ? U64_MAX : n);
@@ -619,13 +637,21 @@ const coerceSection = (
 	return input as ParsedSection;
 };
 
+/**
+ * Normalizes various time representations to bigint.
+ * Returns null if the value cannot be converted.
+ */
 const normalisePublishTime = (value: PublishTimeLike): bigint | null => {
 	if (value === null || value === undefined) return null;
 	if (typeof value === 'bigint') return value;
-	if (typeof value === 'number') return BigInt(value);
-	if (typeof value === 'string' && value.length) {
+	if (typeof value === 'number') {
+		// Validate number is safe for BigInt conversion
+		if (!Number.isFinite(value) || Number.isNaN(value)) return null;
+		return BigInt(Math.floor(value));
+	}
+	if (typeof value === 'string' && value.trim().length > 0) {
 		try {
-			return BigInt(value);
+			return BigInt(value.trim());
 		} catch {
 			return null;
 		}
