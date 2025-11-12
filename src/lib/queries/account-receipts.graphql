@@ -18,5 +18,17 @@ query AccountReceipts($account: ID!, $first: Int!, $skip: Int!) {
 			id
 			tokenId
 		}
+		cyWBTCReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
+		cycbBTCReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
 	}
 }
