@@ -72,6 +72,8 @@ describe('fetchStats', () => {
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleCyFXRP: '0',
+					totalEligibleCyWBTC: '0',
+					totalEligibleCycbBTC: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				accounts: Array(96).fill({}) // Mock 96 accounts
@@ -96,6 +98,8 @@ describe('fetchStats', () => {
 			totalEligibleCysFLR: BigInt('2000000000000000000000'),
 			totalEligibleCyWETH: BigInt('1000000000000000000000'),
 			totalEligibleCyFXRP: 0n,
+			totalEligibleCyWBTC: 0n,
+			totalEligibleCycbBTC: 0n,
 			totalEligibleSum: BigInt('3000000000000000000000'),
 			rewardsPools,
 			cysFLRApy: calculateApy(
@@ -108,7 +112,9 @@ describe('fetchStats', () => {
 				BigInt('1000000000000000000000'),
 				BigInt('1000000000000000000')
 			),
-			cyFXRPApy: 0n
+			cyFXRPApy: 0n,
+			cyWBTCApy: 0n,
+			cycbBTCApy: 0n
 		});
 
 		expect(fetch).toHaveBeenCalledWith(MOCK_REWARDS_SUBGRAPH_URL, {

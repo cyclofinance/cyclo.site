@@ -3,13 +3,18 @@ import { calculateRewardsPools } from './calculateRewardsPools';
 import type { AccountStatusQuery } from '../../generated-graphql';
 import { TOTAL_REWARD } from '$lib/constants';
 
-const eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']> = {
+const eligibleTotals = {
 	__typename: 'EligibleTotals',
 	id: 'SINGLETON',
 	totalEligibleCyWETH: '1000000000000000000000',
 	totalEligibleCysFLR: '2000000000000000000000',
 	totalEligibleCyFXRP: '0',
+	totalEligibleCyWBTC: '0',
+	totalEligibleCycbBTC: '0',
 	totalEligibleSum: '3000000000000000000000'
+} as NonNullable<AccountStatusQuery['eligibleTotals']> & {
+	totalEligibleCyWBTC?: string;
+	totalEligibleCycbBTC?: string;
 };
 
 describe('calculateRewardsPools', () => {
@@ -24,7 +29,9 @@ describe('calculateRewardsPools', () => {
 		expect(rewardsPools).toEqual({
 			cysFlr,
 			cyWeth,
-			cyFxrp: 0n
+			cyFxrp: 0n,
+			cyWbtc: 0n,
+			cycbBtc: 0n
 		});
 	});
 });

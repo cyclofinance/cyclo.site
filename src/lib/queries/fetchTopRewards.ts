@@ -16,19 +16,40 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	});
 	const data: TopAccountsQuery = (await response.json()).data;
 
-	const eligibleTotals = data.eligibleTotals;
+	const eligibleTotals = data.eligibleTotals as {
+		totalEligibleCysFLR?: string;
+		totalEligibleCyWETH?: string;
+		totalEligibleCyFXRP?: string;
+		totalEligibleCyWBTC?: string;
+		totalEligibleCycbBTC?: string;
+		totalEligibleSum?: string;
+	} | null;
+
 	if (!eligibleTotals) {
 		throw 'No eligible totals';
 	}
 
 	const accountsWithShares = (data.accountsByCyBalance ?? []).map((account) => {
-		const shares = calculateShares(account, eligibleTotals);
+		const accountData = account as {
+			id: string;
+			cysFLRBalance: string;
+			cyWETHBalance: string;
+			cyFXRPBalance?: string;
+			cyWBTCBalance?: string;
+			cycbBTCBalance?: string;
+			totalCyBalance: string;
+		};
+
+		const shares = calculateShares(accountData, eligibleTotals);
+
 		return {
-			account: account.id,
+			account: accountData.id as `0x${string}`,
 			eligibleBalances: {
-				cysFLR: BigInt(account.cysFLRBalance),
-				cyWETH: BigInt(account.cyWETHBalance),
-				cyFXRP: BigInt(account.cyFXRPBalance || 0)
+				cysFLR: BigInt(accountData.cysFLRBalance),
+				cyWETH: BigInt(accountData.cyWETHBalance),
+				cyFXRP: BigInt(accountData.cyFXRPBalance || 0),
+				cyWBTC: BigInt(accountData.cyWBTCBalance || 0),
+				cycbBTC: BigInt(accountData.cycbBTCBalance || 0)
 			},
 			shares
 		};

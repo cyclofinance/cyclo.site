@@ -31,10 +31,21 @@ export async function fetchStats(): Promise<GlobalStats> {
 	});
 	const data: StatsQuery = (await response.json()).data;
 
-	const totalEligibleCysFLR = BigInt(data.eligibleTotals?.totalEligibleCysFLR ?? 0);
-	const totalEligibleCyWETH = BigInt(data.eligibleTotals?.totalEligibleCyWETH ?? 0);
-	const totalEligibleCyFXRP = BigInt(data.eligibleTotals?.totalEligibleCyFXRP ?? 0);
-	const totalEligibleSum = BigInt(data.eligibleTotals?.totalEligibleSum ?? 0);
+	const eligibleTotals = data.eligibleTotals as {
+		totalEligibleCysFLR?: string;
+		totalEligibleCyWETH?: string;
+		totalEligibleCyFXRP?: string;
+		totalEligibleCyWBTC?: string;
+		totalEligibleCycbBTC?: string;
+		totalEligibleSum?: string;
+	} | null;
+
+	const totalEligibleCysFLR = BigInt(eligibleTotals?.totalEligibleCysFLR ?? 0);
+	const totalEligibleCyWETH = BigInt(eligibleTotals?.totalEligibleCyWETH ?? 0);
+	const totalEligibleCyFXRP = BigInt(eligibleTotals?.totalEligibleCyFXRP ?? 0);
+	const totalEligibleCyWBTC = BigInt(eligibleTotals?.totalEligibleCyWBTC ?? 0);
+	const totalEligibleCycbBTC = BigInt(eligibleTotals?.totalEligibleCycbBTC ?? 0);
+	const totalEligibleSum = BigInt(eligibleTotals?.totalEligibleSum ?? 0);
 	const eligibleHolders = (data.accounts ?? []).length;
 
 	// Get prices in FLR terms
@@ -52,10 +63,14 @@ export async function fetchStats(): Promise<GlobalStats> {
 		console.error('Failed to fetch cyFXRP/wFLR price:', error);
 		return ONE; // Default to 1:1 if price fetch fails
 	});
+	// TODO: Add price functions for cyWBTC and cycbBTC when available
+	// For now, default to 1:1 price (ONE) which will calculate APY but may be inaccurate
+	const cyWBTCwFLRPrice = ONE;
+	const cycbBTCwFLRPrice = ONE;
 
-	if (!data.eligibleTotals) throw 'No eligible totals';
+	if (!eligibleTotals) throw 'No eligible totals';
 
-	const rewardsPools = calculateRewardsPools(data.eligibleTotals);
+	const rewardsPools = calculateRewardsPools(eligibleTotals);
 
 	// Calculate APY for cysFLR
 	const cysFLRApy = calculateApy(rewardsPools.cysFlr, totalEligibleCysFLR, cysFLRwFLRPrice);
@@ -66,15 +81,25 @@ export async function fetchStats(): Promise<GlobalStats> {
 	// Calculate APY for cyFXRP
 	const cyFXRPApy = calculateApy(rewardsPools.cyFxrp, totalEligibleCyFXRP, cyFXRPwFLRPrice);
 
+	// Calculate APY for cyWBTC
+	const cyWBTCApy = calculateApy(rewardsPools.cyWbtc, totalEligibleCyWBTC, cyWBTCwFLRPrice);
+
+	// Calculate APY for cycbBTC
+	const cycbBTCApy = calculateApy(rewardsPools.cycbBtc, totalEligibleCycbBTC, cycbBTCwFLRPrice);
+
 	return {
 		eligibleHolders,
 		totalEligibleCysFLR,
 		totalEligibleCyWETH,
 		totalEligibleCyFXRP,
+		totalEligibleCyWBTC,
+		totalEligibleCycbBTC,
 		totalEligibleSum,
 		rewardsPools,
 		cysFLRApy,
 		cyWETHApy,
-		cyFXRPApy
+		cyFXRPApy,
+		cyWBTCApy,
+		cycbBTCApy
 	};
 }

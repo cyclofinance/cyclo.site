@@ -36,6 +36,8 @@ describe('fetchTopRewards', () => {
 						cysFLRBalance: '1000000000000000000000',
 						cyWETHBalance: '2000000000000000000000',
 						cyFXRPBalance: '0',
+						cyWBTCBalance: '0',
+						cycbBTCBalance: '0',
 						totalCyBalance: '100000000000000000000'
 					},
 					{
@@ -43,6 +45,8 @@ describe('fetchTopRewards', () => {
 						cysFLRBalance: '500000000000000000000',
 						cyWETHBalance: '1000000000000000000000',
 						cyFXRPBalance: '0',
+						cyWBTCBalance: '0',
+						cycbBTCBalance: '0',
 						totalCyBalance: '50000000000000000000'
 					}
 				],
@@ -51,6 +55,8 @@ describe('fetchTopRewards', () => {
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleCyFXRP: '0',
+					totalEligibleCyWBTC: '0',
+					totalEligibleCycbBTC: '0',
 					totalEligibleSum: '3000000000000000000000'
 				}
 			}
@@ -68,7 +74,9 @@ describe('fetchTopRewards', () => {
 				eligibleBalances: {
 					cysFLR: ONE,
 					cyWETH: 2n * ONE,
-					cyFXRP: 0n
+					cyFXRP: 0n,
+					cyWBTC: 0n,
+					cycbBTC: 0n
 				},
 				shares: calculateShares(
 					mockResponse.data.accountsByCyBalance[0],
@@ -80,7 +88,9 @@ describe('fetchTopRewards', () => {
 				eligibleBalances: {
 					cysFLR: ONE / 2n,
 					cyWETH: ONE,
-					cyFXRP: 0n
+					cyFXRP: 0n,
+					cyWBTC: 0n,
+					cycbBTC: 0n
 				},
 				shares: calculateShares(
 					mockResponse.data.accountsByCyBalance[1],

@@ -28,8 +28,41 @@
 
 	const getTokenDecimals = (tokenName: string) => tokenDecimalsByName[tokenName] ?? 18;
 
+	// Helper to map token name to GraphQL field name (e.g., "cyWETH.pyth" -> "cyWETH")
+	const getTokenFieldName = (tokenName: string): string => {
+		return tokenName.replace(/\.pyth$/, '');
+	};
+
+	// Get token balance from entry based on token name
+	const getTokenBalance = (entry: LeaderboardEntry, tokenName: string): bigint => {
+		const fieldName = getTokenFieldName(tokenName);
+		const balanceMap: Record<string, bigint> = {
+			cysFLR: entry.eligibleBalances.cysFLR ?? 0n,
+			cyWETH: entry.eligibleBalances.cyWETH ?? 0n,
+			cyFXRP: entry.eligibleBalances.cyFXRP ?? 0n,
+			cyWBTC: entry.eligibleBalances.cyWBTC ?? 0n,
+			cycbBTC: entry.eligibleBalances.cycbBTC ?? 0n
+		};
+		return balanceMap[fieldName] ?? 0n;
+	};
+
+	// Get token share from entry based on token name
+	const getTokenShare = (entry: LeaderboardEntry, tokenName: string) => {
+		const fieldName = getTokenFieldName(tokenName);
+		const shareMap: Record<string, { percentageShare: bigint; rewardsAmount: bigint }> = {
+			cysFLR: entry.shares.cysFLR ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cyWETH: entry.shares.cyWETH ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cyFXRP: entry.shares.cyFXRP ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cyWBTC: entry.shares.cyWBTC ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cycbBTC: entry.shares.cycbBTC ?? { percentageShare: 0n, rewardsAmount: 0n }
+		};
+		return shareMap[fieldName] ?? { percentageShare: 0n, rewardsAmount: 0n };
+	};
+
 	$: isConnectedWallet = (account: string) =>
 		$signerAddress?.toLowerCase() === account.toLowerCase();
+
+	$: gridColumns = `150px repeat(${$tokens.length * 2}, 1fr) 150px`;
 </script>
 
 <Card>
@@ -46,63 +79,42 @@
 			</div>
 		{:else}
 			<div class="space-y-2">
-				<div class="grid grid-cols-8 gap-8 text-sm text-gray-300">
+				<div class="grid gap-8 text-sm text-gray-300" style="grid-template-columns: {gridColumns};">
 					<div>Account</div>
-					<div>Net cysFLR</div>
-					<div>cysFLR rewards (rFLR)</div>
-					<div>Net cyWETH</div>
-					<div>cyWETH rewards (rFLR)</div>
-					<div>Net cyFXRP</div>
-					<div>cyFXRP rewards (rFLR)</div>
+					{#each $tokens as token}
+						<div>Net {token.symbol}</div>
+						<div>{token.symbol} rewards (rFLR)</div>
+					{/each}
 					<div>Total Estimated rFLR</div>
 				</div>
 				{#if leaderboard?.length > 0}
 					{#each leaderboard as entry, i}
 						<a
 							href={`/rewards/${entry.account}`}
-							class="grid w-full grid-cols-8 gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
+							class="grid w-full gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
 								entry.account
 							)
 								? 'bg-white/10 hover:bg-white/20'
 								: 'bg-base-200 hover:bg-base-300'}"
+							style="grid-template-columns: {gridColumns};"
 						>
 							<div class="font-medium text-white">
 								#{i + 1}
 								{entry.account.slice(0, 6)}...{entry.account.slice(-4)}
 							</div>
-							<div class=" font-medium text-white">
-								{(+formatUnits(entry.eligibleBalances.cysFLR, getTokenDecimals('cysFLR'))).toFixed(
-									4
-								)}
-							</div>
-							<div class="flex flex-col gap-y-2 font-medium text-white">
-								<span>{(+formatEther(entry.shares.cysFLR.rewardsAmount)).toFixed(4)}</span>
-								<span>
-									({(+formatUnits(entry.shares.cysFLR.percentageShare, 16)).toFixed(4)}%)
-								</span>
-							</div>
-							<div class="font-medium text-white">
-								{(+formatUnits(entry.eligibleBalances.cyWETH, getTokenDecimals('cyWETH'))).toFixed(
-									4
-								)}
-							</div>
-							<div class="font-medium text-white">
-								<span>{(+formatEther(entry.shares.cyWETH.rewardsAmount)).toFixed(4)}</span>
-								<span>
-									({(+formatUnits(entry.shares.cyWETH.percentageShare, 16)).toFixed(4)}%)
-								</span>
-							</div>
-							<div class="font-medium text-white">
-								{(+formatUnits(entry.eligibleBalances.cyFXRP, getTokenDecimals('cyFXRP'))).toFixed(
-									4
-								)}
-							</div>
-							<div class="font-medium text-white">
-								<span>{(+formatEther(entry.shares.cyFXRP.rewardsAmount)).toFixed(4)}</span>
-								<span>
-									({(+formatUnits(entry.shares.cyFXRP.percentageShare, 16)).toFixed(4)}%)
-								</span>
-							</div>
+							{#each $tokens as token}
+								{@const balance = getTokenBalance(entry, token.name)}
+								{@const share = getTokenShare(entry, token.name)}
+								<div class="font-medium text-white">
+									{(+formatUnits(balance, getTokenDecimals(token.name))).toFixed(4)}
+								</div>
+								<div class="font-medium text-white">
+									<span>{(+formatEther(share.rewardsAmount)).toFixed(4)}</span>
+									<span>
+										({(+formatUnits(share.percentageShare, 16)).toFixed(4)}%)
+									</span>
+								</div>
+							{/each}
 							<div data-testid="total-rewards" class="font-medium text-white">
 								{(+formatEther(entry.shares.totalRewards)).toFixed(4)}
 							</div>
