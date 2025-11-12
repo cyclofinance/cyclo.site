@@ -5,14 +5,43 @@
 
 	export let stats: AccountStats;
 
-	$: cyFXRPInfo = $tokens.find((t) => t.name === 'cyFXRP');
-	$: cyFXRPDecimals = cyFXRPInfo?.decimals || 6;
+	// Helper to map token name to GraphQL field name (e.g., "cyWETH.pyth" -> "cyWETH")
+	const getTokenFieldName = (tokenName: string): string => {
+		return tokenName.replace(/\.pyth$/, '');
+	};
+
+	// Get token balance from stats based on token name
+	const getTokenBalance = (tokenName: string): bigint => {
+		const fieldName = getTokenFieldName(tokenName);
+		const balanceMap: Record<string, bigint> = {
+			cysFLR: stats?.eligibleBalances.cysFLR ?? 0n,
+			cyWETH: stats?.eligibleBalances.cyWETH ?? 0n,
+			cyFXRP: stats?.eligibleBalances.cyFXRP ?? 0n,
+			cyWBTC: stats?.eligibleBalances.cyWBTC ?? 0n,
+			cycbBTC: stats?.eligibleBalances.cycbBTC ?? 0n
+		};
+		return balanceMap[fieldName] ?? 0n;
+	};
+
+	// Get token share from stats based on token name
+	const getTokenShare = (tokenName: string) => {
+		const fieldName = getTokenFieldName(tokenName);
+		const shareMap: Record<string, { percentageShare: bigint; rewardsAmount: bigint }> = {
+			cysFLR: stats?.shares.cysFLR ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cyWETH: stats?.shares.cyWETH ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cyFXRP: stats?.shares.cyFXRP ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cyWBTC: stats?.shares.cyWBTC ?? { percentageShare: 0n, rewardsAmount: 0n },
+			cycbBTC: stats?.shares.cycbBTC ?? { percentageShare: 0n, rewardsAmount: 0n }
+		};
+		return shareMap[fieldName] ?? { percentageShare: 0n, rewardsAmount: 0n };
+	};
 
 	$: isEligible =
 		stats?.eligibleBalances &&
-		(stats.eligibleBalances.cyWETH > 0 ||
-			stats.eligibleBalances.cysFLR > 0 ||
-			stats.eligibleBalances.cyFXRP > 0);
+		$tokens.some((token) => {
+			const balance = getTokenBalance(token.name);
+			return balance > 0n;
+		});
 </script>
 
 {#if !isEligible}
@@ -22,58 +51,35 @@
 	</div>
 {/if}
 
-<div class="grid grid-cols-1 gap-8 sm:grid-cols-7 sm:gap-8">
-	<div class="space-y-1">
-		<div class="text-sm text-gray-300">Net cysFLR</div>
-		<div class="break-words font-mono text-white" data-testid="net-cysflr-value">
-			{formatEther(stats.eligibleBalances.cysFLR)}
-		</div>
-	</div>
-	<div class="space-y-1">
-		<div class="text-sm text-gray-300" data-testid="cysflr-rewards">cysFLR rewards</div>
-		<div class="flex flex-col gap-y-2 break-words font-mono text-white">
-			<span data-testid="cysflr-rewards-value"
-				>{formatEther(stats.shares.cysFLR.rewardsAmount)}</span
+<div
+	class="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-8 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+>
+	{#each $tokens as token}
+		{@const balance = getTokenBalance(token.name)}
+		{@const share = getTokenShare(token.name)}
+		<div class="space-y-1">
+			<div class="text-sm text-gray-300">Net {token.symbol}</div>
+			<div
+				class="break-words font-mono text-white"
+				data-testid="net-{token.name.toLowerCase()}-value"
 			>
-			<span data-testid="cysflr-rewards-percentage"
-				>({formatUnits(stats.shares.cysFLR.percentageShare, 16)}%)</span
-			>
+				{formatUnits(balance, token.decimals)}
+			</div>
 		</div>
-	</div>
-	<div class="space-y-1">
-		<div class="text-sm text-gray-300">Net cyWETH</div>
-		<div class="break-words font-mono text-white" data-testid="net-cyweth-value">
-			{formatEther(stats.eligibleBalances.cyWETH)}
+		<div class="space-y-1">
+			<div class="text-sm text-gray-300" data-testid="{token.name.toLowerCase()}-rewards">
+				{token.symbol} rewards
+			</div>
+			<div class="flex flex-col gap-y-2 break-words font-mono text-white">
+				<span data-testid="{token.name.toLowerCase()}-rewards-value">
+					{formatEther(share.rewardsAmount)}
+				</span>
+				<span data-testid="{token.name.toLowerCase()}-rewards-percentage">
+					({formatUnits(share.percentageShare, 16)}%)
+				</span>
+			</div>
 		</div>
-	</div>
-	<div class="space-y-1">
-		<div class="text-sm text-gray-300">cyWETH rewards</div>
-		<div class="flex flex-col gap-y-2 break-words font-mono text-white">
-			<span data-testid="cyweth-rewards-value"
-				>{formatEther(stats.shares.cyWETH.rewardsAmount)}</span
-			>
-			<span data-testid="cyweth-rewards-percentage"
-				>({formatUnits(stats.shares.cyWETH.percentageShare, 16)}%)</span
-			>
-		</div>
-	</div>
-	<div class="space-y-1">
-		<div class="text-sm text-gray-300">Net cyFXRP</div>
-		<div class="break-words font-mono text-white" data-testid="net-cyfxrp-value">
-			{formatUnits(stats.eligibleBalances.cyFXRP, cyFXRPDecimals)}
-		</div>
-	</div>
-	<div class="space-y-1">
-		<div class="text-sm text-gray-300">cyFXRP rewards</div>
-		<div class="flex flex-col gap-y-2 break-words font-mono text-white">
-			<span data-testid="cyfxrp-rewards-value"
-				>{formatEther(stats.shares.cyFXRP.rewardsAmount)}</span
-			>
-			<span data-testid="cyfxrp-rewards-percentage"
-				>({formatUnits(stats.shares.cyFXRP.percentageShare, 16)}%)</span
-			>
-		</div>
-	</div>
+	{/each}
 	<div class="space-y-1">
 		<div class="text-sm text-gray-300">Total Estimated rFLR</div>
 		<div class="break-words font-mono text-white" data-testid="total-rewards-value">

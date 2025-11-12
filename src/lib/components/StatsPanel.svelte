@@ -28,6 +28,47 @@
 	) as Record<string, number>;
 
 	const getTokenDecimals = (tokenName: string) => tokenDecimalsByName[tokenName] ?? 18;
+
+	// Helper to map token name to GraphQL field name (e.g., "cyWETH.pyth" -> "cyWETH")
+	const getTokenFieldName = (tokenName: string): string => {
+		return tokenName.replace(/\.pyth$/, '');
+	};
+
+	// Get token data from stats based on token name
+	const getTokenData = (tokenName: string) => {
+		const fieldName = getTokenFieldName(tokenName);
+
+		// Map field names to stats properties
+		const apyMap: Record<string, bigint> = {
+			cysFLR: stats?.cysFLRApy ?? 0n,
+			cyWETH: stats?.cyWETHApy ?? 0n,
+			cyFXRP: stats?.cyFXRPApy ?? 0n,
+			cyWBTC: stats?.cyWBTCApy ?? 0n,
+			cycbBTC: stats?.cycbBTCApy ?? 0n
+		};
+
+		const eligibleMap: Record<string, bigint> = {
+			cysFLR: stats?.totalEligibleCysFLR ?? 0n,
+			cyWETH: stats?.totalEligibleCyWETH ?? 0n,
+			cyFXRP: stats?.totalEligibleCyFXRP ?? 0n,
+			cyWBTC: stats?.totalEligibleCyWBTC ?? 0n,
+			cycbBTC: stats?.totalEligibleCycbBTC ?? 0n
+		};
+
+		const rewardsMap: Record<string, bigint> = {
+			cysFLR: stats?.rewardsPools.cysFlr ?? 0n,
+			cyWETH: stats?.rewardsPools.cyWeth ?? 0n,
+			cyFXRP: stats?.rewardsPools.cyFxrp ?? 0n,
+			cyWBTC: stats?.rewardsPools.cyWbtc ?? 0n,
+			cycbBTC: stats?.rewardsPools.cycbBtc ?? 0n
+		};
+
+		return {
+			apy: apyMap[fieldName] ?? 0n,
+			eligible: eligibleMap[fieldName] ?? 0n,
+			rewards: rewardsMap[fieldName] ?? 0n
+		};
+	};
 </script>
 
 <Card>
@@ -45,24 +86,15 @@
 			<div class="space-y-4">
 				<div class="text-sm text-gray-300">Current APY</div>
 				<div class="space-y-2">
-					<div class="flex items-baseline gap-2">
-						<div class="text-sm text-gray-300">cysFLR:</div>
-						<div class="font-mono text-3xl font-bold text-white">
-							~{Number(formatEther(stats.cysFLRApy)).toFixed(4)}%
+					{#each $tokens as token}
+						{@const tokenData = getTokenData(token.name)}
+						<div class="flex items-baseline gap-2">
+							<div class="text-sm text-gray-300">{token.symbol}:</div>
+							<div class="font-mono text-3xl font-bold text-white">
+								~{Number(formatEther(tokenData.apy)).toFixed(4)}%
+							</div>
 						</div>
-					</div>
-					<div class="flex items-baseline gap-2">
-						<div class="text-sm text-gray-300">cyWETH:</div>
-						<div class="font-mono text-3xl font-bold text-white">
-							~{Number(formatEther(stats.cyWETHApy)).toFixed(4)}%
-						</div>
-					</div>
-					<div class="flex items-baseline gap-2">
-						<div class="text-sm text-gray-300">cyFXRP:</div>
-						<div class="font-mono text-3xl font-bold text-white">
-							~{Number(formatEther(stats.cyFXRPApy)).toFixed(4)}%
-						</div>
-					</div>
+					{/each}
 				</div>
 			</div>
 
@@ -81,21 +113,14 @@
 					{Number(formatEther(stats.totalEligibleSum)).toFixed(2).toLocaleString()}
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
-					<div>
-						cysFLR: {Number(
-							formatUnits(stats.totalEligibleCysFLR, getTokenDecimals('cysFLR'))
-						).toFixed(2)}
-					</div>
-					<div>
-						cyWETH: {Number(
-							formatUnits(stats.totalEligibleCyWETH, getTokenDecimals('cyWETH'))
-						).toFixed(2)}
-					</div>
-					<div>
-						cyFXRP: {Number(
-							formatUnits(stats.totalEligibleCyFXRP, getTokenDecimals('cyFXRP'))
-						).toFixed(2)}
-					</div>
+					{#each $tokens as token}
+						{@const tokenData = getTokenData(token.name)}
+						<div>
+							{token.symbol}: {Number(
+								formatUnits(tokenData.eligible, getTokenDecimals(token.name))
+							).toFixed(2)}
+						</div>
+					{/each}
 				</div>
 			</div>
 
@@ -106,9 +131,12 @@
 					Total: {Number(formatEther(TOTAL_REWARD)).toLocaleString()}
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
-					<div>cysFLR: {Number(formatEther(stats.rewardsPools.cysFlr)).toLocaleString()}</div>
-					<div>cyWETH: {Number(formatEther(stats.rewardsPools.cyWeth)).toLocaleString()}</div>
-					<div>cyFXRP: {Number(formatEther(stats.rewardsPools.cyFxrp)).toLocaleString()}</div>
+					{#each $tokens as token}
+						{@const tokenData = getTokenData(token.name)}
+						<div>
+							{token.symbol}: {Number(formatEther(tokenData.rewards)).toLocaleString()}
+						</div>
+					{/each}
 				</div>
 			</div>
 		</div>

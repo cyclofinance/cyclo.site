@@ -4,12 +4,16 @@ query AccountStatus($account: ID!) {
 		totalEligibleCyWETH
 		totalEligibleCysFLR
 		totalEligibleCyFXRP
+		totalEligibleCyWBTC
+		totalEligibleCycbBTC
 		totalEligibleSum
 	}
 	account(id: $account) {
 		cysFLRBalance
 		cyWETHBalance
 		cyFXRPBalance
+		cyWBTCBalance
+		cycbBTCBalance
 		totalCyBalance
 		transfersIn {
 			fromIsApprovedSource

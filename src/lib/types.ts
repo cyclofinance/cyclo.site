@@ -51,6 +51,8 @@ export type RewardsPools = {
 	cysFlr: bigint;
 	cyWeth: bigint;
 	cyFxrp: bigint;
+	cyWbtc: bigint;
+	cycbBtc: bigint;
 };
 
 export type Share = {
@@ -62,6 +64,8 @@ export type Shares = {
 	cysFLR: Share;
 	cyWETH: Share;
 	cyFXRP: Share;
+	cyWBTC: Share;
+	cycbBTC: Share;
 	totalRewards: bigint;
 };
 
@@ -71,6 +75,8 @@ export type AccountStats = {
 		cysFLR: bigint;
 		cyWETH: bigint;
 		cyFXRP: bigint;
+		cyWBTC: bigint;
+		cycbBTC: bigint;
 	};
 	shares: Shares;
 	transfers: {
@@ -86,9 +92,13 @@ export type GlobalStats = {
 	totalEligibleCysFLR: bigint;
 	totalEligibleCyWETH: bigint;
 	totalEligibleCyFXRP: bigint;
+	totalEligibleCyWBTC: bigint;
+	totalEligibleCycbBTC: bigint;
 	totalEligibleSum: bigint;
 	rewardsPools: RewardsPools;
 	cysFLRApy: bigint;
 	cyWETHApy: bigint;
 	cyFXRPApy: bigint;
+	cyWBTCApy: bigint;
+	cycbBTCApy: bigint;
 };

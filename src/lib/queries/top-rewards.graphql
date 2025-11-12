@@ -5,12 +5,16 @@ query TopAccounts {
 		totalEligibleCysFLR
 		totalEligibleCyWETH
 		totalEligibleCyFXRP
+		totalEligibleCyWBTC
+		totalEligibleCycbBTC
 	}
 	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 1000) {
 		id
 		cysFLRBalance
 		cyWETHBalance
 		cyFXRPBalance
+		cyWBTCBalance
+		cycbBTCBalance
 		totalCyBalance
 	}
 }

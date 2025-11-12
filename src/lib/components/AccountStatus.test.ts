@@ -16,7 +16,9 @@ const mockStats: AccountStats = {
 	eligibleBalances: {
 		cysFLR: BigInt(100),
 		cyWETH: BigInt(200),
-		cyFXRP: 0n
+		cyFXRP: 0n,
+		cyWBTC: 0n,
+		cycbBTC: 0n
 	},
 	shares: {
 		cysFLR: {
@@ -28,6 +30,14 @@ const mockStats: AccountStats = {
 			rewardsAmount: BigInt(10)
 		},
 		cyFXRP: {
+			percentageShare: 0n,
+			rewardsAmount: 0n
+		},
+		cyWBTC: {
+			percentageShare: 0n,
+			rewardsAmount: 0n
+		},
+		cycbBTC: {
 			percentageShare: 0n,
 			rewardsAmount: 0n
 		},
@@ -98,7 +108,9 @@ describe('AccountStatus Component', () => {
 			eligibleBalances: {
 				cysFLR: BigInt(0),
 				cyWETH: BigInt(0),
-				cyFXRP: 0n
+				cyFXRP: 0n,
+				cyWBTC: 0n,
+				cycbBTC: 0n
 			}
 		});
 

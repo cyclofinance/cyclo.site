@@ -35,12 +35,16 @@ describe('fetchAccountStatus', () => {
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleCyFXRP: '0',
+					totalEligibleCyWBTC: '0',
+					totalEligibleCycbBTC: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				account: {
 					cysFLRBalance: (100n * ONE).toString(),
 					cyWETHBalance: (200n * ONE).toString(),
 					cyFXRPBalance: '0',
+					cyWBTCBalance: '0',
+					cycbBTCBalance: '0',
 					totalCyBalance: (300n * ONE).toString(),
 					eligibleShare: '0.1',
 					transfersIn: [
@@ -80,7 +84,9 @@ describe('fetchAccountStatus', () => {
 			eligibleBalances: {
 				cysFLR: 100n * ONE,
 				cyWETH: 200n * ONE,
-				cyFXRP: 0n
+				cyFXRP: 0n,
+				cyWBTC: 0n,
+				cycbBTC: 0n
 			},
 			shares: calculateShares(mockData.data.account, mockData.data.eligibleTotals),
 			transfers: {
@@ -105,12 +111,16 @@ describe('fetchAccountStatus', () => {
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleCyFXRP: '0',
+					totalEligibleCyWBTC: '0',
+					totalEligibleCycbBTC: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				account: {
 					cysFLRBalance: '100000000000000000000',
 					cyWETHBalance: '200000000000000000000',
 					cyFXRPBalance: '0',
+					cyWBTCBalance: '0',
+					cycbBTCBalance: '0',
 					totalCyBalance: '300000000000000000000',
 					eligibleShare: '0.1',
 					transfersIn: [

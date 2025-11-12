@@ -20,10 +20,28 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 	});
 	const data: AccountStatusQuery = (await response.json()).data;
 
-	const accountData = data.account;
+	const accountData = data.account as {
+		cysFLRBalance: string;
+		cyWETHBalance: string;
+		cyFXRPBalance?: string;
+		cyWBTCBalance?: string;
+		cycbBTCBalance?: string;
+		totalCyBalance: string;
+		transfersIn: NonNullable<AccountStatusQuery['account']>['transfersIn'];
+		transfersOut: NonNullable<AccountStatusQuery['account']>['transfersOut'];
+	} | null;
+
 	if (!accountData) throw 'No account';
 
-	const eligibleTotals = data.eligibleTotals;
+	const eligibleTotals = data.eligibleTotals as {
+		totalEligibleCysFLR?: string;
+		totalEligibleCyWETH?: string;
+		totalEligibleCyFXRP?: string;
+		totalEligibleCyWBTC?: string;
+		totalEligibleCycbBTC?: string;
+		totalEligibleSum?: string;
+	} | null;
+
 	if (!eligibleTotals) throw 'No eligible totals';
 
 	const shares = calculateShares(accountData, eligibleTotals);
@@ -33,7 +51,9 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 		eligibleBalances: {
 			cysFLR: BigInt(accountData.cysFLRBalance),
 			cyWETH: BigInt(accountData.cyWETHBalance),
-			cyFXRP: BigInt(accountData.cyFXRPBalance || 0)
+			cyFXRP: BigInt(accountData.cyFXRPBalance || 0),
+			cyWBTC: BigInt(accountData.cyWBTCBalance || 0),
+			cycbBTC: BigInt(accountData.cycbBTCBalance || 0)
 		},
 		shares,
 		transfers: {

@@ -6,7 +6,7 @@
 	import { tokens, explorerBaseUrl } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
-	import { formatEther } from 'viem';
+	import { formatUnits } from 'viem';
 	import AccountStatsComponent from './AccountStats.svelte';
 
 	export let account: string;
@@ -20,6 +20,18 @@
 			isAddressEqual(address as `0x${string}`, token.address)
 		);
 		return tokenMatch?.name ?? 'Unknown';
+	};
+
+	const getTokenDecimals = (address: string): number => {
+		const tokenMatch = $tokens.find((token) =>
+			isAddressEqual(address as `0x${string}`, token.address)
+		);
+		return tokenMatch?.decimals ?? 18;
+	};
+
+	const formatTransferValue = (value: string, tokenAddress: string): string => {
+		const decimals = getTokenDecimals(tokenAddress);
+		return formatUnits(BigInt(value), decimals);
 	};
 
 	onMount(async () => {
@@ -88,7 +100,7 @@
 							<div class="flex items-center gap-2 truncate pl-4 font-mono text-white">
 								<span class="text-xs text-gray-300">{resolveTokenLabel(transfer.tokenAddress)}</span
 								>
-								<span>{formatEther(transfer.value)}</span>
+								<span>{formatTransferValue(transfer.value, transfer.tokenAddress)}</span>
 							</div>
 						</a>
 					{/each}

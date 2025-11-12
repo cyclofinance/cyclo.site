@@ -13,14 +13,20 @@ const mockStats: GlobalStats = {
 	totalEligibleCysFLR: 1000000000000000000000n,
 	totalEligibleCyWETH: 2000000000000000000000n,
 	totalEligibleCyFXRP: 0n,
+	totalEligibleCyWBTC: 0n,
+	totalEligibleCycbBTC: 0n,
 	totalEligibleSum: 3000000000000000000000n,
 	cysFLRApy: 500000000000000000n, // 50%
 	cyWETHApy: 750000000000000000n, // 75%
 	cyFXRPApy: 0n,
+	cyWBTCApy: 0n,
+	cycbBTCApy: 0n,
 	rewardsPools: {
 		cysFlr: ONE * 1000n,
 		cyWeth: ONE * 2000n,
-		cyFxrp: 0n
+		cyFxrp: 0n,
+		cyWbtc: 0n,
+		cycbBtc: 0n
 	}
 };
 
