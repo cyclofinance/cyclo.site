@@ -25,7 +25,8 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 			account: account.id,
 			eligibleBalances: {
 				cysFLR: BigInt(account.cysFLRBalance),
-				cyWETH: BigInt(account.cyWETHBalance)
+				cyWETH: BigInt(account.cyWETHBalance),
+				cyFXRP: BigInt(account.cyFXRPBalance || 0)
 			},
 			shares
 		};

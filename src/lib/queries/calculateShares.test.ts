@@ -6,6 +6,7 @@ import { ONE, TOTAL_REWARD } from '$lib/constants';
 const account = {
 	cysFLRBalance: ONE.toString(),
 	cyWETHBalance: (ONE / 2n).toString(),
+	cyFXRPBalance: '0',
 	totalCyBalance: (ONE + ONE / 2n).toString()
 };
 
@@ -14,6 +15,7 @@ const eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']> = {
 	id: 'SINGLETON',
 	totalEligibleCyWETH: ONE.toString(),
 	totalEligibleCysFLR: (ONE * 2n).toString(),
+	totalEligibleCyFXRP: '0',
 	totalEligibleSum: (ONE + ONE * 2n).toString()
 };
 

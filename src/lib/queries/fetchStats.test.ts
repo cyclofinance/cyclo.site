@@ -4,6 +4,7 @@ import { ONE, SUBGRAPH_URL } from '$lib/constants';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
+import { getcyFXRPwFLRPrice } from './cyFXRPwFLRQuote';
 import { calculateRewardsPools } from './calculateRewardsPools';
 
 vi.mock('$lib/constants', () => ({
@@ -18,6 +19,10 @@ vi.mock('./cysFLRwFLRQuote', () => ({
 
 vi.mock('./cyWETHwFLRQuote', () => ({
 	getcyWETHwFLRPrice: vi.fn()
+}));
+
+vi.mock('./cyFXRPwFLRQuote', () => ({
+	getcyFXRPwFLRPrice: vi.fn()
 }));
 
 global.fetch = vi.fn();
@@ -56,6 +61,7 @@ describe('fetchStats', () => {
 					id: 'SINGLETON',
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
+					totalEligibleCyFXRP: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				accounts: Array(96).fill({}) // Mock 96 accounts
@@ -69,6 +75,7 @@ describe('fetchStats', () => {
 		// Mock price quotes
 		vi.mocked(getcysFLRwFLRPrice).mockResolvedValueOnce(BigInt('500000000000000000')); // 0.5 FLR
 		vi.mocked(getcyWETHwFLRPrice).mockResolvedValueOnce(BigInt('1000000000000000000')); // 1 FLR
+		vi.mocked(getcyFXRPwFLRPrice).mockResolvedValueOnce(BigInt('1000000000000000000')); // 1 FLR
 
 		const result = await fetchStats();
 
@@ -78,6 +85,7 @@ describe('fetchStats', () => {
 			eligibleHolders: 96,
 			totalEligibleCysFLR: BigInt('2000000000000000000000'),
 			totalEligibleCyWETH: BigInt('1000000000000000000000'),
+			totalEligibleCyFXRP: 0n,
 			totalEligibleSum: BigInt('3000000000000000000000'),
 			rewardsPools,
 			cysFLRApy: calculateApy(
@@ -89,7 +97,8 @@ describe('fetchStats', () => {
 				rewardsPools.cyWeth,
 				BigInt('1000000000000000000000'),
 				BigInt('1000000000000000000')
-			)
+			),
+			cyFXRPApy: 0n
 		});
 
 		expect(fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {

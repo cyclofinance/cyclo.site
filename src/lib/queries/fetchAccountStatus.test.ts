@@ -24,11 +24,13 @@ describe('fetchAccountStatus', () => {
 					id: 'SINGLETON',
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
+					totalEligibleCyFXRP: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				account: {
 					cysFLRBalance: (100n * ONE).toString(),
 					cyWETHBalance: (200n * ONE).toString(),
+					cyFXRPBalance: '0',
 					totalCyBalance: (300n * ONE).toString(),
 					eligibleShare: '0.1',
 					transfersIn: [
@@ -67,7 +69,8 @@ describe('fetchAccountStatus', () => {
 			account,
 			eligibleBalances: {
 				cysFLR: 100n * ONE,
-				cyWETH: 200n * ONE
+				cyWETH: 200n * ONE,
+				cyFXRP: 0n
 			},
 			shares: calculateShares(mockData.data.account, mockData.data.eligibleTotals),
 			transfers: {
@@ -91,11 +94,13 @@ describe('fetchAccountStatus', () => {
 					id: 'SINGLETON',
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
+					totalEligibleCyFXRP: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				account: {
 					cysFLRBalance: '100000000000000000000',
 					cyWETHBalance: '200000000000000000000',
+					cyFXRPBalance: '0',
 					totalCyBalance: '300000000000000000000',
 					eligibleShare: '0.1',
 					transfersIn: [

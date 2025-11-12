@@ -14,6 +14,12 @@ vi.mock('svelte-wagmi', () => ({
 			fn('0x1234567890123456789012345678901234567890');
 			return () => {};
 		})
+	},
+	chainId: {
+		subscribe: vi.fn((fn) => {
+			fn(1);
+			return () => {};
+		})
 	}
 }));
 
@@ -26,7 +32,8 @@ const mockLeaderboard: LeaderboardEntry[] = [
 		account: '0x1234567890123456789012345678901234567890',
 		eligibleBalances: {
 			cysFLR: BigInt(100) * ONE,
-			cyWETH: BigInt(200) * ONE
+			cyWETH: BigInt(200) * ONE,
+			cyFXRP: 0n
 		},
 		shares: {
 			cysFLR: {
@@ -36,6 +43,10 @@ const mockLeaderboard: LeaderboardEntry[] = [
 			cyWETH: {
 				percentageShare: ONE / 10n,
 				rewardsAmount: ONE / 10n
+			},
+			cyFXRP: {
+				percentageShare: 0n,
+				rewardsAmount: 0n
 			},
 			totalRewards: 20n * ONE
 		}
