@@ -70,20 +70,8 @@
 	};
 
 	const refreshSelectedTokenData = async () => {
-		if ($selectedCyToken?.symbol === 'cyWETH.pyth' && $selectedCyToken?.chainId === arbitrum.id) {
-			transactionStore.handlePythPriceUpdate('0xff1a0f4744e8582DF1aE09D5611b887B6a12925C', [
-				'0x9d4294bbcd1174d6f2003ec365831e64cc31d9f6f15a2b85399db8d5000960f6'
-			]);
-		}
-		if ($selectedCyToken?.symbol === 'cyWBTC.pyth' && $selectedCyToken?.chainId === arbitrum.id) {
-			transactionStore.handlePythPriceUpdate('0xff1a0f4744e8582DF1aE09D5611b887B6a12925C', [
-				'0xc9d8b075a5c69303365ae23633d4e085199bf5c520a3b90fed1322a0342ffc33'
-			]);
-		}
-		if ($selectedCyToken?.symbol === 'cycbBTC.pyth' && $selectedCyToken?.chainId === arbitrum.id) {
-			transactionStore.handlePythPriceUpdate('0xff1a0f4744e8582DF1aE09D5611b887B6a12925C', [
-				'0x2817d7bfe5c64b8ea956e9a26f573ef64e72e4d7891f2d6af9bcc93f7aff9a97'
-			]);
+		if ($selectedCyToken?.chainId === arbitrum.id) {
+			transactionStore.handlePythPriceUpdate();
 		}
 	};
 	let refreshing = false;
