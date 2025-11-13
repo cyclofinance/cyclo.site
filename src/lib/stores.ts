@@ -62,7 +62,7 @@ const networkConfigs: NetworkConfig[] = [
 		orderbookSubgraphUrl:
 			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
 		rewardsSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-11-09-5d92e84888be7ea7/gn',
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-11-12-cb80/gn',
 		explorerBaseUrl: 'https://flarescan.com/',
 		tokens: [
 			{
@@ -122,7 +122,7 @@ const networkConfigs: NetworkConfig[] = [
 		orderbookSubgraphUrl:
 			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn',
 		rewardsSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-11-12-8202/gn',
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-11-13-bc00/gn',
 		explorerBaseUrl: 'https://arbiscan.io/',
 		tokens: [
 			{
