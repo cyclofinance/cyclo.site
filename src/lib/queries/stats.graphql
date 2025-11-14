@@ -5,6 +5,12 @@ query Stats {
 		totalEligibleCysFLR
 		totalEligibleCyWETH
 		totalEligibleCyFXRP
+		totalEligibleCyLINK
+		totalEligibleCyDOT
+		totalEligibleCyUNI
+		totalEligibleCyPEPE
+		totalEligibleCyENA
+		totalEligibleCyARB
 	}
 	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
 		id

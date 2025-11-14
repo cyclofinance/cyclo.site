@@ -5,6 +5,19 @@ import AccountReceipts from '$lib/queries/account-receipts.graphql?raw';
 import { type Account } from '../../generated-graphql';
 
 const PAGE_SIZE = 1000;
+const STATIC_RECEIPT_BASE_NAMES = [
+	'cyWETH',
+	'cyFXRP',
+	'cysFLR',
+	'cyWBTC',
+	'cycbBTC',
+	'cyLINK',
+	'cyDOT',
+	'cyUNI',
+	'cyPEPE',
+	'cyENA',
+	'cyARB'
+] as const;
 
 type ReceiptBalance = {
 	receiptAddress: string;
@@ -14,9 +27,10 @@ type ReceiptBalance = {
 };
 
 type AccountWithReceipts = Account & {
-	cyWBTCReceiptBalance?: ReceiptBalance[];
-	cycbBTCReceiptBalance?: ReceiptBalance[];
+	[key: string]: ReceiptBalance[] | undefined;
 };
+
+const normalizeTokenName = (tokenName: string) => tokenName.replace(/\.pyth$/, '');
 
 export const refreshAllReceipts = async (
 	signerAddress: string,
@@ -24,14 +38,28 @@ export const refreshAllReceipts = async (
 ): Promise<Receipt[]> => {
 	if (!signerAddress) return [];
 	const rewardsSg = get(rewardsSubgraphUrl);
+	const tokenList = get(tokens);
 
-	const aggregatedReceipts = {
-		cyWETHReceiptBalance: [] as ReceiptBalance[],
-		cyFXRPReceiptBalance: [] as ReceiptBalance[],
-		cysFLRReceiptBalance: [] as ReceiptBalance[],
-		cyWBTCReceiptBalance: [] as ReceiptBalance[],
-		cycbBTCReceiptBalance: [] as ReceiptBalance[]
-	};
+	const receiptBaseNames = Array.from(
+		new Set([
+			...STATIC_RECEIPT_BASE_NAMES,
+			...(tokenList?.map((token) => normalizeTokenName(token.name)) ?? [])
+		])
+	);
+
+	const aggregatedReceipts = receiptBaseNames.reduce<Record<string, ReceiptBalance[]>>(
+		(acc, baseName) => {
+			acc[baseName] = [];
+			return acc;
+		},
+		{}
+	);
+
+	if (!receiptBaseNames.length) {
+		setLoading(false);
+		myReceipts.set([]);
+		return [];
+	}
 
 	let skip = 0;
 	let hasMore = true;
@@ -62,34 +90,21 @@ export const refreshAllReceipts = async (
 			break;
 		}
 
-		const account = data?.account;
+		const account = data?.account as AccountWithReceipts | undefined;
 
 		if (!account) break;
 
-		// Cast receipt balances from JSON response (strings) to our ReceiptBalance type
-		const cyWETHReceiptBalance = (account.cyWETHReceiptBalance ||
-			[]) as unknown as ReceiptBalance[];
-		const cyFXRPReceiptBalance = (account.cyFXRPReceiptBalance ||
-			[]) as unknown as ReceiptBalance[];
-		const cysFLRReceiptBalance = (account.cysFLRReceiptBalance ||
-			[]) as unknown as ReceiptBalance[];
-		const cyWBTCReceiptBalance = (account.cyWBTCReceiptBalance ||
-			[]) as unknown as ReceiptBalance[];
-		const cycbBTCReceiptBalance = (account.cycbBTCReceiptBalance ||
-			[]) as unknown as ReceiptBalance[];
+		let shouldContinue = false;
 
-		aggregatedReceipts.cyWETHReceiptBalance.push(...cyWETHReceiptBalance);
-		aggregatedReceipts.cyFXRPReceiptBalance.push(...cyFXRPReceiptBalance);
-		aggregatedReceipts.cysFLRReceiptBalance.push(...cysFLRReceiptBalance);
-		aggregatedReceipts.cyWBTCReceiptBalance.push(...cyWBTCReceiptBalance);
-		aggregatedReceipts.cycbBTCReceiptBalance.push(...cycbBTCReceiptBalance);
+		for (const baseName of receiptBaseNames) {
+			const fieldName = `${baseName}ReceiptBalance`;
+			const balances = ((account[fieldName] as unknown) || []) as ReceiptBalance[];
+			aggregatedReceipts[baseName].push(...balances);
 
-		const shouldContinue =
-			cyWETHReceiptBalance.length === PAGE_SIZE ||
-			cyFXRPReceiptBalance.length === PAGE_SIZE ||
-			cysFLRReceiptBalance.length === PAGE_SIZE ||
-			cyWBTCReceiptBalance.length === PAGE_SIZE ||
-			cycbBTCReceiptBalance.length === PAGE_SIZE;
+			if (balances.length === PAGE_SIZE) {
+				shouldContinue = true;
+			}
+		}
 
 		if (!shouldContinue) {
 			hasMore = false;
@@ -101,31 +116,9 @@ export const refreshAllReceipts = async (
 
 	console.log('sg data here : ', JSON.stringify(aggregatedReceipts));
 
-	const tokenList = get(tokens);
-
-	// Helper function to map token name to GraphQL receipt balance field
-	// Handles tokens like "cyWETH.pyth" by extracting base name "cyWETH"
-	const getReceiptBalancesForToken = (tokenName: string) => {
-		// Remove .pyth suffix if present
-		const baseName = tokenName.replace(/\.pyth$/, '');
-
-		// Map token names to receipt balance arrays
-		if (baseName === 'cyWETH') {
-			return aggregatedReceipts.cyWETHReceiptBalance;
-		} else if (baseName === 'cyFXRP') {
-			return aggregatedReceipts.cyFXRPReceiptBalance;
-		} else if (baseName === 'cysFLR') {
-			return aggregatedReceipts.cysFLRReceiptBalance;
-		} else if (baseName === 'cyWBTC') {
-			return aggregatedReceipts.cyWBTCReceiptBalance;
-		} else if (baseName === 'cycbBTC') {
-			return aggregatedReceipts.cycbBTCReceiptBalance;
-		}
-		return [];
-	};
-
-	const receiptCollections = tokenList.map((token) => {
-		const balances = getReceiptBalancesForToken(token.name);
+	const receiptCollections = (tokenList ?? []).map((token) => {
+		const baseName = normalizeTokenName(token.name);
+		const balances = aggregatedReceipts[baseName] ?? [];
 
 		return balances.map((receiptBalance) => ({
 			chainId: token.chainId.toString(),

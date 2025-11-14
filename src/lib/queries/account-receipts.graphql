@@ -12,6 +12,42 @@ query AccountReceipts($account: ID!, $first: Int!, $skip: Int!) {
 			id
 			tokenId
 		}
+		cyLINKReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
+		cyDOTReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
+		cyUNIReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
+		cyPEPEReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
+		cyENAReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
+		cyARBReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
 		cysFLRReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
 			receiptAddress
 			balance

@@ -5,12 +5,24 @@ query TopAccounts {
 		totalEligibleCysFLR
 		totalEligibleCyWETH
 		totalEligibleCyFXRP
+		totalEligibleCyLINK
+		totalEligibleCyDOT
+		totalEligibleCyUNI
+		totalEligibleCyPEPE
+		totalEligibleCyENA
+		totalEligibleCyARB
 	}
 	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 1000) {
 		id
 		cysFLRBalance
 		cyWETHBalance
 		cyFXRPBalance
+		cyLINKBalance
+		cyDOTBalance
+		cyUNIBalance
+		cyPEPEBalance
+		cyENABalance
+		cyARBBalance
 		totalCyBalance
 	}
 }
