@@ -58,9 +58,7 @@
 			{#each $tokens as token (token.address)}
 				<button
 					data-testid="{token.name}-button"
-				class="token-button {$selectedCyToken.name === token.name
-						? 'active'
-						: ''}"
+					class="token-button {$selectedCyToken.name === token.name ? 'active' : ''}"
 					on:click={() => ($selectedCyToken = token)}
 				>
 					{token.name}

@@ -36,6 +36,12 @@ describe('fetchTopRewards', () => {
 						cysFLRBalance: '1000000000000000000000',
 						cyWETHBalance: '2000000000000000000000',
 						cyFXRPBalance: '0',
+						cyLINKBalance: '0',
+						cyDOTBalance: '0',
+						cyUNIBalance: '0',
+						cyPEPEBalance: '0',
+						cyENABalance: '0',
+						cyARBBalance: '0',
 						totalCyBalance: '100000000000000000000'
 					},
 					{
@@ -43,6 +49,12 @@ describe('fetchTopRewards', () => {
 						cysFLRBalance: '500000000000000000000',
 						cyWETHBalance: '1000000000000000000000',
 						cyFXRPBalance: '0',
+						cyLINKBalance: '0',
+						cyDOTBalance: '0',
+						cyUNIBalance: '0',
+						cyPEPEBalance: '0',
+						cyENABalance: '0',
+						cyARBBalance: '0',
 						totalCyBalance: '50000000000000000000'
 					}
 				],
@@ -51,6 +63,12 @@ describe('fetchTopRewards', () => {
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleCyFXRP: '0',
+					totalEligibleCyLINK: '0',
+					totalEligibleCyDOT: '0',
+					totalEligibleCyUNI: '0',
+					totalEligibleCyPEPE: '0',
+					totalEligibleCyENA: '0',
+					totalEligibleCyARB: '0',
 					totalEligibleSum: '3000000000000000000000'
 				}
 			}

@@ -72,6 +72,12 @@ describe('fetchStats', () => {
 					totalEligibleCyWETH: '1000000000000000000000',
 					totalEligibleCysFLR: '2000000000000000000000',
 					totalEligibleCyFXRP: '0',
+					totalEligibleCyLINK: '0',
+					totalEligibleCyDOT: '0',
+					totalEligibleCyUNI: '0',
+					totalEligibleCyPEPE: '0',
+					totalEligibleCyENA: '0',
+					totalEligibleCyARB: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				accounts: Array(96).fill({}) // Mock 96 accounts
