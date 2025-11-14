@@ -48,6 +48,12 @@ query AccountReceipts($account: ID!, $first: Int!, $skip: Int!) {
 			id
 			tokenId
 		}
+		cywstETHReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
+			receiptAddress
+			balance
+			id
+			tokenId
+		}
 		cysFLRReceiptBalance(first: $first, skip: $skip, where: { balance_gt: "0" }) {
 			receiptAddress
 			balance

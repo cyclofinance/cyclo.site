@@ -122,7 +122,7 @@ const networkConfigs: NetworkConfig[] = [
 		orderbookSubgraphUrl:
 			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn',
 		rewardsSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-11-14-9c16/gn',
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-11-14-ec23/gn',
 		explorerBaseUrl: 'https://arbiscan.io/',
 		tokens: [
 			{
@@ -229,6 +229,18 @@ const networkConfigs: NetworkConfig[] = [
 				underlyingAddress: '0x912CE59144191C1204E64559FE8253a0e49E6548' as Hex,
 				underlyingSymbol: 'ARB',
 				receiptAddress: '0x3fEe841c184dCF93f15CD28144b6E5514fFfC18e' as Hex,
+				chainId: arbitrum.id,
+				networkKey: 'arbitrum',
+				networkName: 'Arbitrum One'
+			},
+			{
+				name: 'cywstETH.pyth',
+				symbol: 'cywstETH.pyth',
+				decimals: 18,
+				address: '0xC43ee790dc819dB728e2c5bB6285359BBdE7E016' as Hex,
+				underlyingAddress: '0x5979D7b546E38E414F7E9822514be443A4800529' as Hex,
+				underlyingSymbol: 'wstETH',
+				receiptAddress: '0x8C1843A9f3278C94f6d79cebA9828596F524E898' as Hex,
 				chainId: arbitrum.id,
 				networkKey: 'arbitrum',
 				networkName: 'Arbitrum One'

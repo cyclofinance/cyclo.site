@@ -16,7 +16,8 @@ const STATIC_RECEIPT_BASE_NAMES = [
 	'cyUNI',
 	'cyPEPE',
 	'cyENA',
-	'cyARB'
+	'cyARB',
+	'cywstETH'
 ] as const;
 
 type ReceiptBalance = {

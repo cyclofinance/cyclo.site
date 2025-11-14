@@ -11,6 +11,7 @@ query Stats {
 		totalEligibleCyPEPE
 		totalEligibleCyENA
 		totalEligibleCyARB
+		totalEligibleCywstETH
 	}
 	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
 		id
