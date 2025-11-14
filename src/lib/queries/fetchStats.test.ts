@@ -78,6 +78,7 @@ describe('fetchStats', () => {
 					totalEligibleCyPEPE: '0',
 					totalEligibleCyENA: '0',
 					totalEligibleCyARB: '0',
+					totalEligibleCywstETH: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				accounts: Array(96).fill({}) // Mock 96 accounts

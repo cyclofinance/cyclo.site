@@ -42,6 +42,7 @@ describe('fetchTopRewards', () => {
 						cyPEPEBalance: '0',
 						cyENABalance: '0',
 						cyARBBalance: '0',
+						cywstETHBalance: '0',
 						totalCyBalance: '100000000000000000000'
 					},
 					{
@@ -55,6 +56,7 @@ describe('fetchTopRewards', () => {
 						cyPEPEBalance: '0',
 						cyENABalance: '0',
 						cyARBBalance: '0',
+						cywstETHBalance: '0',
 						totalCyBalance: '50000000000000000000'
 					}
 				],
@@ -69,6 +71,7 @@ describe('fetchTopRewards', () => {
 					totalEligibleCyPEPE: '0',
 					totalEligibleCyENA: '0',
 					totalEligibleCyARB: '0',
+					totalEligibleCywstETH: '0',
 					totalEligibleSum: '3000000000000000000000'
 				}
 			}

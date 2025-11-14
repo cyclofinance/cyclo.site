@@ -41,6 +41,7 @@ describe('fetchAccountStatus', () => {
 					totalEligibleCyPEPE: '0',
 					totalEligibleCyENA: '0',
 					totalEligibleCyARB: '0',
+					totalEligibleCywstETH: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				account: {
@@ -53,6 +54,7 @@ describe('fetchAccountStatus', () => {
 					cyPEPEBalance: '0',
 					cyENABalance: '0',
 					cyARBBalance: '0',
+					cywstETHBalance: '0',
 					totalCyBalance: (300n * ONE).toString(),
 					eligibleShare: '0.1',
 					transfersIn: [
@@ -123,6 +125,7 @@ describe('fetchAccountStatus', () => {
 					totalEligibleCyPEPE: '0',
 					totalEligibleCyENA: '0',
 					totalEligibleCyARB: '0',
+					totalEligibleCywstETH: '0',
 					totalEligibleSum: '3000000000000000000000'
 				},
 				account: {
@@ -135,6 +138,7 @@ describe('fetchAccountStatus', () => {
 					cyPEPEBalance: '0',
 					cyENABalance: '0',
 					cyARBBalance: '0',
+					cywstETHBalance: '0',
 					totalCyBalance: '300000000000000000000',
 					eligibleShare: '0.1',
 					transfersIn: [
