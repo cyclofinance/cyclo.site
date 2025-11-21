@@ -32,7 +32,8 @@ const mockStats: AccountStats = {
 	transfers: {
 		in: [],
 		out: []
-	}
+	},
+	liquidityChanges: [],
 };
 
 describe('AccountSummary Component', () => {

@@ -52,7 +52,8 @@ const mockStats: AccountStats = {
 				value: '200000000000000000000'
 			}
 		]
-	}
+	},
+	liquidityChanges: [],
 };
 
 describe('AccountStatus Component', () => {

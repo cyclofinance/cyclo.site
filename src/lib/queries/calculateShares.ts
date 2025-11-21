@@ -4,7 +4,7 @@ import type { AccountStatusQuery } from '../../generated-graphql';
 import { calculateRewardsPools } from './calculateRewardsPools';
 
 export const calculateShares = (
-	account: Omit<NonNullable<AccountStatusQuery['account']>, 'transfersIn' | 'transfersOut'>,
+	account: Omit<NonNullable<AccountStatusQuery['account']>, 'transfersIn' | 'transfersOut' | 'liquidityChanges'>,
 	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']>
 ): Shares => {
 	// Calculate share for each token
