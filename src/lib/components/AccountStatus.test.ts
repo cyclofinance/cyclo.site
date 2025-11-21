@@ -53,7 +53,7 @@ const mockStats: AccountStats = {
 			}
 		]
 	},
-	liquidityChanges: [],
+	liquidityChanges: []
 };
 
 describe('AccountStatus Component', () => {
