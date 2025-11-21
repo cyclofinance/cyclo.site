@@ -8,6 +8,7 @@
 	import type { AccountStats } from '$lib/types';
 	import { formatEther } from 'viem';
 	import AccountStatsComponent from './AccountStats.svelte';
+	import { LiquidityChangeType } from '../../generated-graphql';
 
 	export let account: string;
 
@@ -51,26 +52,46 @@
 			<div class="space-y-6" data-testid="transfer-history">
 				<h2 class="text-xl font-semibold text-white">Transfer History</h2>
 				<div class="space-y-2">
-					{#each [...stats.transfers.in, ...stats.transfers.out].sort((a, b) => Number(b.blockTimestamp) - Number(a.blockTimestamp)) as transfer}
+					{#each [...stats.transfers.in, ...stats.transfers.out, ...stats.liquidityChanges].sort(
+						(a, b) => {
+							const res = Number(b.blockTimestamp) - Number(a.blockTimestamp);
+							if (res === 0){
+								if ("fromIsApprovedSource" in a && !("fromIsApprovedSource" in b)) {
+									return 1;
+								}
+								if ("fromIsApprovedSource" in b && !("fromIsApprovedSource" in a)) {
+									return -1;
+								}
+							}
+							return res;
+						}
+					) as transfer}
 						<a
 							href={`https://flarescan.com/tx/${transfer.transactionHash}`}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="flex items-center justify-between rounded py-2 {transfer.fromIsApprovedSource
-								? 'border-success bg-base-200 border-l-4'
-								: 'bg-base-200'} hover:bg-base-300"
+							class="flex items-center justify-between rounded py-2 {
+								("fromIsApprovedSource" in transfer ? transfer.fromIsApprovedSource : transfer.LiquidityChangeType === LiquidityChangeType.Deposit)
+									? 'border-success bg-base-200 border-l-4'
+									: 'bg-base-200'} hover:bg-base-300"
 						>
 							<div class="space-y-1">
 								<div class="text-sm">
-									{#if getAddress(transfer.from.id) === getAddress(account)}
-										<span class="text-error"
-											>Sent to {transfer.to.id.slice(0, 6)}...{transfer.to.id.slice(-4)}</span
-										>
+									{#if "fromIsApprovedSource" in transfer}
+										{#if getAddress(transfer.from.id) === getAddress(account)}
+											<span class="text-error"
+												>Sent to {transfer.to.id.slice(0, 6)}...{transfer.to.id.slice(-4)}</span
+											>
+										{:else}
+											<span class="text-success"
+												>Received from {transfer.from.id.slice(0, 6)}...{transfer.from.id.slice(
+													-4
+												)}</span
+											>
+										{/if}
 									{:else}
-										<span class="text-success"
-											>Received from {transfer.from.id.slice(0, 6)}...{transfer.from.id.slice(
-												-4
-											)}</span
+										<span class="text-error"
+											>Liquidity {transfer.LiquidityChangeType.toLowerCase()}</span
 										>
 									{/if}
 								</div>
@@ -86,7 +107,7 @@
 											? 'cyWETH'
 											: 'Unknown'}</span
 								>
-								<span>{formatEther(transfer.value)}</span>
+								<span>{formatEther("fromIsApprovedSource" in transfer ? transfer.value : transfer.depositedBalanceChange)}</span>
 							</div>
 						</a>
 					{/each}

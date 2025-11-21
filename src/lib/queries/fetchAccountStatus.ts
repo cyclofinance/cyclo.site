@@ -36,6 +36,7 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 		transfers: {
 			in: accountData.transfersIn,
 			out: accountData.transfersOut
-		}
+		},
+		liquidityChanges: accountData.liquidityChanges
 	};
 }
