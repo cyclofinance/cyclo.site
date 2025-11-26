@@ -14,6 +14,8 @@ const account = {
 	cyENABalance: '0',
 	cyARBBalance: '0',
 	cywstETHBalance: '0',
+	cyXAUt0Balance: '0',
+	cyPYTHBalance: '0',
 	totalCyBalance: (ONE + ONE / 2n).toString()
 };
 
@@ -30,6 +32,8 @@ const eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']> = {
 	totalEligibleCyENA: '0',
 	totalEligibleCyARB: '0',
 	totalEligibleCywstETH: '0',
+	totalEligibleCyXAUt0: '0',
+	totalEligibleCyPYTH: '0',
 	totalEligibleSum: (ONE + ONE * 2n).toString()
 };
 
