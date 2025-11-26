@@ -11,6 +11,8 @@ query AccountStatus($account: ID!) {
 		totalEligibleCyENA
 		totalEligibleCyARB
 		totalEligibleCywstETH
+		totalEligibleCyXAUt0
+		totalEligibleCyPYTH
 		totalEligibleSum
 	}
 	account(id: $account) {
@@ -24,6 +26,8 @@ query AccountStatus($account: ID!) {
 		cyENABalance
 		cyARBBalance
 		cywstETHBalance
+		cyXAUt0Balance
+		cyPYTHBalance
 		totalCyBalance
 		transfersIn {
 			fromIsApprovedSource

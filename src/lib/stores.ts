@@ -122,7 +122,7 @@ const networkConfigs: NetworkConfig[] = [
 		orderbookSubgraphUrl:
 			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn',
 		rewardsSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-11-14-ec23/gn',
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-11-26-dfe6/gn',
 		explorerBaseUrl: 'https://arbiscan.io/',
 		tokens: [
 			{
@@ -241,6 +241,30 @@ const networkConfigs: NetworkConfig[] = [
 				underlyingAddress: '0x5979D7b546E38E414F7E9822514be443A4800529' as Hex,
 				underlyingSymbol: 'wstETH',
 				receiptAddress: '0x8C1843A9f3278C94f6d79cebA9828596F524E898' as Hex,
+				chainId: arbitrum.id,
+				networkKey: 'arbitrum',
+				networkName: 'Arbitrum One'
+			},
+			{
+				name: 'cyXAUt0.pyth',
+				symbol: 'cyXAUt0.pyth',
+				decimals: 6,
+				address: '0x6Ddc84F2FC195AE372501B01Bb1CA25CA3221776' as Hex,
+				underlyingAddress: '0x40461291347e1eCbb09499F3371D3f17f10d7159' as Hex,
+				underlyingSymbol: 'XAUt0',
+				receiptAddress: '0x45D63e1C4cb7201ed45d75Af771BCfA9116a99Be' as Hex,
+				chainId: arbitrum.id,
+				networkKey: 'arbitrum',
+				networkName: 'Arbitrum One'
+			},
+			{
+				name: 'cyPYTH.pyth',
+				symbol: 'cyPYTH.pyth',
+				decimals: 6,
+				address: '0x87f7B55D7CCc9Be93B0a8aE601801d79FA96FD4f' as Hex,
+				underlyingAddress: '0xE4D5c6aE46ADFAF04313081e8C0052A30b6Dd724' as Hex,
+				underlyingSymbol: 'PYTH',
+				receiptAddress: '0x93AC50B43aFf21aDD1Ad2a626CF6E88C5e00ea39' as Hex,
 				chainId: arbitrum.id,
 				networkKey: 'arbitrum',
 				networkName: 'Arbitrum One'
