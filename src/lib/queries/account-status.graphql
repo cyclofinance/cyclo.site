@@ -9,7 +9,7 @@ query AccountStatus($account: ID!) {
 		cysFLRBalance
 		cyWETHBalance
 		totalCyBalance
-		transfersIn {
+		transfersIn(orderBy: blockNumber, orderDirection: desc) {
 			fromIsApprovedSource
 			transactionHash
 			blockTimestamp
@@ -24,7 +24,7 @@ query AccountStatus($account: ID!) {
 			id
 			blockNumber
 		}
-		transfersOut {
+		transfersOut(orderBy: blockNumber, orderDirection: desc) {
 			fromIsApprovedSource
 			transactionHash
 			blockTimestamp
@@ -38,6 +38,21 @@ query AccountStatus($account: ID!) {
 			value
 			id
 			blockNumber
+		}
+		liquidityChanges(orderBy: blockNumber, orderDirection: desc) {
+			__typename
+			id
+			tokenAddress
+			LiquidityChangeType
+			blockNumber
+			blockTimestamp
+			liquidityChange
+			lpAddress
+			transactionHash
+			depositedBalanceChange
+			... on LiquidityV3Change {
+				tokenId
+			}
 		}
 	}
 }

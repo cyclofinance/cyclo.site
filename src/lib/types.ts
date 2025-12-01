@@ -71,9 +71,10 @@ export type AccountStats = {
 		in: NonNullable<AccountStatusQuery['account']>['transfersIn'];
 		out: NonNullable<AccountStatusQuery['account']>['transfersOut'];
 	};
+	liquidityChanges: NonNullable<AccountStatusQuery['account']>['liquidityChanges'];
 };
 
-export type LeaderboardEntry = Omit<AccountStats, 'transfers'>;
+export type LeaderboardEntry = Omit<AccountStats, 'transfers' | 'liquidityChanges'>;
 
 export type GlobalStats = {
 	eligibleHolders: number;
