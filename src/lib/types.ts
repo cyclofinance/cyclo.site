@@ -38,6 +38,7 @@ export interface CyToken extends Token {
 	chainId: number;
 	networkKey: string;
 	networkName: string;
+	visible?: boolean;
 }
 
 export type InitiateLockTransactionArgs = {
