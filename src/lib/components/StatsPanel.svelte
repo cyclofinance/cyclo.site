@@ -5,12 +5,15 @@
 	import { formatEther } from 'ethers';
 	import type { GlobalStats } from '$lib/types';
 	import { TOTAL_REWARD } from '$lib/constants';
+	import { selectedNetwork } from '$lib/stores';
 
 	let loading = true;
 	let error: string | null = null;
 	let stats: GlobalStats | null = null;
 
-	onMount(async () => {
+	async function loadStats() {
+		loading = true;
+		error = null;
 		try {
 			stats = await fetchStats();
 			loading = false;
@@ -19,7 +22,16 @@
 			error = e instanceof Error ? e.message : 'Failed to fetch stats';
 			loading = false;
 		}
+	}
+
+	onMount(() => {
+		loadStats();
 	});
+
+	// Re-fetch stats when network changes
+	$: if ($selectedNetwork) {
+		loadStats();
+	}
 </script>
 
 <Card>

@@ -2,7 +2,7 @@
 	import Input from '$lib/components/Input.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import { tokens } from '$lib/constants';
-	import { tokens as cyTokens } from '$lib/stores';
+	import { tokens as cyTokens, selectedCyToken as storeSelectedCyToken } from '$lib/stores';
 	import type { CyToken, Token } from '$lib/types';
 	import TradeAmountInput from '$lib/components/TradeAmountInput.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -21,8 +21,20 @@
 	} from '$lib/trade/validateDeploymentArgs';
 	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
 
-	// selected values
-	let selectedCyToken: CyToken = cyTokens[0];
+	// selected values - initialize from store and update when network changes
+	let selectedCyToken: CyToken = $storeSelectedCyToken;
+	
+	// Update selectedCyToken when network changes - sync with store or use first available token
+	$: if ($cyTokens.length > 0) {
+		const currentTokens = $cyTokens;
+		const storeToken = $storeSelectedCyToken;
+		
+		// If store token exists in current tokens, use it; otherwise use first token
+		const tokenToUse = currentTokens.find((t) => t.name === storeToken.name) || currentTokens[0];
+		if (selectedCyToken.name !== tokenToUse.name) {
+			selectedCyToken = tokenToUse;
+		}
+	}
 	let selectedToken: Token = tokens[0];
 	let selectedBuyOrSell: 'Buy' | 'Sell' = 'Buy';
 	let selectedPeriodUnit: 'Days' | 'Hours' | 'Minutes' = 'Days';
@@ -40,7 +52,7 @@
 	let selectedAmountError: boolean = false;
 	let selectedPeriodError: boolean = false;
 	let selectedBaselineError: boolean = false;
-	let inputVaultIdError: boolean = false;
+	let inputVaultIdError: boolean = false;   
 	let outputVaultIdError: boolean = false;
 	let overrideDepositAmountError: boolean = false;
 
@@ -104,12 +116,14 @@
 		/>
 
 		<!-- token to buy or sell -->
-		<Select
-			options={cyTokens}
-			bind:selected={selectedCyToken}
-			getOptionLabel={(token) => token.name}
-			dataTestId="cy-token-select"
-		/>
+		{#if $cyTokens.length > 0}
+			<Select
+				options={$cyTokens}
+				bind:selected={selectedCyToken}
+				getOptionLabel={(token) => token.name}
+				dataTestId="cy-token-select"
+			/>
+		{/if}
 
 		<!-- token to spend or receive -->
 		<span class="text-sm text-gray-200" data-testid="with-for-label"

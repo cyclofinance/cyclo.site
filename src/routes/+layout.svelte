@@ -6,7 +6,7 @@
 	import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
 	import { browser } from '$app/environment';
 	import { PUBLIC_LAUNCHED } from '$env/static/public';
-	import { flare } from '@wagmi/core/chains';
+	import { supportedNetworks } from '$lib/stores';
 	import { cusdxAddress, quoterAddress, selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
@@ -16,11 +16,13 @@
 
 	let intervalId: ReturnType<typeof setInterval>;
 	const initWallet = async () => {
+		// Get all chains from supported networks
+		const chains = supportedNetworks.map((network) => network.chain);
 		const erckit = defaultConfig({
 			autoConnect: true,
 			appName: 'cyclo',
 			walletConnectProjectId: PUBLIC_WALLETCONNECT_ID,
-			chains: [flare],
+			chains: chains,
 			connectors: [injected(), walletConnect({ projectId: PUBLIC_WALLETCONNECT_ID })]
 		});
 		await erckit.init();

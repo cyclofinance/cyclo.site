@@ -1,7 +1,8 @@
 import type { Config } from '@wagmi/core';
 import type { Receipt } from '$lib/types';
-import { myReceipts, tokens } from '$lib/stores';
+import { myReceipts, tokens, selectedNetwork } from '$lib/stores';
 import { getSingleTokenReceipts } from '$lib/queries/getReceipts';
+import { get } from 'svelte/store';
 
 export const refreshAllReceipts = async (
 	signerAddress: string,
@@ -10,11 +11,23 @@ export const refreshAllReceipts = async (
 ): Promise<Receipt[]> => {
 	if (!signerAddress) return [];
 
+	const currentNetwork = get(selectedNetwork);
+	const currentTokens = get(tokens);
+
+	if (currentTokens.length < 2) {
+		setLoading(false);
+		myReceipts.set([]);
+		return [];
+	}
+
 	// Get receipts for both tokens
 	const [cysFLRReceipts, cyWETHReceipts] = await Promise.all([
-		getSingleTokenReceipts(signerAddress, tokens[0].receiptAddress, config),
-		getSingleTokenReceipts(signerAddress, tokens[1].receiptAddress, config)
+		getSingleTokenReceipts(signerAddress, currentTokens[0].receiptAddress, config, currentNetwork),
+		getSingleTokenReceipts(signerAddress, currentTokens[1].receiptAddress, config, currentNetwork)
 	]);
+
+	console.log('cysFLRReceipts', cysFLRReceipts);
+	console.log('cyWETHReceipts', cyWETHReceipts);
 
 	if (!cysFLRReceipts && !cyWETHReceipts) {
 		setLoading(false);

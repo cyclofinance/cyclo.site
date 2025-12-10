@@ -259,8 +259,9 @@ const balancesStore = () => {
 		try {
 			update((state) => ({ ...state, status: 'Checking' }));
 
+			const currentTokens: CyToken[] = get(tokens);
 			await Promise.all(
-				tokens.map(async (token: CyToken) => {
+				currentTokens.map(async (token: CyToken) => {
 					const [underlyingBalance, balance] = await Promise.all([
 						readErc20BalanceOf(config, {
 							address: token.underlyingAddress,
@@ -350,8 +351,9 @@ const balancesStore = () => {
 			return stats;
 		};
 
+		const currentTokens: CyToken[] = get(tokens);
 		const [cysFLRStats, cyWETHStats] = await Promise.all(
-			tokens.map(async (token) => await getTokenStats(token))
+			currentTokens.map(async (token: CyToken) => await getTokenStats(token))
 		);
 
 		update((state) => ({

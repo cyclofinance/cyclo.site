@@ -52,7 +52,7 @@
 
 		<!-- Tabs for different token receipts -->
 		<div class="flex gap-4 text-white">
-			{#each tokens as token}
+			{#each $tokens as token}
 				<button
 					data-testid="{token.name}-button"
 					class="w-24 sm:w-32 {$selectedCyToken.name === token.name

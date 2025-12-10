@@ -1,27 +1,56 @@
 <script lang="ts">
-	import { tokens, selectedCyToken } from '$lib/stores';
+	import { tokens, selectedCyToken, selectedNetwork, getDexScreenerChainName } from '$lib/stores';
 	import Select from '$lib/components/Select.svelte';
 	import { onMount } from 'svelte';
 
-	const chartConfigs = {
-		cysFLR: {
-			address: '0x05cf1df11d92d99988c9b797e91d95e60bba1720',
-			name: 'cysFLR/USDC.e'
-		},
-		cyWETH: {
-			address: '0x650a36213419fc19892b375595960180e272e16b',
-			name: 'cyWETH/USDC.e'
+	// Chart configurations per network
+	// Note: Chart addresses may differ per network - update with actual addresses when available
+	const chartConfigs: Record<string, Record<string, { address: string; name: string }>> = {
+		flare: {
+			cysFLR: {
+				address: '0x05cf1df11d92d99988c9b797e91d95e60bba1720',
+				name: 'cysFLR/USDC.e'
+			},
+			cyWETH: {
+				address: '0x650a36213419fc19892b375595960180e272e16b',
+				name: 'cyWETH/USDC.e'
+			}
 		}
 	};
+
 
 	let chartUrl = '';
 	let isLoading = false;
 
 	function updateChart() {
-		const config = chartConfigs[$selectedCyToken.symbol as keyof typeof chartConfigs];
-		if (config) {
+		const network = $selectedNetwork;
+		const dexScreenerChain = getDexScreenerChainName(network.chain);
+		const networkConfigs = chartConfigs[dexScreenerChain] || chartConfigs.flare; // Fallback to flare if network not found
+		const config = networkConfigs[$selectedCyToken.symbol as keyof typeof networkConfigs];
+		
+		if (config && config.address) {
 			isLoading = true;
-			chartUrl = `https://dexscreener.com/flare/${config.address}?embed=1&theme=dark&chartTheme=dark&chartType=usd&interval=1d&chartLeftToolbar=1&chartRightToolbar=1`;
+			// Ensure address is lowercase (DexScreener expects lowercase addresses)
+			const address = config.address.toLowerCase();
+			chartUrl = `https://dexscreener.com/${dexScreenerChain}/${address}?embed=1&theme=dark&chartTheme=dark&chartType=usd&interval=1d&chartLeftToolbar=1&chartRightToolbar=1`;
+			console.log('Chart URL generated:', {
+				chainId: network.chain.id,
+				chainName: network.chain.name,
+				dexScreenerChain,
+				tokenSymbol: $selectedCyToken.symbol,
+				address: config.address,
+				lowercaseAddress: address,
+				chartUrl
+			});
+		} else {
+			console.warn('Chart config not found for:', {
+				chainId: network.chain.id,
+				chainName: network.chain.name,
+				dexScreenerChain,
+				tokenSymbol: $selectedCyToken.symbol,
+				availableConfigs: Object.keys(networkConfigs)
+			});
+			chartUrl = '';
 		}
 	}
 
@@ -29,8 +58,8 @@
 		isLoading = false;
 	}
 
-	// Update chart when token selection changes
-	$: if ($selectedCyToken) {
+	// Update chart when token selection or network changes
+	$: if ($selectedCyToken && $selectedNetwork) {
 		updateChart();
 	}
 
@@ -44,12 +73,14 @@
 		class="flex w-full flex-col items-center gap-3 text-base font-semibold text-white sm:flex-row sm:justify-center sm:gap-6 sm:text-xl"
 	>
 		<span>CHART</span>
-		<Select
-			options={tokens}
-			bind:selected={$selectedCyToken}
-			getOptionLabel={(option) => option.name}
-			dataTestId="chart-token-select"
-		/>
+		{#if $tokens.length > 0}
+			<Select
+				options={$tokens}
+				bind:selected={$selectedCyToken}
+				getOptionLabel={(option) => option.name}
+				dataTestId="chart-token-select"
+			/>
+		{/if}
 	</div>
 
 	{#if chartUrl}

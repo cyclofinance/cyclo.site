@@ -3,14 +3,16 @@
 	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
 	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
-	import { tokens } from '$lib/stores';
+	import { tokens, selectedNetwork, getExplorerUrl } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
 	import { formatEther } from 'viem';
 	import AccountStatsComponent from './AccountStats.svelte';
-	import { LiquidityChangeType } from '../../generated-graphql';
 
 	export let account: string;
+
+	$: explorerUrl = getExplorerUrl($selectedNetwork);
+	$: currentTokens = $tokens;
 
 	let loading = true;
 	let error: string | null = null;
@@ -65,13 +67,13 @@
 							return res;
 						} ) as transfer}
 						<a
-							href={`https://flarescan.com/tx/${transfer.transactionHash}`}
+							href={`${explorerUrl}/tx/${transfer.transactionHash}`}
 							target="_blank"
 							rel="noopener noreferrer"
 							class="flex items-center justify-between rounded py-2 {(
 								'fromIsApprovedSource' in transfer
 									? transfer.fromIsApprovedSource
-									: transfer.LiquidityChangeType === LiquidityChangeType.Deposit
+									: 'LiquidityChangeType' in transfer && transfer.LiquidityChangeType === 'Deposit'
 							)
 								? 'border-success bg-base-200 border-l-4'
 								: 'bg-base-200'} hover:bg-base-300"
@@ -102,11 +104,7 @@
 							</div>
 							<div class="flex items-center gap-2 truncate pl-4 font-mono text-white">
 								<span class="text-xs text-gray-300"
-									>{isAddressEqual(transfer.tokenAddress, tokens[0].address)
-										? 'cysFLR'
-										: isAddressEqual(transfer.tokenAddress, tokens[1].address)
-											? 'cyWETH'
-											: 'Unknown'}</span
+									>{currentTokens.find((t) => isAddressEqual(transfer.tokenAddress, t.address))?.symbol || 'Unknown'}</span
 								>
 								<span
 									>{formatEther(

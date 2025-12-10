@@ -85,16 +85,18 @@
 
 <Card size="lg">
 	<div class="flex w-full flex-col items-center justify-center gap-10" data-testid="lock-container">
-		<div
-			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
-		>
-			<span>SELECT TOKEN</span>
-			<Select
-				options={tokens}
-				bind:selected={$selectedCyToken}
-				getOptionLabel={(option) => option.name}
-			/>
-		</div>
+		{#if $tokens.length > 0}
+			<div
+				class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
+			>
+				<span>SELECT TOKEN</span>
+				<Select
+					options={$tokens}
+					bind:selected={$selectedCyToken}
+					getOptionLabel={(option) => option.name}
+				/>
+			</div>
+		{/if}
 
 		{#if $signerAddress}
 			<div
@@ -214,9 +216,11 @@
 					class="flex w-1/4 flex-col items-center justify-center pb-12 pl-6 pr-2 text-center text-white"
 				>
 					<img src={ftso} alt="ftso" class="w-1/2" />
-					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-						{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}
-					{/key}
+					{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+						{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
+							{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}
+						{/key}
+					{/if}
 				</div>
 				<img src={mintDia} alt="diagram" class="w-1/2" />
 				<div class="w-1/4"></div>
@@ -225,11 +229,15 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-					<span data-testid="calculated-cysflr"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
-					>
-				{/key}
+				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
+						<span data-testid="calculated-cysflr"
+							>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+						>
+					{/key}
+				{:else}
+					<span data-testid="calculated-cysflr">0</span>
+				{/if}
 				<span>{$selectedCyToken.name}</span>
 			</div>
 			<div
@@ -255,17 +263,23 @@
 			<img src={mintMobileSquiggle} alt="diagram" class="h-12" />
 			<div class="flex w-1/4 flex-col items-center justify-center text-center text-white">
 				<img src={ftso} alt="ftso" class="" />
-				{Number(formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString()))}
+				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+					{Number(formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString()))}
+				{/if}
 			</div>
 			<img src={mintMobile} alt="diagram" class="h-60" />
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white md:text-2xl"
 			>
-				{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-					<span data-testid="calculated-cysflr-mobile"
-						>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
-					>
-				{/key}
+				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
+						<span data-testid="calculated-cysflr-mobile"
+							>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+						>
+					{/key}
+				{:else}
+					<span data-testid="calculated-cysflr-mobile">0</span>
+				{/if}
 				<span>{$selectedCyToken.name}</span>
 			</div>
 			<div
