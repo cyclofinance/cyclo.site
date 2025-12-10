@@ -1,58 +1,60 @@
 query AccountStatus($account: ID!) {
 	eligibleTotals(id: "SINGLETON") {
 		id
-		totalEligibleCyWETH
-		totalEligibleCysFLR
 		totalEligibleSum
 	}
 	account(id: $account) {
-		cysFLRBalance
-		cyWETHBalance
-		totalCyBalance
-		transfersIn(orderBy: blockNumber, orderDirection: desc) {
-			fromIsApprovedSource
-			transactionHash
-			blockTimestamp
-			tokenAddress
-			from {
-				id
-			}
-			to {
-				id
-			}
-			value
-			id
-			blockNumber
-		}
-		transfersOut(orderBy: blockNumber, orderDirection: desc) {
-			fromIsApprovedSource
-			transactionHash
-			blockTimestamp
-			tokenAddress
-			from {
-				id
-			}
-			to {
-				id
-			}
-			value
-			id
-			blockNumber
-		}
-		liquidityChanges(orderBy: blockNumber, orderDirection: desc) {
-			__typename
-			id
-			tokenAddress
-			LiquidityChangeType
-			blockNumber
-			blockTimestamp
-			liquidityChange
-			lpAddress
-			transactionHash
-			depositedBalanceChange
-			... on LiquidityV3Change {
-				tokenId
-			}
-		}
+		vaultBalances {
+      balance
+      vault {
+        address
+      }
+    }
+    totalCyBalance
+    transfersIn(orderBy: blockNumber, orderDirection: desc) {
+      fromIsApprovedSource
+      transactionHash
+      blockTimestamp
+      tokenAddress
+      from {
+        id
+      }
+      to {
+        id
+      }
+      value
+      id
+      blockNumber
+    }
+    transfersOut(orderBy: blockNumber, orderDirection: desc) {
+      fromIsApprovedSource
+      transactionHash
+      blockTimestamp
+      tokenAddress
+      from {
+        id
+      }
+      to {
+        id
+      }
+      value
+      id
+      blockNumber
+    }
+    liquidityChanges(orderBy: blockNumber, orderDirection: desc) {
+      __typename
+      id
+      tokenAddress
+      LiquidityChangeType
+      blockNumber
+      blockTimestamp
+      liquidityChange
+      lpAddress
+      transactionHash
+      depositedBalanceChange
+      ... on LiquidityV3Change {
+        tokenId
+      }
+    }
 	}
 }

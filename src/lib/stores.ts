@@ -41,6 +41,15 @@ const flareConfig: NetworkConfig = {
 			underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex, // weth
 			underlyingSymbol: 'WETH',
 			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex
+		},
+		{
+			name: 'cyFXRP.ftso',
+			symbol: 'cyFXRP.ftso',
+			decimals: 6,
+			address: '0xF23595Ede14b54817397B1dAb899bA061BdCe7b5' as Hex,
+			underlyingAddress: '0xAd552A648C74D49E10027AB8a618A3ad4901c5bE' as Hex, // fxrp
+			underlyingSymbol: 'FXRP',
+			receiptAddress: '0xC46600cEbD84Ed2FE60Ec525dF13E341D24642f2' as Hex
 		}
 	]
 };

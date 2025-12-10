@@ -3,6 +3,37 @@ import TopAccounts from '$lib/queries/top-rewards.graphql?raw';
 import { SUBGRAPH_URL } from '$lib/constants';
 import type { LeaderboardEntry } from '$lib/types';
 import { calculateShares } from './calculateShares';
+import { get } from 'svelte/store';
+import { tokens } from '$lib/stores';
+import { isAddressEqual } from 'viem';
+
+/**
+ * Extract token balances from vaultBalances array
+ */
+function extractBalancesFromVaults(
+	vaultBalances: NonNullable<TopAccountsQuery['accountsByCyBalance']>[0]['vaultBalances']
+): { cysFLR: bigint; cyWETH: bigint } {
+	const currentTokens = get(tokens);
+	const balances = { cysFLR: 0n, cyWETH: 0n };
+
+	if (!vaultBalances) return balances;
+
+	for (const vaultBalance of vaultBalances) {
+		const vaultAddress = vaultBalance.vault?.address;
+		if (!vaultAddress) continue;
+
+		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
+		if (token) {
+			if (token.symbol === 'cysFLR') {
+				balances.cysFLR = BigInt(vaultBalance.balance || '0');
+			} else if (token.symbol === 'cyWETH') {
+				balances.cyWETH = BigInt(vaultBalance.balance || '0');
+			}
+		}
+	}
+
+	return balances;
+}
 
 export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	const response = await fetch(SUBGRAPH_URL, {
@@ -21,12 +52,10 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 
 	const accountsWithShares = (data.accountsByCyBalance ?? []).map((account) => {
 		const shares = calculateShares(account, eligibleTotals);
+		const balances = extractBalancesFromVaults(account.vaultBalances);
 		return {
 			account: account.id,
-			eligibleBalances: {
-				cysFLR: BigInt(account.cysFLRBalance),
-				cyWETH: BigInt(account.cyWETHBalance)
-			},
+			eligibleBalances: balances,
 			shares
 		};
 	});
