@@ -37,39 +37,35 @@ interface StatsState {
 	};
 }
 
-const initialState: StatsState = {
-	status: 'Checking',
-	statsLoading: true,
-	stats: {
-		cysFLR: {
+// Helper function to create initial state from tokens
+const createInitialState = (tokens: CyToken[]): StatsState => {
+	const stats: StatsState['stats'] = {};
+	const balances: StatsState['balances'] = {};
+
+	for (const token of tokens) {
+		stats[token.name] = {
 			supply: BigInt(0),
 			price: BigInt(0),
 			lockPrice: BigInt(0),
 			underlyingTvl: BigInt(0),
 			usdTvl: BigInt(0)
-		},
-		cyWETH: {
-			supply: BigInt(0),
-			price: BigInt(0),
-			lockPrice: BigInt(0),
-			underlyingTvl: BigInt(0),
-			usdTvl: BigInt(0)
-		}
-	},
-	balances: {
-		cysFLR: {
+		};
+		balances[token.name] = {
 			signerBalance: BigInt(0),
 			signerUnderlyingBalance: BigInt(0)
-		},
-		cyWETH: {
-			signerBalance: BigInt(0),
-			signerUnderlyingBalance: BigInt(0)
-		}
-	},
-	swapQuotes: {
-		cyTokenOutput: BigInt(0),
-		cusdxOutput: BigInt(0)
+		};
 	}
+
+	return {
+		status: 'Checking',
+		statsLoading: true,
+		stats,
+		balances,
+		swapQuotes: {
+			cyTokenOutput: BigInt(0),
+			cusdxOutput: BigInt(0)
+		}
+	};
 };
 
 const getDepositPreviewSwapValue = async (
@@ -187,41 +183,16 @@ const getUnderlyingBalanceLockedInCysToken = async (
 };
 
 const balancesStore = () => {
-	const { subscribe, set, update } = writable<StatsState>({
-		status: 'Checking',
-		statsLoading: true,
-		stats: {
-			cysFLR: {
-				supply: BigInt(0),
-				price: BigInt(0),
-				lockPrice: BigInt(0),
-				underlyingTvl: BigInt(0),
-				usdTvl: BigInt(0)
-			},
-			cyWETH: {
-				supply: BigInt(0),
-				price: BigInt(0),
-				lockPrice: BigInt(0),
-				underlyingTvl: BigInt(0),
-				usdTvl: BigInt(0)
-			}
-		},
-		balances: {
-			cysFLR: {
-				signerBalance: BigInt(0),
-				signerUnderlyingBalance: BigInt(0)
-			},
-			cyWETH: {
-				signerBalance: BigInt(0),
-				signerUnderlyingBalance: BigInt(0)
-			}
-		},
-		swapQuotes: {
-			cyTokenOutput: BigInt(0),
-			cusdxOutput: BigInt(0)
-		}
-	});
-	const reset = () => set(initialState);
+	// Initialize with current tokens
+	const initialTokens = get(tokens);
+	const initialState = createInitialState(initialTokens);
+	
+	const { subscribe, set, update } = writable<StatsState>(initialState);
+	
+	const reset = () => {
+		const currentTokens = get(tokens);
+		set(createInitialState(currentTokens));
+	};
 
 	const refreshPrices = async (config: Config, selectedToken: CyToken) => {
 		if (!selectedToken?.address) return;
@@ -238,21 +209,40 @@ const balancesStore = () => {
 			)
 		]);
 
-		update((state) => ({
-			...state,
-			status: 'Ready',
-			stats: {
-				...state.stats,
-				[selectedToken.name]: {
-					...state.stats[selectedToken.name],
-					price: state.stats[selectedToken.name].price,
-					lockPrice,
-					supply: cysFlrSupply,
-					underlyingTvl: underlyingBalanceLockedInCysToken,
-					usdTvl: (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
-				}
+		update((state) => {
+			// Ensure token exists in state, initialize if missing
+			if (!state.stats[selectedToken.name]) {
+				state.stats[selectedToken.name] = {
+					supply: BigInt(0),
+					price: BigInt(0),
+					lockPrice: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				};
 			}
-		}));
+			if (!state.balances[selectedToken.name]) {
+				state.balances[selectedToken.name] = {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
+				};
+			}
+
+			return {
+				...state,
+				status: 'Ready',
+				stats: {
+					...state.stats,
+					[selectedToken.name]: {
+						...state.stats[selectedToken.name],
+						price: state.stats[selectedToken.name].price,
+						lockPrice,
+						supply: cysFlrSupply,
+						underlyingTvl: underlyingBalanceLockedInCysToken,
+						usdTvl: (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
+					}
+				}
+			};
+		});
 	};
 
 	const refreshBalances = async (config: Config, signerAddress: Hex) => {
@@ -348,28 +338,41 @@ const balancesStore = () => {
 				usdTvl: lockPriceResult > 0n ? (tvlResult * lockPriceResult) / BigInt(1e18) : BigInt(0)
 			};
 
-			return stats;
+			return { tokenName: token.name, stats };
 		};
 
 		const currentTokens: CyToken[] = get(tokens);
-		const [cysFLRStats, cyWETHStats] = await Promise.all(
+		const tokenStatsResults = await Promise.all(
 			currentTokens.map(async (token: CyToken) => await getTokenStats(token))
 		);
 
-		update((state) => ({
-			...state,
-			statsLoading: false,
-			stats: {
-				cysFLR: {
-					...state.stats.cysFLR,
-					...cysFLRStats
-				},
-				cyWETH: {
-					...state.stats.cyWETH,
-					...cyWETHStats
+		update((state) => {
+			const updatedStats = { ...state.stats };
+			
+			// Update stats for all tokens
+			for (const { tokenName, stats } of tokenStatsResults) {
+				// Ensure token exists in state, initialize if missing
+				if (!updatedStats[tokenName]) {
+					updatedStats[tokenName] = {
+						supply: BigInt(0),
+						price: BigInt(0),
+						lockPrice: BigInt(0),
+						underlyingTvl: BigInt(0),
+						usdTvl: BigInt(0)
+					};
 				}
+				updatedStats[tokenName] = {
+					...updatedStats[tokenName],
+					...stats
+				};
 			}
-		}));
+
+			return {
+				...state,
+				statsLoading: false,
+				stats: updatedStats
+			};
+		});
 	};
 
 	return {

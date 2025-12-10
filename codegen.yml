@@ -6,3 +6,8 @@ generates:
       - typescript
       - typescript-operations
       - typescript-document-nodes
+    config:
+      # Use a custom naming convention to handle nested field conflicts
+      # This prevents 'receiptAddress' and 'receipt__address' from both becoming 'ReceiptAddress'
+      namingConvention:
+        enumValues: keep

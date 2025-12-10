@@ -8,6 +8,14 @@ import type { GlobalStats } from '$lib/types';
 import { get } from 'svelte/store';
 import { tokens } from '$lib/stores';
 import { isAddressEqual } from 'viem';
+import type { CyToken } from '$lib/types';
+
+// Map of token symbols to their price quote functions
+const priceQuoteFunctions: Record<string, () => Promise<bigint>> = {
+	cysFLR: getcysFLRwFLRPrice,
+	cyWETH: getcyWETHwFLRPrice
+	// TODO: Add price quote function for cyFXRP.ftso when available
+};
 
 export const calculateApy = (rewardPool: bigint, totalEligible: bigint, price: bigint) => {
 	const numerator =
@@ -23,15 +31,17 @@ export const calculateApy = (rewardPool: bigint, totalEligible: bigint, price: b
 /**
  * Aggregate total eligible amounts from all accounts' vaultBalances
  */
-function aggregateTotalEligible(accounts: StatsQuery['accounts']): {
-	totalEligibleCysFLR: bigint;
-	totalEligibleCyWETH: bigint;
-	totalEligibleSum: bigint;
-} {
+function aggregateTotalEligible(accounts: StatsQuery['accounts']): Record<string, bigint> {
 	const currentTokens = get(tokens);
-	const totals = { totalEligibleCysFLR: 0n, totalEligibleCyWETH: 0n, totalEligibleSum: 0n };
+	const totals: Record<string, bigint> = {};
 
-	if (!accounts) return totals;
+	if (!accounts) {
+		// Initialize with zeros for all tokens
+		for (const token of currentTokens) {
+			totals[token.symbol] = 0n;
+		}
+		return totals;
+	}
 
 	// Aggregate totals from all accounts' vault balances
 	for (const account of accounts) {
@@ -45,13 +55,18 @@ function aggregateTotalEligible(accounts: StatsQuery['accounts']): {
 
 			const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
 			if (token) {
-				if (token.symbol === 'cysFLR') {
-					totals.totalEligibleCysFLR += totalEligible;
-				} else if (token.symbol === 'cyWETH') {
-					totals.totalEligibleCyWETH += totalEligible;
+				if (!(token.symbol in totals)) {
+					totals[token.symbol] = 0n;
 				}
-				totals.totalEligibleSum += totalEligible;
+				totals[token.symbol] += totalEligible;
 			}
+		}
+	}
+
+	// Ensure all tokens have entries (even if 0)
+	for (const token of currentTokens) {
+		if (!(token.symbol in totals)) {
+			totals[token.symbol] = 0n;
 		}
 	}
 
@@ -70,40 +85,57 @@ export async function fetchStats(): Promise<GlobalStats> {
 
 	if (!data.eligibleTotals) throw 'No eligible totals';
 
+	const currentTokens = get(tokens);
+	
 	// Aggregate totals from accounts' vaultBalances
-	const totals = aggregateTotalEligible(data.accounts);
-	const totalEligibleCysFLR = totals.totalEligibleCysFLR;
-	const totalEligibleCyWETH = totals.totalEligibleCyWETH;
-	const totalEligibleSum = totals.totalEligibleSum;
+	const totalEligible = aggregateTotalEligible(data.accounts);
+	const totalEligibleSum = Object.values(totalEligible).reduce((sum, val) => sum + val, 0n);
 	const eligibleHolders = (data.accounts ?? []).length;
-
-	// Get prices in FLR terms
-	const cysFLRwFLRPrice = await getcysFLRwFLRPrice();
-	const cyWETHwFLRPrice = await getcyWETHwFLRPrice();
 
 	// Create eligibleTotals structure for calculateRewardsPools
 	const eligibleTotalsForPools = {
 		...data.eligibleTotals,
-		totalEligibleCysFLR: totalEligibleCysFLR.toString(),
-		totalEligibleCyWETH: totalEligibleCyWETH.toString(),
-		totalEligibleSum: totalEligibleSum.toString()
+		totalEligibleSum: totalEligibleSum.toString(),
+		...Object.fromEntries(
+			currentTokens.map((token) => [
+				`totalEligible${token.symbol}`,
+				totalEligible[token.symbol]?.toString() || '0'
+			])
+		)
 	};
 
-	const rewardsPools = calculateRewardsPools(eligibleTotalsForPools);
+	const rewardsPools = calculateRewardsPools(eligibleTotalsForPools, currentTokens);
 
-	// Calculate APY for cysFLR
-	const cysFLRApy = calculateApy(rewardsPools.cysFlr, totalEligibleCysFLR, cysFLRwFLRPrice);
+	// Get prices and calculate APY for each token that has a price quote function
+	const apy: Record<string, bigint> = {};
+	const pricePromises = currentTokens
+		.filter((token) => priceQuoteFunctions[token.symbol])
+		.map(async (token) => {
+			try {
+				const price = await priceQuoteFunctions[token.symbol]();
+				const totalEligibleForToken = totalEligible[token.symbol] || 0n;
+				const poolReward = rewardsPools[token.symbol] || 0n;
+				apy[token.symbol] = calculateApy(poolReward, totalEligibleForToken, price);
+			} catch (error) {
+				console.error(`Failed to get price for ${token.symbol}:`, error);
+				apy[token.symbol] = 0n;
+			}
+		});
 
-	// Calculate APY for cyWETH
-	const cyWETHApy = calculateApy(rewardsPools.cyWeth, totalEligibleCyWETH, cyWETHwFLRPrice);
+	await Promise.all(pricePromises);
+
+	// Initialize APY to 0 for tokens without price quote functions
+	for (const token of currentTokens) {
+		if (!(token.symbol in apy)) {
+			apy[token.symbol] = 0n;
+		}
+	}
 
 	return {
 		eligibleHolders,
-		totalEligibleCysFLR,
-		totalEligibleCyWETH,
+		totalEligible,
 		totalEligibleSum,
 		rewardsPools,
-		cysFLRApy,
-		cyWETHApy
+		apy
 	};
 }

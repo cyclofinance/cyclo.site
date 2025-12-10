@@ -5,7 +5,7 @@
 	import { formatEther } from 'ethers';
 	import type { GlobalStats } from '$lib/types';
 	import { TOTAL_REWARD } from '$lib/constants';
-	import { selectedNetwork } from '$lib/stores';
+	import { selectedNetwork, tokens } from '$lib/stores';
 
 	let loading = true;
 	let error: string | null = null;
@@ -49,18 +49,14 @@
 			<div class="space-y-4">
 				<div class="text-sm text-gray-300">Current APY</div>
 				<div class="space-y-2">
-					<div class="flex items-baseline gap-2">
-						<div class="text-sm text-gray-300">cysFLR:</div>
-						<div class="font-mono text-3xl font-bold text-white">
-							~{Number(formatEther(stats.cysFLRApy)).toFixed(4)}%
+					{#each $tokens as token}
+						<div class="flex items-baseline gap-2">
+							<div class="text-sm text-gray-300">{token.symbol}:</div>
+							<div class="font-mono text-3xl font-bold text-white">
+								~{Number(formatEther(stats.apy[token.symbol] || 0n)).toFixed(4)}%
+							</div>
 						</div>
-					</div>
-					<div class="flex items-baseline gap-2">
-						<div class="text-sm text-gray-300">cyWETH:</div>
-						<div class="font-mono text-3xl font-bold text-white">
-							~{Number(formatEther(stats.cyWETHApy)).toFixed(4)}%
-						</div>
-					</div>
+					{/each}
 				</div>
 			</div>
 
@@ -79,8 +75,9 @@
 					{Number(formatEther(stats.totalEligibleSum)).toFixed(2).toLocaleString()}
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
-					<div>cysFLR: {Number(formatEther(stats.totalEligibleCysFLR)).toFixed(2)}</div>
-					<div>cyWETH: {Number(formatEther(stats.totalEligibleCyWETH)).toFixed(2)}</div>
+					{#each $tokens as token}
+						<div>{token.symbol}: {Number(formatEther(stats.totalEligible[token.symbol] || 0n)).toFixed(2)}</div>
+					{/each}
 				</div>
 			</div>
 
@@ -91,8 +88,9 @@
 					Total: {Number(formatEther(TOTAL_REWARD)).toLocaleString()}
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
-					<div>cysFLR: {Number(formatEther(stats.rewardsPools.cysFlr)).toLocaleString()}</div>
-					<div>cyWETH: {Number(formatEther(stats.rewardsPools.cyWeth)).toLocaleString()}</div>
+					{#each $tokens as token}
+						<div>{token.symbol}: {Number(formatEther(stats.rewardsPools[token.symbol] || 0n)).toLocaleString()}</div>
+					{/each}
 				</div>
 			</div>
 		</div>

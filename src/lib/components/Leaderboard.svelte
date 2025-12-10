@@ -5,6 +5,10 @@
 	import { signerAddress } from 'svelte-wagmi';
 	import type { LeaderboardEntry } from '$lib/types';
 	import { formatEther, formatUnits } from 'viem';
+	import { tokens } from '$lib/stores';
+
+	// Calculate grid columns: 1 for account + 2 per token (balance + rewards) + 1 for total
+	$: gridCols = 1 + $tokens.length * 2 + 1;
 
 	let loading = true;
 	let error: string | null = null;
@@ -38,47 +42,41 @@
 				{error}
 			</div>
 		{:else}
-			<div class="space-y-2">
-				<div class="grid grid-cols-6 gap-8 text-sm text-gray-300">
+			<div class="space-y-2 overflow-x-auto">
+				<div class="grid gap-8 text-sm text-gray-300" style="grid-template-columns: repeat({gridCols}, minmax(120px, 1fr));">
 					<div>Account</div>
-					<div>Net cysFLR</div>
-					<div>cysFLR rewards (rFLR)</div>
-					<div>Net cyWETH</div>
-					<div>cyWETH rewards (rFLR)</div>
+					{#each $tokens as token}
+						<div>Net {token.symbol}</div>
+						<div>{token.symbol} rewards (rFLR)</div>
+					{/each}
 					<div>Total Estimated rFLR</div>
 				</div>
 				{#if leaderboard?.length > 0}
 					{#each leaderboard as entry, i}
 						<a
 							href={`/rewards/${entry.account}`}
-							class="grid w-full grid-cols-6 gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
+							class="grid gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
 								entry.account
 							)
 								? 'bg-white/10 hover:bg-white/20'
 								: 'bg-base-200 hover:bg-base-300'}"
+							style="grid-template-columns: repeat({gridCols}, minmax(120px, 1fr));"
 						>
 							<div class="font-medium text-white">
 								#{i + 1}
 								{entry.account.slice(0, 6)}...{entry.account.slice(-4)}
 							</div>
-							<div class=" font-medium text-white">
-								{(+formatEther(entry.eligibleBalances.cysFLR)).toFixed(4)}
-							</div>
-							<div class="flex flex-col gap-y-2 font-medium text-white">
-								<span>{(+formatEther(entry.shares.cysFLR.rewardsAmount)).toFixed(4)}</span>
-								<span>
-									({(+formatUnits(entry.shares.cysFLR.percentageShare, 16)).toFixed(4)}%)
-								</span>
-							</div>
-							<div class="font-medium text-white">
-								{(+formatEther(entry.eligibleBalances.cyWETH)).toFixed(4)}
-							</div>
-							<div class="font-medium text-white">
-								<span>{(+formatEther(entry.shares.cyWETH.rewardsAmount)).toFixed(4)}</span>
-								<span>
-									({(+formatUnits(entry.shares.cyWETH.percentageShare, 16)).toFixed(4)}%)
-								</span>
-							</div>
+							{#each $tokens as token}
+								<div class="font-medium text-white">
+									{(+formatEther(entry.eligibleBalances[token.symbol] || 0n)).toFixed(4)}
+								</div>
+								<div class="flex flex-col gap-y-2 font-medium text-white">
+									<span>{(+formatEther(entry.shares[token.symbol]?.rewardsAmount || 0n)).toFixed(4)}</span>
+									<span>
+										({(+formatUnits(entry.shares[token.symbol]?.percentageShare || 0n, 16)).toFixed(4)}%)
+									</span>
+								</div>
+							{/each}
 							<div data-testid="total-rewards" class="font-medium text-white">
 								{(+formatEther(entry.shares.totalRewards)).toFixed(4)}
 							</div>

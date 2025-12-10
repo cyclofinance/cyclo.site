@@ -12,9 +12,9 @@ import { isAddressEqual } from 'viem';
  */
 function extractBalancesFromVaults(
 	vaultBalances: NonNullable<TopAccountsQuery['accountsByCyBalance']>[0]['vaultBalances']
-): { cysFLR: bigint; cyWETH: bigint } {
+): Record<string, bigint> {
 	const currentTokens = get(tokens);
-	const balances = { cysFLR: 0n, cyWETH: 0n };
+	const balances: Record<string, bigint> = {};
 
 	if (!vaultBalances) return balances;
 
@@ -24,11 +24,14 @@ function extractBalancesFromVaults(
 
 		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
 		if (token) {
-			if (token.symbol === 'cysFLR') {
-				balances.cysFLR = BigInt(vaultBalance.balance || '0');
-			} else if (token.symbol === 'cyWETH') {
-				balances.cyWETH = BigInt(vaultBalance.balance || '0');
-			}
+			balances[token.symbol] = BigInt(vaultBalance.balance || '0');
+		}
+	}
+
+	// Ensure all tokens have a balance entry (even if 0)
+	for (const token of currentTokens) {
+		if (!(token.symbol in balances)) {
+			balances[token.symbol] = 0n;
 		}
 	}
 
