@@ -6,6 +6,7 @@ import type { BlockScoutData } from '$lib/types';
 import type { Config } from '@wagmi/core';
 import { formatEther } from 'ethers';
 import { type Hex } from 'viem';
+import type { NetworkConfig } from '$lib/stores';
 
 vi.mock('axios');
 vi.mock('../../generated', () => ({
@@ -16,6 +17,17 @@ describe('getSingleTokenReceipts', () => {
 	const mockAddress = '0xMockAddress' as Hex;
 	const mockErc1155Address = '0xMockERC1155Address' as Hex;
 	const mockConfig = {} as Config;
+	const mockNetworkConfig: NetworkConfig = {
+		chain: {} as any,
+		wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
+		quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
+		cusdxAddress: '0xfe2907dfa8db6e320cdbf45f0aa888f6135ec4f8' as Hex,
+		usdcAddress: '0xFbDa5F676cB37624f28265A144A48B0d6e87d3b6' as Hex,
+		explorerApiUrl: 'https://flare-explorer.flare.network/api',
+		orderbookSubgraphUrl: '',
+		rewardsSubgraphUrl: '',
+		tokens: []
+	};
 
 	const mockData: BlockScoutData[] = [
 		{
@@ -58,17 +70,22 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(1));
 
-		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(
+			mockAddress,
+			mockErc1155Address,
+			mockConfig,
+			mockNetworkConfig
+		);
 
 		// Should have made 2 API calls due to pagination
 		expect(axios.get).toHaveBeenCalledTimes(2);
 		expect(axios.get).toHaveBeenNthCalledWith(
 			1,
-			`https://flare-explorer.flare.network/api/v2/addresses/${mockAddress}/nft?type=ERC-1155`
+			`${mockNetworkConfig.explorerApiUrl}/v2/addresses/${mockAddress}/nft?type=ERC-1155`
 		);
 		expect(axios.get).toHaveBeenNthCalledWith(
 			2,
-			`https://flare-explorer.flare.network/api/v2/addresses/${mockAddress}/nft?type=ERC-1155&items_count=50&token_contract_address_hash=${mockErc1155Address}&token_id=1000000000000000000&token_type=ERC-1155`
+			`${mockNetworkConfig.explorerApiUrl}/v2/addresses/${mockAddress}/nft?type=ERC-1155&items_count=50&token_contract_address_hash=${mockErc1155Address}&token_id=1000000000000000000&token_type=ERC-1155`
 		);
 
 		expect(readErc1155BalanceOf).toHaveBeenCalled();
@@ -93,7 +110,12 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(0));
 
-		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
+		const result = await getSingleTokenReceipts(
+			mockAddress,
+			mockErc1155Address,
+			mockConfig,
+			mockNetworkConfig
+		);
 		expect(result).toEqual([]);
 	});
 
@@ -102,8 +124,12 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(axios.get).mockRejectedValue(new Error('Network error'));
 
-		const result = await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig);
-
+		const result = await getSingleTokenReceipts(
+			mockAddress,
+			mockErc1155Address,
+			mockConfig,
+			mockNetworkConfig
+		);
 		expect(result).toBeNull();
 		expect(consoleErrorSpy).toHaveBeenCalled();
 
@@ -136,7 +162,13 @@ describe('getSingleTokenReceipts', () => {
 
 		vi.mocked(readErc1155BalanceOf).mockResolvedValue(BigInt(1));
 
-		await getSingleTokenReceipts(mockAddress, mockErc1155Address, mockConfig, progressCallback);
+		await getSingleTokenReceipts(
+			mockAddress,
+			mockErc1155Address,
+			mockConfig,
+			mockNetworkConfig,
+			progressCallback
+		);
 
 		// Should have called progress callback for each page
 		expect(progressCallback).toHaveBeenCalledWith(1, 1); // First page

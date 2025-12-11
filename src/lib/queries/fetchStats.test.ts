@@ -5,18 +5,47 @@ import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
 import { calculateRewardsPools } from './calculateRewardsPools';
+import type { CyToken } from '$lib/types';
+import type { Hex } from 'viem';
 
-const MOCKED_SUBGRAPH_URL = 'http://mocked-subgraph-url';
+const { mockTokens, MOCKED_SUBGRAPH_URL } = vi.hoisted(() => {
+	const MOCKED_SUBGRAPH_URL = 'http://mocked-subgraph-url';
+	const tokens: CyToken[] = [
+		{
+			name: 'cysFLR',
+			symbol: 'cysFLR',
+			decimals: 18,
+			address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
+			underlyingAddress: '0x12e605bc104e93B45e1aD99F9e555f659051c2BB' as Hex,
+			underlyingSymbol: 'sFLR',
+			receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex
+		},
+		{
+			name: 'cyWETH',
+			symbol: 'cyWETH',
+			decimals: 18,
+			address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex,
+			underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex,
+			underlyingSymbol: 'WETH',
+			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex
+		}
+	];
+	return { mockTokens: tokens, MOCKED_SUBGRAPH_URL };
+});
 
 vi.mock('$lib/constants', () => ({
 	TOTAL_REWARD: 1000000000000000000000n,
 	ONE: 1000000000000000000000n
 }));
 
-vi.mock('$lib/stores', () => ({
-	tokens: { get: vi.fn(() => []) },
-	selectedNetwork: { get: vi.fn(() => ({ rewardsSubgraphUrl: MOCKED_SUBGRAPH_URL })) }
-}));
+vi.mock('$lib/stores', () => {
+	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	const { writable } = require('svelte/store');
+	return {
+		tokens: writable(mockTokens),
+		selectedNetwork: writable({ rewardsSubgraphUrl: MOCKED_SUBGRAPH_URL })
+	};
+});
 
 vi.mock('./cysFLRwFLRQuote', () => ({
 	getcysFLRwFLRPrice: vi.fn()
@@ -56,15 +85,33 @@ describe('fetchStats', () => {
 	});
 
 	it('fetches and calculates stats correctly', async () => {
+		// Use values that divide evenly by 96 to avoid rounding errors
+		const totalEligibleCysFLR = BigInt('1920000000000000000000'); // 96 * 20000000000000000000
+		const totalEligibleCyWETH = BigInt('960000000000000000000'); // 96 * 10000000000000000000
+		const totalEligibleSum = totalEligibleCysFLR + totalEligibleCyWETH;
+
 		const mockResponse = {
 			data: {
 				eligibleTotals: {
 					id: 'SINGLETON',
-					totalEligibleCyWETH: '1000000000000000000000',
-					totalEligibleCysFLR: '2000000000000000000000',
-					totalEligibleSum: '3000000000000000000000'
+					totalEligibleSum: totalEligibleSum.toString()
 				},
-				accounts: Array(96).fill({}) // Mock 96 accounts
+				accounts: Array(96).fill({
+					vaultBalances: [
+						{
+							vault: {
+								address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR
+								totalEligible: '20000000000000000000' // totalEligibleCysFLR / 96
+							}
+						},
+						{
+							vault: {
+								address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH
+								totalEligible: '10000000000000000000' // totalEligibleCyWETH / 96
+							}
+						}
+					]
+				})
 			}
 		};
 
@@ -78,24 +125,34 @@ describe('fetchStats', () => {
 
 		const result = await fetchStats();
 
-		const rewardsPools = calculateRewardsPools(mockResponse.data.eligibleTotals);
+		const eligibleTotalsForPools = {
+			...mockResponse.data.eligibleTotals,
+			totalEligibleSum: totalEligibleSum.toString(),
+			totalEligiblecysFLR: totalEligibleCysFLR.toString(),
+			totalEligiblecyWETH: totalEligibleCyWETH.toString()
+		};
+		const rewardsPools = calculateRewardsPools(eligibleTotalsForPools, mockTokens);
 
 		expect(result).toEqual({
 			eligibleHolders: 96,
-			totalEligibleCysFLR: BigInt('2000000000000000000000'),
-			totalEligibleCyWETH: BigInt('1000000000000000000000'),
-			totalEligibleSum: BigInt('3000000000000000000000'),
+			totalEligible: {
+				cysFLR: totalEligibleCysFLR,
+				cyWETH: totalEligibleCyWETH
+			},
+			totalEligibleSum,
 			rewardsPools,
-			cysFLRApy: calculateApy(
-				rewardsPools.cysFlr,
-				BigInt('2000000000000000000000'),
-				BigInt('500000000000000000')
-			),
-			cyWETHApy: calculateApy(
-				rewardsPools.cyWeth,
-				BigInt('1000000000000000000000'),
-				BigInt('1000000000000000000')
-			)
+			apy: {
+				cysFLR: calculateApy(
+					rewardsPools.cysFLR,
+					totalEligibleCysFLR,
+					BigInt('500000000000000000')
+				),
+				cyWETH: calculateApy(
+					rewardsPools.cyWETH,
+					totalEligibleCyWETH,
+					BigInt('1000000000000000000')
+				)
+			}
 		});
 
 		expect(fetch).toHaveBeenCalledWith(MOCKED_SUBGRAPH_URL, {

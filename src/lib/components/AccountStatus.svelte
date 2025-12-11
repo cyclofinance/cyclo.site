@@ -3,7 +3,7 @@
 	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
 	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
-	import { tokens, selectedNetwork, getExplorerUrl } from '$lib/stores';
+	import { tokens, selectedNetwork } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
 	import { formatEther } from 'viem';
@@ -11,7 +11,7 @@
 
 	export let account: string;
 
-	$: explorerUrl = getExplorerUrl($selectedNetwork);
+	$: explorerUrl = $selectedNetwork.explorerUrl;
 	$: currentTokens = $tokens;
 
 	let loading = true;

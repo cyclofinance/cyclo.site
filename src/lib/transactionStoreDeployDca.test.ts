@@ -6,7 +6,6 @@ import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 import { flare } from '@wagmi/core/chains';
 import { DataFetcher } from 'sushi';
-import { writable } from 'svelte/store';
 // Mock the dependencies, not the module under test
 vi.mock('./trade/getDeploymentArgs', () => ({
 	getDcaDeploymentArgs: vi.fn()
@@ -32,16 +31,19 @@ vi.mock('@rainlanguage/orderbook/js_api', () => ({
 	getTransactionAddOrders: vi.fn()
 }));
 
-const MOCKED_ORDERBOOK_SUBGRAPH_URL = 'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn';
-
-const mockSelectedNetworkWritable = writable({
-	orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL
+const { mockSelectedNetworkStore, MOCKED_ORDERBOOK_SUBGRAPH_URL } = vi.hoisted(() => {
+	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	const { writable } = require('svelte/store');
+	const MOCKED_ORDERBOOK_SUBGRAPH_URL = 'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn';
+	const mockSelectedNetworkWritable = writable({
+		orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL
+	});
+	const mockSelectedNetworkStore = {
+		subscribe: mockSelectedNetworkWritable.subscribe,
+		set: mockSelectedNetworkWritable.set
+	};
+	return { mockSelectedNetworkStore, MOCKED_ORDERBOOK_SUBGRAPH_URL };
 });
-
-const mockSelectedNetworkStore = {
-	subscribe: mockSelectedNetworkWritable.subscribe,
-	set: mockSelectedNetworkWritable.set
-};
 
 vi.mock('./stores', () => ({
 	myReceipts: { set: vi.fn() },
