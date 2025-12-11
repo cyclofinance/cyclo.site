@@ -13,6 +13,8 @@ export interface NetworkConfig {
 	usdcAddress: Hex;
 	tokens: CyToken[];
 	explorerApiUrl: string;
+	orderbookSubgraphUrl: string;
+	rewardsSubgraphUrl: string;
 }
 
 // Network configurations
@@ -23,6 +25,8 @@ const flareConfig: NetworkConfig = {
 	cusdxAddress: '0xfe2907dfa8db6e320cdbf45f0aa888f6135ec4f8' as Hex,
 	usdcAddress: '0xFbDa5F676cB37624f28265A144A48B0d6e87d3b6' as Hex,
 	explorerApiUrl: 'https://flare-explorer.flare.network/api',
+	orderbookSubgraphUrl: 'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
+	rewardsSubgraphUrl: 'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare-test/2025-12-09-09c9/gn',
 	tokens: [
 		{
 			name: 'cysFLR',

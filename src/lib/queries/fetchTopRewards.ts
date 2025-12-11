@@ -1,10 +1,9 @@
 import { type TopAccountsQuery } from '../../generated-graphql';
 import TopAccounts from '$lib/queries/top-rewards.graphql?raw';
-import { SUBGRAPH_URL } from '$lib/constants';
 import type { LeaderboardEntry } from '$lib/types';
 import { calculateShares } from './calculateShares';
 import { get } from 'svelte/store';
-import { tokens } from '$lib/stores';
+import { tokens, selectedNetwork } from '$lib/stores';
 import { isAddressEqual } from 'viem';
 
 /**
@@ -39,7 +38,8 @@ function extractBalancesFromVaults(
 }
 
 export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
-	const response = await fetch(SUBGRAPH_URL, {
+	const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
+	const response = await fetch(subgraphUrl, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({

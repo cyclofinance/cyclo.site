@@ -3,7 +3,6 @@ import { myReceipts, tokens, selectedNetwork } from '$lib/stores';
 import { get } from 'svelte/store';
 import AccountReceipts from '$lib/queries/account-receipts.graphql?raw';
 import type { AccountReceiptsQuery } from '../../generated-graphql';
-import { SUBGRAPH_URL } from '$lib/constants';
 
 const PAGE_SIZE = 1000;
 
@@ -38,8 +37,9 @@ export const refreshAllReceipts = async (
 	let hasMore = true;
 
 	// Fetch all receipt balances in pages
+	const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
 	while (hasMore) {
-		const response = await fetch(SUBGRAPH_URL, {
+		const response = await fetch(subgraphUrl, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({

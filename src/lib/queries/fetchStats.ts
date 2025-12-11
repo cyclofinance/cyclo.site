@@ -2,11 +2,11 @@ import { type StatsQuery } from '../../generated-graphql';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
-import { ONE, SUBGRAPH_URL } from '$lib/constants';
+import { ONE } from '$lib/constants';
 import { calculateRewardsPools } from './calculateRewardsPools';
 import type { GlobalStats } from '$lib/types';
 import { get } from 'svelte/store';
-import { tokens } from '$lib/stores';
+import { tokens, selectedNetwork } from '$lib/stores';
 import { isAddressEqual } from 'viem';
 import type { CyToken } from '$lib/types';
 
@@ -74,7 +74,8 @@ function aggregateTotalEligible(accounts: StatsQuery['accounts']): Record<string
 }
 
 export async function fetchStats(): Promise<GlobalStats> {
-	const response = await fetch(SUBGRAPH_URL, {
+	const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
+	const response = await fetch(subgraphUrl, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({

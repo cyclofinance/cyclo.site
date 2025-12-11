@@ -1,15 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { calculateApy, fetchStats } from './fetchStats';
-import { ONE, SUBGRAPH_URL } from '$lib/constants';
+import { ONE } from '$lib/constants';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
 import { calculateRewardsPools } from './calculateRewardsPools';
 
+const MOCKED_SUBGRAPH_URL = 'http://mocked-subgraph-url';
+
 vi.mock('$lib/constants', () => ({
-	SUBGRAPH_URL: 'http://mocked-subgraph-url',
 	TOTAL_REWARD: 1000000000000000000000n,
 	ONE: 1000000000000000000000n
+}));
+
+vi.mock('$lib/stores', () => ({
+	tokens: { get: vi.fn(() => []) },
+	selectedNetwork: { get: vi.fn(() => ({ rewardsSubgraphUrl: MOCKED_SUBGRAPH_URL })) }
 }));
 
 vi.mock('./cysFLRwFLRQuote', () => ({
@@ -92,7 +98,7 @@ describe('fetchStats', () => {
 			)
 		});
 
-		expect(fetch).toHaveBeenCalledWith(SUBGRAPH_URL, {
+		expect(fetch).toHaveBeenCalledWith(MOCKED_SUBGRAPH_URL, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ query: Stats })
