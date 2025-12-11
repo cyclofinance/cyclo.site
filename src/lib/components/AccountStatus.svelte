@@ -15,7 +15,9 @@
 	$: currentTokens = $tokens;
 
 	function isDeposit(
-		transfer: NonNullable<AccountStats['transfers']['in'][0]> | NonNullable<AccountStats['liquidityChanges'][0]>
+		transfer:
+			| NonNullable<AccountStats['transfers']['in'][0]>
+			| NonNullable<AccountStats['liquidityChanges'][0]>
 	): boolean {
 		return 'LiquidityChangeType' in transfer && String(transfer.LiquidityChangeType) === 'Deposit';
 	}

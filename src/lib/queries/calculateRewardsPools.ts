@@ -4,7 +4,8 @@ import type { AccountStatusQuery } from '../../generated-graphql';
 import type { CyToken } from '$lib/types';
 
 export const calculateRewardsPools = (
-	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']> & Record<string, string | undefined>,
+	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']> &
+		Record<string, string | undefined>,
 	tokens: CyToken[]
 ): RewardsPools => {
 	const pools: RewardsPools = {};
