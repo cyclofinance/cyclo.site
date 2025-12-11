@@ -5,7 +5,6 @@ import { calculateRewardsPools } from './calculateRewardsPools';
 import { get } from 'svelte/store';
 import { tokens } from '$lib/stores';
 import { isAddressEqual } from 'viem';
-import type { CyToken } from '$lib/types';
 
 type AccountWithVaults =
 	| Omit<
@@ -17,9 +16,7 @@ type AccountWithVaults =
 /**
  * Extract token balances and total eligible from vaultBalances
  */
-function extractVaultData(
-	vaultBalances: AccountWithVaults['vaultBalances']
-): {
+function extractVaultData(vaultBalances: AccountWithVaults['vaultBalances']): {
 	balances: Record<string, bigint>;
 	totals: Record<string, bigint>;
 } {
@@ -45,7 +42,7 @@ function extractVaultData(
 			const balance = BigInt(vaultBalance.balance || '0');
 			// totalEligible may not be present in all query types (e.g., AccountStatusQuery)
 			// It's only present in TopAccountsQuery and StatsQuery, not AccountStatusQuery
-			const vault = vaultBalance.vault as { totalEligible?: any };
+			const vault = vaultBalance.vault as { totalEligible?: string | null };
 			const totalEligible = BigInt(vault?.totalEligible || '0');
 
 			balances[token.symbol] = balance;
@@ -71,7 +68,7 @@ export const calculateShares = (
 	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']>
 ): Shares => {
 	const currentTokens = get(tokens);
-	
+
 	// Initialize shares for all tokens
 	const shares = {
 		totalRewards: BigInt(0)

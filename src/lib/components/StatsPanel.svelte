@@ -76,7 +76,11 @@
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					{#each $tokens as token}
-						<div>{token.symbol}: {Number(formatEther(stats.totalEligible[token.symbol] || 0n)).toFixed(2)}</div>
+						<div>
+							{token.symbol}: {Number(formatEther(stats.totalEligible[token.symbol] || 0n)).toFixed(
+								2
+							)}
+						</div>
 					{/each}
 				</div>
 			</div>
@@ -89,7 +93,11 @@
 				</div>
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					{#each $tokens as token}
-						<div>{token.symbol}: {Number(formatEther(stats.rewardsPools[token.symbol] || 0n)).toLocaleString()}</div>
+						<div>
+							{token.symbol}: {Number(
+								formatEther(stats.rewardsPools[token.symbol] || 0n)
+							).toLocaleString()}
+						</div>
 					{/each}
 				</div>
 			</div>

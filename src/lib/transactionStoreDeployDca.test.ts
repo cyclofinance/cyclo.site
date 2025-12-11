@@ -32,9 +32,10 @@ vi.mock('@rainlanguage/orderbook/js_api', () => ({
 }));
 
 const { mockSelectedNetworkStore, MOCKED_ORDERBOOK_SUBGRAPH_URL } = vi.hoisted(() => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
-	const MOCKED_ORDERBOOK_SUBGRAPH_URL = 'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn';
+	const MOCKED_ORDERBOOK_SUBGRAPH_URL =
+		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn';
 	const mockSelectedNetworkWritable = writable({
 		orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL
 	});
@@ -211,9 +212,6 @@ describe('transactionStore.handleDeployDca', () => {
 		await vi.advanceTimersByTimeAsync(2000); // Advance to trigger the interval
 		await deployPromise;
 
-		expect(getTransactionAddOrders).toHaveBeenCalledWith(
-			MOCKED_ORDERBOOK_SUBGRAPH_URL,
-			'0xtxhash'
-		);
+		expect(getTransactionAddOrders).toHaveBeenCalledWith(MOCKED_ORDERBOOK_SUBGRAPH_URL, '0xtxhash');
 	});
 });

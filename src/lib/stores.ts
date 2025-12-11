@@ -27,8 +27,10 @@ const flareConfig: NetworkConfig = {
 	usdcAddress: '0xFbDa5F676cB37624f28265A144A48B0d6e87d3b6' as Hex,
 	explorerApiUrl: 'https://flare-explorer.flare.network/api',
 	explorerUrl: 'https://flarescan.com',
-	orderbookSubgraphUrl: 'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
-	rewardsSubgraphUrl: 'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare-test/2025-12-09-09c9/gn',
+	orderbookSubgraphUrl:
+		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
+	rewardsSubgraphUrl:
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare-test/2025-12-09-09c9/gn',
 	tokens: [
 		{
 			name: 'cysFLR',
@@ -68,10 +70,22 @@ export const selectedNetwork = writable<NetworkConfig>(flareConfig);
 
 // Derived stores for easy access to current network values
 export const targetNetwork = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.chain);
-export const wFLRAddress = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.wFLRAddress);
-export const quoterAddress = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.quoterAddress);
-export const cusdxAddress = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.cusdxAddress);
-export const usdcAddress = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.usdcAddress);
+export const wFLRAddress = derived(
+	selectedNetwork,
+	($selectedNetwork) => $selectedNetwork.wFLRAddress
+);
+export const quoterAddress = derived(
+	selectedNetwork,
+	($selectedNetwork) => $selectedNetwork.quoterAddress
+);
+export const cusdxAddress = derived(
+	selectedNetwork,
+	($selectedNetwork) => $selectedNetwork.cusdxAddress
+);
+export const usdcAddress = derived(
+	selectedNetwork,
+	($selectedNetwork) => $selectedNetwork.usdcAddress
+);
 export const tokens = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.tokens);
 
 // Wrong network check - checks if connected to a different network than selected
@@ -97,7 +111,9 @@ selectedNetwork.subscribe((network) => {
  */
 export function getDexScreenerChainName(chain: Chain): string {
 	// Convert chain name to lowercase and normalize common patterns
-	const normalized = chain.name.toLowerCase().replace(/\s+(mainnet|canary|network|testnet).*$/i, '');
+	const normalized = chain.name
+		.toLowerCase()
+		.replace(/\s+(mainnet|canary|network|testnet).*$/i, '');
 	return normalized;
 }
 

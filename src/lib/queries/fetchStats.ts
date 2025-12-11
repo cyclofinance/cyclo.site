@@ -8,7 +8,6 @@ import type { GlobalStats } from '$lib/types';
 import { get } from 'svelte/store';
 import { tokens, selectedNetwork } from '$lib/stores';
 import { isAddressEqual } from 'viem';
-import type { CyToken } from '$lib/types';
 
 // Map of token symbols to their price quote functions
 const priceQuoteFunctions: Record<string, () => Promise<bigint>> = {
@@ -87,7 +86,7 @@ export async function fetchStats(): Promise<GlobalStats> {
 	if (!data.eligibleTotals) throw 'No eligible totals';
 
 	const currentTokens = get(tokens);
-	
+
 	// Aggregate totals from accounts' vaultBalances
 	const totalEligible = aggregateTotalEligible(data.accounts);
 	const totalEligibleSum = Object.values(totalEligible).reduce((sum, val) => sum + val, 0n);

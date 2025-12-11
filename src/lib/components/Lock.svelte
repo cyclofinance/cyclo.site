@@ -135,7 +135,10 @@
 							class="flex flex-row items-center gap-2"
 							data-testid="price-ratio"
 							>{Number(
-								formatUnits($balancesStore.stats[$selectedCyToken.name].lockPrice, $selectedCyToken.decimals)
+								formatUnits(
+									$balancesStore.stats[$selectedCyToken.name].lockPrice,
+									$selectedCyToken.decimals
+								)
 							).toString()}
 
 							<svg width="20" height="20" viewBox="0 0 100 100">
@@ -231,15 +234,20 @@
 			<div
 				class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
 			>
-					{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-						{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-							<span data-testid="calculated-cysflr"
-								>{!amountToLock ? '0' : formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}</span
-							>
-						{/key}
-					{:else}
-						<span data-testid="calculated-cysflr">0</span>
-					{/if}
+				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
+						<span data-testid="calculated-cysflr"
+							>{!amountToLock
+								? '0'
+								: formatUnits(
+										$balancesStore.swapQuotes.cyTokenOutput,
+										$selectedCyToken.decimals
+									)}</span
+						>
+					{/key}
+				{:else}
+					<span data-testid="calculated-cysflr">0</span>
+				{/if}
 				<span>{$selectedCyToken.name}</span>
 			</div>
 			<div
@@ -276,7 +284,12 @@
 				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
 					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 						<span data-testid="calculated-cysflr-mobile"
-							>{!amountToLock ? '0' : formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}</span
+							>{!amountToLock
+								? '0'
+								: formatUnits(
+										$balancesStore.swapQuotes.cyTokenOutput,
+										$selectedCyToken.decimals
+									)}</span
 						>
 					{/key}
 				{:else}

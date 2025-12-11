@@ -30,7 +30,7 @@ const { mockTokens } = vi.hoisted(() => {
 });
 
 vi.mock('$lib/stores', () => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
 	return {
 		tokens: writable(mockTokens)
@@ -62,7 +62,7 @@ const eligibleTotals = {
 	__typename: 'EligibleTotals',
 	id: 'SINGLETON',
 	totalEligibleSum: (ONE + ONE * 2n).toString()
-} as NonNullable<AccountStatusQuery['eligibleTotals']> & Record<string, any>;
+} as NonNullable<AccountStatusQuery['eligibleTotals']> & Record<string, string | undefined>;
 
 describe('calculateShares', () => {
 	beforeEach(() => {

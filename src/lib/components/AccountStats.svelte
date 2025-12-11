@@ -17,7 +17,7 @@
 	</div>
 {/if}
 
-<div class="grid grid-cols-1 gap-8 sm:grid-flow-col sm:auto-cols-fr">
+<div class="grid grid-cols-1 gap-8 sm:auto-cols-fr sm:grid-flow-col">
 	{#each $tokens as token}
 		<div class="space-y-4">
 			<div class="space-y-1">
@@ -30,10 +30,7 @@
 				</div>
 			</div>
 			<div class="space-y-1">
-				<div
-					class="text-sm text-gray-300"
-					data-testid={`${token.symbol.toLowerCase()}-rewards`}
-				>
+				<div class="text-sm text-gray-300" data-testid={`${token.symbol.toLowerCase()}-rewards`}>
 					{token.symbol} rewards
 				</div>
 				<div class="flex flex-col gap-y-2 break-words font-mono text-white">
@@ -55,4 +52,3 @@
 		</div>
 	</div>
 </div>
-

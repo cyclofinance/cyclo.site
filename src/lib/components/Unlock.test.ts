@@ -36,7 +36,7 @@ const {
 	selectedCyToken,
 	receipts
 } = vi.hoisted(() => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
 
 	const selectedCyToken: CyToken = {
@@ -153,7 +153,6 @@ describe('Unlock Component', () => {
 				cusdxOutput: BigInt(0),
 				cyTokenOutput: BigInt(0)
 			}
-
 		);
 	});
 

@@ -4,7 +4,6 @@ import Page from './+page.svelte';
 import transactionStore from '$lib/transactionStore';
 import { useDataFetcher } from '$lib/dataFetcher';
 import { Router } from 'sushi/router';
-import { writable } from 'svelte/store';
 
 // Mock dependencies
 vi.mock('$lib/dataFetcher', () => ({
@@ -35,9 +34,8 @@ vi.mock('$lib/constants', () => ({
 	]
 }));
 
-vi.mock('$lib/stores', () => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
-	const { writable } = require('svelte/store');
+vi.mock('$lib/stores', async () => {
+	const { writable } = await import('svelte/store');
 	const mockCyToken = {
 		address: '0xdef4560000000000000000000000000000000000',
 		symbol: 'TEST',

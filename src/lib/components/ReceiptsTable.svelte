@@ -33,12 +33,12 @@
 
 		const balance = BigInt(receipt.balance);
 		const tokenId = BigInt(receipt.tokenId);
-		
+
 		// Calculate totals: (balance * 10^18) / tokenId
 		// balance is in token.decimals, we scale to 18 decimals, then divide by tokenId (in 18 decimals)
 		// Result is total underlying token locked in 18 decimals
 		const totalsFlr = (balance * BigInt(10 ** 18)) / tokenId;
-		
+
 		// Calculate per-receipt: 10^36 / tokenId
 		// This gives the cyToken per locked underlying token (in 18 decimals)
 		const flrPerReceipt = BigInt(10 ** 36) / tokenId;

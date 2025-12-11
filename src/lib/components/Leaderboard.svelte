@@ -43,7 +43,10 @@
 			</div>
 		{:else}
 			<div class="space-y-2 overflow-x-auto">
-				<div class="grid gap-8 text-sm text-gray-300" style="grid-template-columns: repeat({gridCols}, minmax(120px, 1fr));">
+				<div
+					class="grid gap-8 text-sm text-gray-300"
+					style="grid-template-columns: repeat({gridCols}, minmax(120px, 1fr));"
+				>
 					<div>Account</div>
 					{#each $tokens as token}
 						<div>Net {token.symbol}</div>
@@ -55,9 +58,7 @@
 					{#each leaderboard as entry, i}
 						<a
 							href={`/rewards/${entry.account}`}
-							class="grid gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
-								entry.account
-							)
+							class="grid gap-8 rounded py-4 text-left font-mono {isConnectedWallet(entry.account)
 								? 'bg-white/10 hover:bg-white/20'
 								: 'bg-base-200 hover:bg-base-300'}"
 							style="grid-template-columns: repeat({gridCols}, minmax(120px, 1fr));"
@@ -71,9 +72,15 @@
 									{(+formatEther(entry.eligibleBalances[token.symbol] || 0n)).toFixed(4)}
 								</div>
 								<div class="flex flex-col gap-y-2 font-medium text-white">
-									<span>{(+formatEther(entry.shares[token.symbol]?.rewardsAmount || 0n)).toFixed(4)}</span>
+									<span
+										>{(+formatEther(entry.shares[token.symbol]?.rewardsAmount || 0n)).toFixed(
+											4
+										)}</span
+									>
 									<span>
-										({(+formatUnits(entry.shares[token.symbol]?.percentageShare || 0n, 16)).toFixed(4)}%)
+										({(+formatUnits(entry.shares[token.symbol]?.percentageShare || 0n, 16)).toFixed(
+											4
+										)}%)
 									</span>
 								</div>
 							{/each}

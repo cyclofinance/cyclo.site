@@ -27,7 +27,7 @@ export const refreshAllReceipts = async (
 	}
 
 	// Create a map of receiptAddress -> token for quick lookup
-	const receiptAddressToToken = new Map<string, typeof tokenList[0]>();
+	const receiptAddressToToken = new Map<string, (typeof tokenList)[0]>();
 	for (const token of tokenList) {
 		receiptAddressToToken.set(token.receiptAddress.toLowerCase(), token);
 	}
@@ -94,12 +94,10 @@ export const refreshAllReceipts = async (
 	// Map receipt balances to Receipt format, matching by receiptAddress
 	const network = get(selectedNetwork);
 	const chainId = network.chain.id.toString();
-	
+
 	const receipts: Receipt[] = allReceiptBalances
 		.map((receiptBalance): Receipt | null => {
-			const token = receiptAddressToToken.get(
-				receiptBalance.receiptAddress.toLowerCase()
-			);
+			const token = receiptAddressToToken.get(receiptBalance.receiptAddress.toLowerCase());
 			if (!token) return null;
 
 			return {

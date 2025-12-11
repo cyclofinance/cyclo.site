@@ -5,13 +5,13 @@ query TopAccounts {
 	}
 	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 1000) {
 		id
-		vaultBalances{
-      vault{
-        address
-      	totalEligible	  
-      }
-      balance
-    }
+		vaultBalances {
+			vault {
+				address
+				totalEligible
+			}
+			balance
+		}
 		totalCyBalance
 	}
 }

@@ -186,9 +186,9 @@ const balancesStore = () => {
 	// Initialize with current tokens
 	const initialTokens = get(tokens);
 	const initialState = createInitialState(initialTokens);
-	
+
 	const { subscribe, set, update } = writable<StatsState>(initialState);
-	
+
 	const reset = () => {
 		const currentTokens = get(tokens);
 		set(createInitialState(currentTokens));
@@ -348,7 +348,7 @@ const balancesStore = () => {
 
 		update((state) => {
 			const updatedStats = { ...state.stats };
-			
+
 			// Update stats for all tokens
 			for (const { tokenName, stats } of tokenStatsResults) {
 				// Ensure token exists in state, initialize if missing

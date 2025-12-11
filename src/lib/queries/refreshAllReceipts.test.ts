@@ -2,7 +2,7 @@ import { vi, it, expect, beforeEach, describe } from 'vitest';
 import { refreshAllReceipts } from './refreshAllReceipts';
 
 const { mockTokens, mockNetworkConfig } = vi.hoisted(() => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
 	const tokens = writable([]);
 	const selectedNetwork = writable({
@@ -13,7 +13,7 @@ const { mockTokens, mockNetworkConfig } = vi.hoisted(() => {
 });
 
 vi.mock('$lib/stores', () => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
 	return {
 		myReceipts: writable([]),

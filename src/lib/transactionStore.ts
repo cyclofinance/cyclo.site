@@ -261,10 +261,7 @@ const transactionStore = () => {
 		// Poll for the order to be added to the orderbook
 		const orderbookSubgraphUrl = get(selectedNetwork).orderbookSubgraphUrl;
 		const interval = setInterval(async () => {
-			const orders = await getTransactionAddOrders(
-				orderbookSubgraphUrl,
-				hash
-			);
+			const orders = await getTransactionAddOrders(orderbookSubgraphUrl, hash);
 			if (orders.length > 0) {
 				clearInterval(interval);
 				const orderHash = orders[0].order.orderHash;

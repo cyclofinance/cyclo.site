@@ -42,7 +42,9 @@
 					>
 						<span>Current Lock Price ({token.symbol} per {token.underlyingSymbol})</span>
 						<span
-							>{Number(formatEther($balancesStore.stats[token.name]?.lockPrice || 0n)).toString()}</span
+							>{Number(
+								formatEther($balancesStore.stats[token.name]?.lockPrice || 0n)
+							).toString()}</span
 						>
 					</div>
 					<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="price">
@@ -84,7 +86,9 @@
 						<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="tvl">
 							<span>Total Value Locked</span>
 							<span>
-								{Number(formatUnits($balancesStore.stats[token.name].underlyingTvl, token.decimals))}
+								{Number(
+									formatUnits($balancesStore.stats[token.name].underlyingTvl, token.decimals)
+								)}
 								{token.underlyingSymbol}
 								/ $ {Number(formatUnits($balancesStore.stats[token.name].usdTvl, token.decimals))}
 							</span>

@@ -5,11 +5,11 @@ query Stats {
 	}
 	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
 		id
-    vaultBalances{
-      vault{
-        address
-        totalEligible
-      }
-    }
+		vaultBalances {
+			vault {
+				address
+				totalEligible
+			}
+		}
 	}
 }

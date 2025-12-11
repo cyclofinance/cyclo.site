@@ -39,7 +39,7 @@ vi.mock('$lib/constants', () => ({
 }));
 
 vi.mock('$lib/stores', () => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
 	return {
 		tokens: writable(mockTokens),

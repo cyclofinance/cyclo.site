@@ -10,7 +10,7 @@ vi.mock('$lib/queries/fetchStats', () => ({
 }));
 
 const { mockTokensStore, mockSelectedNetworkStore } = vi.hoisted(() => {
-	// eslint-disable-next-line @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
 	const tokens: CyToken[] = [
 		{

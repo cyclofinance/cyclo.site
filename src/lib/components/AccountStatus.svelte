@@ -14,6 +14,12 @@
 	$: explorerUrl = $selectedNetwork.explorerUrl;
 	$: currentTokens = $tokens;
 
+	function isDeposit(
+		transfer: NonNullable<AccountStats['transfers']['in'][0]> | NonNullable<AccountStats['liquidityChanges'][0]>
+	): boolean {
+		return 'LiquidityChangeType' in transfer && String(transfer.LiquidityChangeType) === 'Deposit';
+	}
+
 	let loading = true;
 	let error: string | null = null;
 	let stats: AccountStats | null = null;
@@ -73,7 +79,7 @@
 							class="flex items-center justify-between rounded py-2 {(
 								'fromIsApprovedSource' in transfer
 									? transfer.fromIsApprovedSource
-									: 'LiquidityChangeType' in transfer && transfer.LiquidityChangeType === 'Deposit'
+									: isDeposit(transfer)
 							)
 								? 'border-success bg-base-200 border-l-4'
 								: 'bg-base-200'} hover:bg-base-300"
@@ -104,7 +110,8 @@
 							</div>
 							<div class="flex items-center gap-2 truncate pl-4 font-mono text-white">
 								<span class="text-xs text-gray-300"
-									>{currentTokens.find((t) => isAddressEqual(transfer.tokenAddress, t.address))?.symbol || 'Unknown'}</span
+									>{currentTokens.find((t) => isAddressEqual(transfer.tokenAddress, t.address))
+										?.symbol || 'Unknown'}</span
 								>
 								<span
 									>{formatEther(

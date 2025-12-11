@@ -40,7 +40,10 @@
 						<div class="flex flex-row gap-2" data-testid="{token.symbol.toLowerCase()}-balance">
 							{#key $balancesStore.balances[token.name]?.signerBalance}
 								<span in:fade={{ duration: 700 }}>
-									{formatUnits($balancesStore.balances[token.name]?.signerBalance || 0n, token.decimals)}
+									{formatUnits(
+										$balancesStore.balances[token.name]?.signerBalance || 0n,
+										token.decimals
+									)}
 								</span>
 							{/key}
 							<span>{token.symbol}</span>
