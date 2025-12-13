@@ -1,8 +1,9 @@
 <script lang="ts">
 	import Input from '$lib/components/Input.svelte';
 	import Select from '$lib/components/Select.svelte';
-	import { tokens } from '$lib/constants';
-	import { tokens as cyTokens, selectedCyToken as storeSelectedCyToken } from '$lib/stores';
+	import { tokensForNetwork } from '$lib/constants';
+	import { tokens as cyTokens, selectedCyToken as storeSelectedCyToken, selectedNetwork } from '$lib/stores';
+	import { get } from 'svelte/store';
 	import type { CyToken, Token } from '$lib/types';
 	import TradeAmountInput from '$lib/components/TradeAmountInput.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -25,6 +26,9 @@
 	let selectedCyToken: CyToken = $storeSelectedCyToken;
 	let previousTokens: CyToken[] = $cyTokens;
 
+	// Get tokens for the current network
+	$: networkTokens = tokensForNetwork($selectedNetwork.key);
+
 	// Update selectedCyToken only when network changes (tokens array reference changes), not on every render
 	$: if ($cyTokens.length > 0 && $cyTokens !== previousTokens) {
 		const currentTokens = $cyTokens;
@@ -35,17 +39,37 @@
 		selectedCyToken = tokenToUse;
 		previousTokens = $cyTokens;
 	}
-	let selectedToken: Token = tokens[0];
+
+	// Initialize and update selectedToken based on network
+	let selectedToken: Token | undefined;
+	let previousNetworkKey: string | undefined;
+	$: if (networkTokens.length > 0) {
+		const currentNetworkKey = $selectedNetwork.key;
+		// If network changed or selectedToken is not initialized or not in current network tokens
+		if (
+			currentNetworkKey !== previousNetworkKey ||
+			!selectedToken ||
+			!networkTokens.find((t) => t.address === selectedToken!.address)
+		) {
+			// Try to find the current selectedToken in the new network's tokens
+			const tokenToUse =
+				selectedToken && networkTokens.find((t) => t.address === selectedToken!.address);
+			selectedToken = tokenToUse || networkTokens[0];
+			previousNetworkKey = currentNetworkKey;
+		}
+	}
 	let selectedBuyOrSell: 'Buy' | 'Sell' = 'Buy';
 	let selectedPeriodUnit: 'Days' | 'Hours' | 'Minutes' = 'Days';
-	let selectedAmountToken: Token;
+	let selectedAmountToken: Token | undefined;
 	let selectedAmount: bigint;
 	let selectedPeriod: string;
 	let selectedBaseline: string;
 	let overrideDepositAmount: bigint;
 	let inputVaultId: Hex | undefined;
 	let outputVaultId: Hex | undefined;
-	$: selectedAmountToken = selectedBuyOrSell == 'Buy' ? selectedToken : selectedCyToken;
+	$: selectedAmountToken = selectedBuyOrSell == 'Buy' 
+		? (selectedToken || (networkTokens.length > 0 ? networkTokens[0] : undefined))
+		: selectedCyToken;
 	$: depositAmount = chooseOverrideDepositAmount ? overrideDepositAmount : selectedAmount;
 
 	// errors
@@ -57,6 +81,8 @@
 	let overrideDepositAmountError: boolean = false;
 
 	$: disableDeploy =
+		!selectedToken ||
+		!selectedAmountToken ||
 		!selectedAmount ||
 		!selectedPeriod ||
 		!selectedBaseline ||
@@ -75,6 +101,8 @@
 	const dataFetcher: DataFetcher = useDataFetcher();
 
 	const handleDeploy = () => {
+		if (!selectedToken || !selectedAmountToken) return;
+		
 		transactionStore.handleDeployDca(
 			{
 				selectedCyToken,
@@ -87,7 +115,8 @@
 				selectedBaseline,
 				depositAmount,
 				inputVaultId,
-				outputVaultId
+				outputVaultId,
+				selectedNetworkKey: get(selectedNetwork).key
 			},
 			dataFetcher
 		);
@@ -129,12 +158,14 @@
 		<span class="text-sm text-gray-200" data-testid="with-for-label"
 			>{selectedBuyOrSell == 'Buy' ? 'with' : 'for'}</span
 		>
-		<Select
-			options={tokens}
-			bind:selected={selectedToken}
-			getOptionLabel={(token) => token.name}
-			dataTestId="token-select"
-		/>
+		{#if networkTokens.length > 0}
+			<Select
+				options={networkTokens}
+				bind:selected={selectedToken}
+				getOptionLabel={(token) => token.name}
+				dataTestId="token-select"
+			/>
+		{/if}
 	</div>
 
 	<!-- amount to spend or receive -->
@@ -146,13 +177,15 @@
 				time defined below. This creates a streaming budget over time.
 			</InfoTooltip></span
 		>
-		<TradeAmountInput
-			amountToken={selectedAmountToken}
-			bind:amount={selectedAmount}
-			dataTestId="amount-input"
-			validate={validateSelectedAmount}
-			bind:isError={selectedAmountError}
-		/>
+		{#if selectedAmountToken}
+			<TradeAmountInput
+				amountToken={selectedAmountToken}
+				bind:amount={selectedAmount}
+				dataTestId="amount-input"
+				validate={validateSelectedAmount}
+				bind:isError={selectedAmountError}
+			/>
+		{/if}
 	</div>
 
 	<!-- period over which to spend or receive -->
@@ -183,27 +216,29 @@
 
 	<!-- lowest price to spend or receive -->
 	<div class="flex flex-col gap-2" data-testid="baseline-container">
-		<div class="text-sm text-gray-200">
-			{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${selectedToken.symbol} per ${selectedCyToken.symbol}`})
-			<InfoTooltip
-				>The {selectedBuyOrSell == 'Buy' ? 'highest' : 'lowest'} price at which the strategy will {selectedBuyOrSell ==
-				'Buy'
-					? 'buy'
-					: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but note
-				the budget set above is still accruing, meaning the strategy will attempt to "catch up" when
-				the market comes back within range.
-			</InfoTooltip>
-		</div>
+		{#if selectedToken}
+			<div class="text-sm text-gray-200">
+				{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${selectedToken.symbol} per ${selectedCyToken.symbol}`})
+				<InfoTooltip
+					>The {selectedBuyOrSell == 'Buy' ? 'highest' : 'lowest'} price at which the strategy will {selectedBuyOrSell ==
+					'Buy'
+						? 'buy'
+						: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but note
+					the budget set above is still accruing, meaning the strategy will attempt to "catch up" when
+					the market comes back within range.
+				</InfoTooltip>
+			</div>
 
-		<Input
-			type="number"
-			unit={selectedToken.symbol}
-			bind:amount={selectedBaseline}
-			dataTestId="baseline-input"
-			validate={validateBaseline}
-			bind:isError={selectedBaselineError}
-		/>
-		<TradePrice inputToken={selectedToken} outputToken={selectedCyToken} dataTestId="trade-price" />
+			<Input
+				type="number"
+				unit={selectedToken.symbol}
+				bind:amount={selectedBaseline}
+				dataTestId="baseline-input"
+				validate={validateBaseline}
+				bind:isError={selectedBaselineError}
+			/>
+			<TradePrice inputToken={selectedToken} outputToken={selectedCyToken} dataTestId="trade-price" />
+		{/if}
 	</div>
 
 	<!-- advanced options -->
@@ -225,7 +260,7 @@
 						<span class="text-md text-gray-200">Custom deposit amount</span>
 						<Toggle bind:checked={chooseOverrideDepositAmount} size="small" />
 					</div>
-					{#if chooseOverrideDepositAmount}
+					{#if chooseOverrideDepositAmount && selectedAmountToken}
 						<TradeAmountInput
 							amountToken={selectedAmountToken}
 							bind:amount={overrideDepositAmount}

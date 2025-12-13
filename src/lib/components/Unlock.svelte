@@ -7,7 +7,7 @@
 	import Button from '$lib/components/Button.svelte';
 	import balancesStore from '$lib/balancesStore';
 	import { fade } from 'svelte/transition';
-	import { selectedCyToken, tokens } from '$lib/stores';
+	import { selectedCyToken, tokens, selectedNetwork } from '$lib/stores';
 	import { myReceipts } from '$lib/stores';
 	import type { Hex } from 'viem';
 
@@ -18,9 +18,27 @@
 		loading = _loading;
 	};
 
-	$: if ($signerAddress) {
-		refreshAllReceipts($signerAddress, setLoading);
-		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
+	// Track previous values to prevent unnecessary re-fetches
+	let previousSignerAddress: string | null = null;
+	let previousNetworkKey: string | undefined = undefined;
+	let isRefreshing = false;
+
+	// Only refresh when signer address or network actually changes
+	$: if (
+		$signerAddress &&
+		$selectedNetwork &&
+		$selectedNetwork.rewardsSubgraphUrl &&
+		($signerAddress !== previousSignerAddress || $selectedNetwork.key !== previousNetworkKey) &&
+		!isRefreshing
+	) {
+		isRefreshing = true;
+		previousSignerAddress = $signerAddress;
+		previousNetworkKey = $selectedNetwork.key;
+		
+		
+		refreshAllReceipts($signerAddress, setLoading).finally(() => {
+			isRefreshing = false;
+		});
 	}
 </script>
 
@@ -54,13 +72,12 @@
 		</Card>
 
 		<!-- Tabs for different token receipts -->
-		<div class="flex gap-4 text-white">
-			{#each $tokens as token}
+		<!-- Tabs for different token receipts -->
+		<div class="token-grid text-white">
+			{#each $tokens as token (token.address)}
 				<button
 					data-testid="{token.name}-button"
-					class="w-24 sm:w-32 {$selectedCyToken.name === token.name
-						? 'bg-white text-primary'
-						: 'border border-white'}"
+					class="token-button {$selectedCyToken.name === token.name ? 'active' : ''}"
 					on:click={() => ($selectedCyToken = token)}
 				>
 					{token.name}
@@ -93,3 +110,44 @@
 		{/if}
 	{/key}
 {/if}
+
+<style>
+	.token-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.75rem;
+	}
+
+	@media (max-width: 1024px) {
+		.token-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 540px) {
+		.token-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	.token-button {
+		width: 100%;
+		min-height: 40px;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid white;
+		background: transparent;
+		text-align: center;
+	}
+
+	.token-button.active {
+		background: white;
+		color: #1a1a4b;
+	}
+
+	@media (max-width: 500px) {
+		.token-button {
+			font-size: 0.85rem;
+			min-height: 36px;
+		}
+	}
+</style>

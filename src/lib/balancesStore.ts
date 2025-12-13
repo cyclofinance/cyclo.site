@@ -199,14 +199,23 @@ const balancesStore = () => {
 		const { blockNumber } = get(blockNumberStore);
 
 		const [lockPrice, cysFlrSupply, underlyingBalanceLockedInCysToken] = await Promise.all([
-			getLockPrice(config, selectedToken),
-			getcysFLRSupply(config, selectedToken),
+			getLockPrice(config, selectedToken).catch((error) => {
+				console.log(`Failed to fetch lock price for ${selectedToken.name}:`, error);
+				return BigInt(0);
+			}),
+			getcysFLRSupply(config, selectedToken).catch((error) => {
+				console.log(`Failed to fetch supply for ${selectedToken.name}:`, error);
+				return BigInt(0);
+			}),
 			getUnderlyingBalanceLockedInCysToken(
 				config,
 				selectedToken,
 				selectedToken.underlyingAddress,
 				blockNumber
-			)
+			).catch((error) => {
+				console.log(`Failed to fetch TVL for ${selectedToken.name}:`, error);
+				return BigInt(0);
+			})
 		]);
 
 		update((state) => {
@@ -238,7 +247,7 @@ const balancesStore = () => {
 						lockPrice,
 						supply: cysFlrSupply,
 						underlyingTvl: underlyingBalanceLockedInCysToken,
-						usdTvl: (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
+						usdTvl: lockPrice > 0n ? (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18) : BigInt(0)
 					}
 				}
 			};

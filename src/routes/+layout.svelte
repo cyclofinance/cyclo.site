@@ -43,7 +43,7 @@
 	}
 
 	const startGettingPricesAndBalances = () => {
-		intervalId = setInterval(getPricesAndBalances, 3000);
+		intervalId = setInterval(getPricesAndBalances, 10000);
 	};
 
 	function stopGettingPriceRatio() {

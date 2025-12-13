@@ -258,24 +258,53 @@ const transactionStore = () => {
 			to: deploymentArgs.orderbookAddress as `0x${string}`
 		});
 
-		// Poll for the order to be added to the orderbook
-		const orderbookSubgraphUrl = get(selectedNetwork).orderbookSubgraphUrl;
-		const interval = setInterval(async () => {
-			const orders = await getTransactionAddOrders(orderbookSubgraphUrl, hash);
-			if (orders.length > 0) {
-				clearInterval(interval);
-				const orderHash = orders[0].order.orderHash;
-				const orderbookId = orders[0].order.orderbook.id;
-				const link = `
-				<a
-								target="_blank"
-								class="whitespace-pre-wrap break-words text-center hover:underline"
-								href="https://raindex.finance/orders/14-${orderbookId}-${orderHash}"
-								data-testid="raindex-link">Manage your order on Raindex</a
-							>
-				`;
+		// Store initial network info to detect network switches
+		const initialNetwork = get(selectedNetwork);
+		const initialNetworkKey = initialNetwork.key;
+		const initialChainId = initialNetwork.chain.id;
+		const orderbookSubgraphUrl = initialNetwork.orderbookSubgraphUrl;
 
-				return transactionSuccess(hash, link);
+		// Poll for the order to be added to the orderbook
+		let pollCount = 0;
+		const maxPolls = 60; // 2 minutes max (60 * 2000ms)
+		const interval = setInterval(async () => {
+			// Check if network has switched
+			const currentNetwork = get(selectedNetwork);
+			if (currentNetwork.key !== initialNetworkKey || currentNetwork.chain.id !== initialChainId) {
+				clearInterval(interval);
+				return transactionError(
+					TransactionErrorMessage.NETWORK_SWITCHED_DURING_DEPLOYMENT,
+					hash
+				);
+			}
+
+			// Check for timeout
+			pollCount++;
+			if (pollCount >= maxPolls) {
+				clearInterval(interval);
+				return transactionError(TransactionErrorMessage.TIMEOUT, hash);
+			}
+
+			try {
+				const orders = await getTransactionAddOrders(orderbookSubgraphUrl, hash);
+				if (orders.length > 0) {
+					clearInterval(interval);
+					const orderHash = orders[0].order.orderHash;
+					const orderbookId = orders[0].order.orderbook.id;
+					const link = `
+					<a
+									target="_blank"
+									class="whitespace-pre-wrap break-words text-center hover:underline"
+									href="https://raindex.finance/orders/${initialChainId}-${orderbookId}-${orderHash}"
+									data-testid="raindex-link">Manage your order on Raindex</a
+								>
+					`;
+
+					return transactionSuccess(hash, link);
+				}
+			} catch (error) {
+				// Log error but continue polling (network issues might be temporary)
+				console.error('Error polling for order:', error);
 			}
 		}, 2000);
 	};

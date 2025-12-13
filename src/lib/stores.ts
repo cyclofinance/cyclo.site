@@ -3,9 +3,11 @@ import { chainId, signerAddress } from 'svelte-wagmi';
 import { type Chain } from '@wagmi/core/chains';
 import type { Hex } from 'viem';
 import type { Receipt, CyToken } from './types';
-import { flare } from '@wagmi/core/chains';
+import { flare, arbitrum } from '@wagmi/core/chains';
+import { ethers } from 'ethers';
 
 export interface NetworkConfig {
+	key: string;
 	chain: Chain;
 	wFLRAddress: Hex;
 	quoterAddress: Hex;
@@ -20,6 +22,7 @@ export interface NetworkConfig {
 
 // Network configurations
 const flareConfig: NetworkConfig = {
+	key: 'flare',
 	chain: flare,
 	wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
 	quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
@@ -30,7 +33,7 @@ const flareConfig: NetworkConfig = {
 	orderbookSubgraphUrl:
 		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
 	rewardsSubgraphUrl:
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-10-b807/gn',
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-11-ab43/gn',
 	tokens: [
 		{
 			name: 'cysFLR',
@@ -62,38 +65,196 @@ const flareConfig: NetworkConfig = {
 	]
 };
 
-// Supported networks
-export const supportedNetworks: NetworkConfig[] = [flareConfig];
+const arbitrumConfig: NetworkConfig = {
+	key: 'arbitrum',
+	chain: arbitrum,
+	wFLRAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
+	quoterAddress: ethers.ZeroAddress as Hex,
+	cusdxAddress: ethers.ZeroAddress as Hex,
+	usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as Hex,
+	explorerApiUrl: 'https://api.etherscan.io/v2/api',
+	explorerUrl: 'https://arbiscan.io',
+	orderbookSubgraphUrl:
+		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn',
+	rewardsSubgraphUrl:
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-12-12-25c8/gn',
+	tokens: [
+		{
+			name: 'cyWETH.pyth',
+			symbol: 'cyWETH.pyth',
+			decimals: 18,
+			address: '0x28C7747D7eA25ED3dDCd075c6CCC3634313a0F59' as Hex,
+			underlyingAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
+			underlyingSymbol: 'WETH',
+			receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319' as Hex
+		},
+		{
+			name: 'cyWBTC.pyth',
+			symbol: 'cyWBTC.pyth',
+			decimals: 8,
+			address: '0x229917ac2842Eaab42060a1A9213CA78e01b572a' as Hex,
+			underlyingAddress: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f' as Hex,
+			underlyingSymbol: 'WBTC',
+			receiptAddress: '0x922A293D4d0af30D67A51e5510a487916a2bb494' as Hex
+		},
+		{
+			name: 'cycbBTC.pyth',
+			symbol: 'cycbBTC.pyth',
+			decimals: 8,
+			address: '0x9fC9dA918552df0DAd6C00051351e335656da100' as Hex,
+			underlyingAddress: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf' as Hex,
+			underlyingSymbol: 'cbBTC',
+			receiptAddress: '0x3a5eDe5AE4EC55F61c4aFf2CDfC920b5029Abf05' as Hex
+		},
+		{
+			name: 'cyLINK.pyth',
+			symbol: 'cyLINK.pyth',
+			decimals: 18,
+			address: '0x715aa5f9A5b3C2b51c432C9028C8692029BCE609' as Hex,
+			underlyingAddress: '0xf97f4df75117a78c1A5a0DBb814Af92458539FB4' as Hex,
+			underlyingSymbol: 'LINK',
+			receiptAddress: '0xDF66e921C8C29e1b1CA729848790A4D0bd6cbde9' as Hex
+		},
+		{
+			name: 'cyDOT.pyth',
+			symbol: 'cyDOT.pyth',
+			decimals: 18,
+			address: '0xEE6a7019679f96CED1Ea861Aae0c88D4481c7226' as Hex,
+			underlyingAddress: '0x8d010bf9C26881788b4e6bf5Fd1bdC358c8F90b8' as Hex,
+			underlyingSymbol: 'DOT',
+			receiptAddress: '0x3B22b5cE7F9901fe6a676E57E079873775aAA331' as Hex
+		},
+		{
+			name: 'cyUNI.pyth',
+			symbol: 'cyUNI.pyth',
+			decimals: 18,
+			address: '0x7Cad3F864639738f9cC25952433cd844c07D16a4' as Hex,
+			underlyingAddress: '0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0' as Hex,
+			underlyingSymbol: 'UNI',
+			receiptAddress: '0xBF979c720c730738e25D766748F7063f223F1d27' as Hex
+		},
+		{
+			name: 'cyPEPE.pyth',
+			symbol: 'cyPEPE.pyth',
+			decimals: 18,
+			address: '0x4DD4230F3B4d6118D905eD0B6f5f20A3b2472166' as Hex,
+			underlyingAddress: '0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00' as Hex,
+			underlyingSymbol: 'PEPE',
+			receiptAddress: '0xdb2C91313aAAaE40aedf6E91a1E78443241a64c0' as Hex
+		},
+		{
+			name: 'cyENA.pyth',
+			symbol: 'cyENA.pyth',
+			decimals: 18,
+			address: '0x5D938CAf878BD56ACcF2B27Fad9F697aA206dF40' as Hex,
+			underlyingAddress: '0x58538e6A46E07434d7E7375Bc268D3cb839C0133' as Hex,
+			underlyingSymbol: 'ENA',
+			receiptAddress: '0x7426ddC75b522e40552ea24D647898fAcE0E2360' as Hex
+		},
+		{
+			name: 'cyARB.pyth',
+			symbol: 'cyARB.pyth',
+			decimals: 18,
+			address: '0xc83563177290bdd391DB56553Ed828413b7689bc' as Hex,
+			underlyingAddress: '0x912CE59144191C1204E64559FE8253a0e49E6548' as Hex,
+			underlyingSymbol: 'ARB',
+			receiptAddress: '0x3fEe841c184dCF93f15CD28144b6E5514fFfC18e' as Hex
+		},
+		{
+			name: 'cywstETH.pyth',
+			symbol: 'cywstETH.pyth',
+			decimals: 18,
+			address: '0xC43ee790dc819dB728e2c5bB6285359BBdE7E016' as Hex,
+			underlyingAddress: '0x5979D7b546E38E414F7E9822514be443A4800529' as Hex,
+			underlyingSymbol: 'wstETH',
+			receiptAddress: '0x8C1843A9f3278C94f6d79cebA9828596F524E898' as Hex
+		},
+		{
+			name: 'cyXAUt0.pyth',
+			symbol: 'cyXAUt0.pyth',
+			decimals: 6,
+			address: '0x6Ddc84F2FC195AE372501B01Bb1CA25CA3221776' as Hex,
+			underlyingAddress: '0x40461291347e1eCbb09499F3371D3f17f10d7159' as Hex,
+			underlyingSymbol: 'XAUt0',
+			receiptAddress: '0x45D63e1C4cb7201ed45d75Af771BCfA9116a99Be' as Hex
+		},
+		{
+			name: 'cyPYTH.pyth',
+			symbol: 'cyPYTH.pyth',
+			decimals: 6,
+			address: '0x87f7B55D7CCc9Be93B0a8aE601801d79FA96FD4f' as Hex,
+			underlyingAddress: '0xE4D5c6aE46ADFAF04313081e8C0052A30b6Dd724' as Hex,
+			underlyingSymbol: 'PYTH',
+			receiptAddress: '0x93AC50B43aFf21aDD1Ad2a626CF6E88C5e00ea39' as Hex
+		}
+	]
+};
 
-// Selected network store
-export const selectedNetwork = writable<NetworkConfig>(flareConfig);
+// Supported networks
+export const supportedNetworks: NetworkConfig[] = [flareConfig, arbitrumConfig];
+
+// Alias for backward compatibility (previous version used this name)
+export const availableNetworks = supportedNetworks;
+
+// Create a map for quick lookup
+const networkConfigMap = new Map(supportedNetworks.map((config) => [config.key, config]));
+
+// Helper function to resolve network config by key
+const resolveNetworkConfig = (key: string): NetworkConfig => {
+	return networkConfigMap.get(key) ?? flareConfig;
+};
+
+// Active network key store (using key makes it easier to persist)
+export const activeNetworkKey = writable<string>(flareConfig.key);
+
+// Derived store for the actual network config
+export const activeNetworkConfig = derived(activeNetworkKey, (key) => resolveNetworkConfig(key));
+
+// Alias for backward compatibility
+export const selectedNetwork = activeNetworkConfig;
 
 // Derived stores for easy access to current network values
-export const targetNetwork = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.chain);
+export const targetNetwork = derived(activeNetworkConfig, (config) => config.chain);
 export const wFLRAddress = derived(
-	selectedNetwork,
-	($selectedNetwork) => $selectedNetwork.wFLRAddress
+	activeNetworkConfig,
+	(config) => config.wFLRAddress
 );
 export const quoterAddress = derived(
-	selectedNetwork,
-	($selectedNetwork) => $selectedNetwork.quoterAddress
+	activeNetworkConfig,
+	(config) => config.quoterAddress
 );
 export const cusdxAddress = derived(
-	selectedNetwork,
-	($selectedNetwork) => $selectedNetwork.cusdxAddress
+	activeNetworkConfig,
+	(config) => config.cusdxAddress
 );
 export const usdcAddress = derived(
-	selectedNetwork,
-	($selectedNetwork) => $selectedNetwork.usdcAddress
+	activeNetworkConfig,
+	(config) => config.usdcAddress
 );
-export const tokens = derived(selectedNetwork, ($selectedNetwork) => $selectedNetwork.tokens);
+export const tokens = derived(activeNetworkConfig, (config) => config.tokens);
 
 // Wrong network check - checks if connected to a different network than selected
 export const wrongNetwork = derived(
-	[chainId, signerAddress, selectedNetwork],
-	([$chainId, $signerAddress, $selectedNetwork]) =>
-		$signerAddress && $chainId !== $selectedNetwork.chain.id
+	[chainId, signerAddress, targetNetwork],
+	([$chainId, $signerAddress, $targetNetwork]) =>
+		$signerAddress && $chainId !== $targetNetwork.id
 );
+
+// Helper functions to set active network
+export const setActiveNetwork = (key: string) => {
+	if (!networkConfigMap.has(key)) {
+		console.warn(`Attempted to set unknown network key "${key}"`);
+		return;
+	}
+	activeNetworkKey.set(key);
+};
+
+export const setActiveNetworkByChainId = (id: number) => {
+	const match = supportedNetworks.find((config) => config.chain.id === id);
+	if (match) {
+		activeNetworkKey.set(match.key);
+	}
+};
 
 export const myReceipts = writable<Receipt[]>([]);
 
@@ -101,7 +262,7 @@ export const myReceipts = writable<Receipt[]>([]);
 export const selectedCyToken = writable<CyToken>(flareConfig.tokens[0]);
 
 // Update selectedCyToken when network changes
-selectedNetwork.subscribe((network) => {
+activeNetworkConfig.subscribe((network) => {
 	selectedCyToken.set(network.tokens[0]);
 });
 
