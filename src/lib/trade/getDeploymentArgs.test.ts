@@ -4,7 +4,7 @@ import { DotrainOrderGui } from '@rainlanguage/orderbook/js_api';
 import { getPrice } from './prices';
 import { DataFetcher } from 'sushi';
 import { flare } from '@wagmi/core/chains';
-import { tokens } from '$lib/constants';
+import { tokensForNetwork } from '$lib/constants';
 import { getBaseline, getMaxTradeAmount, getPeriodInSeconds } from './derivations';
 import { get } from 'svelte/store';
 
@@ -43,6 +43,11 @@ vi.mock('./derivations', () => ({
 	getPeriodInSeconds: vi.fn()
 }));
 
+// Mock the constants module
+vi.mock('$lib/constants', () => ({
+	tokensForNetwork: vi.fn()
+}));
+
 describe('getDcaDeploymentArgs', () => {
 	const mockGui = {
 		saveSelectToken: vi.fn().mockResolvedValue(undefined),
@@ -54,6 +59,13 @@ describe('getDcaDeploymentArgs', () => {
 			value: 0n
 		}),
 		setVaultId: vi.fn().mockResolvedValue(undefined)
+	};
+
+	const mockReferenceToken = {
+		address: '0xfbda5f676cb37624f28265a144a48b0d6e87d3b6' as `0x${string}`,
+		symbol: 'USDC.e',
+		name: 'Bridged USDC (Stargate)',
+		decimals: 6
 	};
 
 	const mockOptions = {
@@ -85,7 +97,8 @@ describe('getDcaDeploymentArgs', () => {
 		selectedBaseline: '1.5',
 		inputVaultId: '0x1234567890123456789012345678901234567890' as `0x${string}`,
 		outputVaultId: '0x1234567890123456789012345678901234567890' as `0x${string}`,
-		depositAmount: BigInt(1000000000000000000)
+		depositAmount: BigInt(1000000000000000000),
+		selectedNetworkKey: 'flare'
 	};
 
 	const mockDataFetcher = new DataFetcher(flare.id);
@@ -98,6 +111,7 @@ describe('getDcaDeploymentArgs', () => {
 			mockGui as unknown as DotrainOrderGui
 		);
 		vi.mocked(getPrice).mockResolvedValue('1.5');
+		vi.mocked(tokensForNetwork).mockReturnValue([mockReferenceToken]);
 
 		vi.mocked(getPeriodInSeconds).mockReturnValue(86400);
 		vi.mocked(getMaxTradeAmount).mockReturnValue(BigInt(100000000000000000)); // 0.1 TEST
@@ -107,7 +121,10 @@ describe('getDcaDeploymentArgs', () => {
 	it('should call DotrainOrderGui.chooseDeployment with the correct arguments', async () => {
 		await getDcaDeploymentArgs(mockOptions, mockDataFetcher);
 
-		expect(DotrainOrderGui.chooseDeployment).toHaveBeenCalledWith(expect.any(String), 'flare');
+		expect(DotrainOrderGui.chooseDeployment).toHaveBeenCalledWith(
+			expect.any(String),
+			mockOptions.selectedNetworkKey
+		);
 	});
 
 	it('should save the correct tokens based on Buy/Sell selection', async () => {
@@ -169,12 +186,12 @@ describe('getDcaDeploymentArgs', () => {
 	});
 
 	it('should handle min-trade-amount correctly for different tokens', async () => {
-		// When output token is the first token in the tokens array
+		// When output token is the reference token
 		const firstTokenOptions = {
 			...mockOptions,
 			selectedAmountToken: {
-				...tokens[0],
-				address: tokens[0].address as `0x${string}`
+				...mockReferenceToken,
+				address: mockReferenceToken.address
 			}
 		};
 
@@ -185,9 +202,10 @@ describe('getDcaDeploymentArgs', () => {
 			isPreset: false
 		});
 
-		// When output token is not the first token
+		// When output token is not the reference token
 		vi.clearAllMocks();
 		vi.mocked(getPrice).mockResolvedValue('2.5');
+		vi.mocked(tokensForNetwork).mockReturnValue([mockReferenceToken]);
 
 		await getDcaDeploymentArgs(mockOptions, mockDataFetcher);
 
@@ -201,6 +219,14 @@ describe('getDcaDeploymentArgs', () => {
 		await getDcaDeploymentArgs(mockOptions, mockDataFetcher);
 
 		expect(mockGui.saveDeposit).toHaveBeenCalledWith('output', '1');
+	});
+
+	it('should throw an error if no reference token is found', async () => {
+		vi.mocked(tokensForNetwork).mockReturnValueOnce([]);
+
+		await expect(getDcaDeploymentArgs(mockOptions, mockDataFetcher)).rejects.toThrow(
+			`No reference tokens configured for network "${mockOptions.selectedNetworkKey}"`
+		);
 	});
 
 	it('should throw an error if signer address is not found', async () => {
