@@ -1,11 +1,45 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import AccountStatus from './AccountStatus.svelte';
-import { tokens } from '$lib/stores';
-import type { AccountStats } from '$lib/types';
+import type { AccountStats, CyToken } from '$lib/types';
+import type { Hex } from 'viem';
 
 vi.mock('$lib/queries/fetchAccountStatus', () => ({
 	fetchAccountStatus: vi.fn()
+}));
+
+const { mockTokensStore, mockSelectedNetworkStore } = vi.hoisted(() => {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const { writable } = require('svelte/store');
+	const tokens: CyToken[] = [
+		{
+			name: 'cysFLR',
+			address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
+			underlyingAddress: '0x12e605bc104e93B45e1aD99F9e555f659051c2BB' as Hex,
+			underlyingSymbol: 'sFLR',
+			receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,
+			symbol: 'cysFLR',
+			decimals: 18
+		},
+		{
+			name: 'cyWETH',
+			address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex,
+			underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex,
+			underlyingSymbol: 'WETH',
+			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex,
+			symbol: 'cyWETH',
+			decimals: 18
+		}
+	];
+	return {
+		mockTokensStore: writable(tokens),
+		mockSelectedNetworkStore: writable({ explorerUrl: 'https://flarescan.com' })
+	};
+});
+
+vi.mock('$lib/stores', () => ({
+	tokens: mockTokensStore,
+	selectedNetwork: mockSelectedNetworkStore
 }));
 
 const mockStats: AccountStats = {
@@ -24,7 +58,7 @@ const mockStats: AccountStats = {
 			rewardsAmount: BigInt(10)
 		},
 		totalRewards: BigInt(20)
-	},
+	} as unknown as AccountStats['shares'],
 	transfers: {
 		in: [
 			{
@@ -33,7 +67,7 @@ const mockStats: AccountStats = {
 				fromIsApprovedSource: true,
 				transactionHash: 'hash1',
 				blockTimestamp: '1000',
-				tokenAddress: tokens[0].address,
+				tokenAddress: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
 				from: { id: '0x1234567890123456789012345678901234567890' },
 				to: { id: '0x2345678901234567890123456789012345678901' },
 				value: '100000000000000000000'
@@ -46,7 +80,7 @@ const mockStats: AccountStats = {
 				fromIsApprovedSource: false,
 				transactionHash: 'hash2',
 				blockTimestamp: '2000',
-				tokenAddress: tokens[1].address,
+				tokenAddress: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex,
 				from: { id: '0x2345678901234567890123456789012345678901' },
 				to: { id: '0x1234567890123456789012345678901234567890' },
 				value: '200000000000000000000'

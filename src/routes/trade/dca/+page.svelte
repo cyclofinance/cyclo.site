@@ -23,17 +23,17 @@
 
 	// selected values - initialize from store and update when network changes
 	let selectedCyToken: CyToken = $storeSelectedCyToken;
-	
-	// Update selectedCyToken when network changes - sync with store or use first available token
-	$: if ($cyTokens.length > 0) {
+	let previousTokens: CyToken[] = $cyTokens;
+
+	// Update selectedCyToken only when network changes (tokens array reference changes), not on every render
+	$: if ($cyTokens.length > 0 && $cyTokens !== previousTokens) {
 		const currentTokens = $cyTokens;
 		const storeToken = $storeSelectedCyToken;
-		
+
 		// If store token exists in current tokens, use it; otherwise use first token
 		const tokenToUse = currentTokens.find((t) => t.name === storeToken.name) || currentTokens[0];
-		if (selectedCyToken.name !== tokenToUse.name) {
-			selectedCyToken = tokenToUse;
-		}
+		selectedCyToken = tokenToUse;
+		previousTokens = $cyTokens;
 	}
 	let selectedToken: Token = tokens[0];
 	let selectedBuyOrSell: 'Buy' | 'Sell' = 'Buy';
@@ -52,7 +52,7 @@
 	let selectedAmountError: boolean = false;
 	let selectedPeriodError: boolean = false;
 	let selectedBaselineError: boolean = false;
-	let inputVaultIdError: boolean = false;   
+	let inputVaultIdError: boolean = false;
 	let outputVaultIdError: boolean = false;
 	let overrideDepositAmountError: boolean = false;
 

@@ -3,13 +3,13 @@
 	import { wagmiConfig } from 'svelte-wagmi';
 	import { switchChain } from '@wagmi/core';
 
-	function handleNetworkChange(networkConfig: typeof supportedNetworks[0]) {
+	function handleNetworkChange(networkConfig: (typeof supportedNetworks)[0]) {
 		if ($selectedNetwork.chain.id === networkConfig.chain.id) {
 			return;
 		}
 
 		selectedNetwork.set(networkConfig);
-		
+
 		// Try to switch chain if wallet is connected and wagmi config is available
 		if ($wagmiConfig) {
 			try {
@@ -25,7 +25,7 @@
 </script>
 
 <select
-	class="rounded border border-white bg-transparent px-2 py-1 text-white text-sm cursor-pointer"
+	class="cursor-pointer rounded border border-white bg-transparent px-2 py-1 text-sm text-white"
 	value={$selectedNetwork.chain.id}
 	on:change={(e) => {
 		const selectedId = Number(e.currentTarget.value);

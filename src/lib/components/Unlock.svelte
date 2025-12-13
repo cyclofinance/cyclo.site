@@ -2,7 +2,7 @@
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
 	import { refreshAllReceipts } from '$lib/queries/refreshAllReceipts';
-	import { formatEther } from 'ethers';
+	import { formatUnits } from 'ethers';
 	import ReceiptsTable from '$lib/components/ReceiptsTable.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import balancesStore from '$lib/balancesStore';
@@ -19,7 +19,7 @@
 	};
 
 	$: if ($signerAddress) {
-		refreshAllReceipts($signerAddress, $wagmiConfig, setLoading);
+		refreshAllReceipts($signerAddress, setLoading);
 		balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 	}
 </script>
@@ -36,14 +36,17 @@
 			>
 				<span>BALANCES</span>
 				<div class="flex flex-col gap-4 sm:items-end">
-					{#each ['cysFLR', 'cyWETH'] as token}
-						<div class="flex flex-row gap-2" data-testid="{token.toLowerCase()}-balance">
-							{#key $balancesStore.balances[token]?.signerBalance}
+					{#each $tokens as token}
+						<div class="flex flex-row gap-2" data-testid="{token.symbol.toLowerCase()}-balance">
+							{#key $balancesStore.balances[token.name]?.signerBalance}
 								<span in:fade={{ duration: 700 }}>
-									{formatEther($balancesStore.balances[token]?.signerBalance || 0n)}
+									{formatUnits(
+										$balancesStore.balances[token.name]?.signerBalance || 0n,
+										token.decimals
+									)}
 								</span>
 							{/key}
-							<span>{token}</span>
+							<span>{token.symbol}</span>
 						</div>
 					{/each}
 				</div>

@@ -31,12 +31,35 @@ vi.mock('@rainlanguage/orderbook/js_api', () => ({
 	getTransactionAddOrders: vi.fn()
 }));
 
+const { mockSelectedNetworkStore, MOCKED_ORDERBOOK_SUBGRAPH_URL } = vi.hoisted(() => {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const { writable } = require('svelte/store');
+	const MOCKED_ORDERBOOK_SUBGRAPH_URL =
+		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn';
+	const mockSelectedNetworkWritable = writable({
+		orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL
+	});
+	const mockSelectedNetworkStore = {
+		subscribe: mockSelectedNetworkWritable.subscribe,
+		set: mockSelectedNetworkWritable.set
+	};
+	return { mockSelectedNetworkStore, MOCKED_ORDERBOOK_SUBGRAPH_URL };
+});
+
+vi.mock('./stores', () => ({
+	myReceipts: { set: vi.fn() },
+	selectedNetwork: mockSelectedNetworkStore
+}));
+
 vi.mock('svelte/store', async () => {
 	const actual = await vi.importActual('svelte/store');
 	return {
 		...actual,
 		get: vi.fn().mockImplementation((store) => {
 			if (store === transactionStore) return transactionStore;
+			if (store === mockSelectedNetworkStore) {
+				return { orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL };
+			}
 			return mockWagmiConfigStore;
 		})
 	};
@@ -189,9 +212,6 @@ describe('transactionStore.handleDeployDca', () => {
 		await vi.advanceTimersByTimeAsync(2000); // Advance to trigger the interval
 		await deployPromise;
 
-		expect(getTransactionAddOrders).toHaveBeenCalledWith(
-			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
-			'0xtxhash'
-		);
+		expect(getTransactionAddOrders).toHaveBeenCalledWith(MOCKED_ORDERBOOK_SUBGRAPH_URL, '0xtxhash');
 	});
 });

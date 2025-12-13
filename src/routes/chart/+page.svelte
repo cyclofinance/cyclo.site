@@ -18,7 +18,6 @@
 		}
 	};
 
-
 	let chartUrl = '';
 	let isLoading = false;
 
@@ -27,7 +26,7 @@
 		const dexScreenerChain = getDexScreenerChainName(network.chain);
 		const networkConfigs = chartConfigs[dexScreenerChain] || chartConfigs.flare; // Fallback to flare if network not found
 		const config = networkConfigs[$selectedCyToken.symbol as keyof typeof networkConfigs];
-		
+
 		if (config && config.address) {
 			isLoading = true;
 			// Ensure address is lowercase (DexScreener expects lowercase addresses)

@@ -13,7 +13,7 @@
 	import { Modal } from 'flowbite-svelte';
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import { fade } from 'svelte/transition';
-	import { formatEther, formatUnits, parseEther } from 'ethers';
+	import { formatUnits, parseUnits } from 'viem';
 	import Select from './Select.svelte';
 	import { tokens } from '$lib/stores';
 	import type { Hex } from 'viem';
@@ -42,7 +42,7 @@
 
 	const checkBalance = () => {
 		if (amountToLock) {
-			const bigNumValue = BigInt(parseEther(amountToLock.toString()).toString());
+			const bigNumValue = parseUnits(amountToLock.toString(), $selectedCyToken.decimals);
 			assets = bigNumValue;
 			insufficientFunds =
 				($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n) < assets;
@@ -106,8 +106,9 @@
 
 				<div class="flex flex-row gap-4">
 					<span data-testid="your-balance">
-						{formatEther(
-							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
+						{formatUnits(
+							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n,
+							$selectedCyToken.decimals
 						)}
 					</span>
 				</div>
@@ -134,7 +135,10 @@
 							class="flex flex-row items-center gap-2"
 							data-testid="price-ratio"
 							>{Number(
-								formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)
+								formatUnits(
+									$balancesStore.stats[$selectedCyToken.name].lockPrice,
+									$selectedCyToken.decimals
+								)
 							).toString()}
 
 							<svg width="20" height="20" viewBox="0 0 100 100">
@@ -171,7 +175,7 @@
 						const balance =
 							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n;
 						assets = balance;
-						amountToLock = Number(formatEther(balance)).toString();
+						amountToLock = Number(formatUnits(balance, $selectedCyToken.decimals)).toString();
 					}}
 					bind:amount={amountToLock}
 					maxValue={$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n}
@@ -183,8 +187,9 @@
 						class="my-2 text-left text-xs font-light sm:text-right"
 						data-testid="underlying-balance"
 					>
-						{$selectedCyToken.underlyingSymbol} Balance: {formatEther(
-							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n
+						{$selectedCyToken.underlyingSymbol} Balance: {formatUnits(
+							$balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n,
+							$selectedCyToken.decimals
 						)}
 					</p>
 				{:else}
@@ -218,7 +223,7 @@
 					<img src={ftso} alt="ftso" class="w-1/2" />
 					{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
 						{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
-							{formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice)}
+							{formatUnits($balancesStore.stats[$selectedCyToken.name].lockPrice, 18)}
 						{/key}
 					{/if}
 				</div>
@@ -232,7 +237,12 @@
 				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
 					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 						<span data-testid="calculated-cysflr"
-							>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+							>{!amountToLock
+								? '0'
+								: formatUnits(
+										$balancesStore.swapQuotes.cyTokenOutput,
+										$selectedCyToken.decimals
+									)}</span
 						>
 					{/key}
 				{:else}
@@ -264,7 +274,7 @@
 			<div class="flex w-1/4 flex-col items-center justify-center text-center text-white">
 				<img src={ftso} alt="ftso" class="" />
 				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-					{Number(formatEther($balancesStore.stats[$selectedCyToken.name].lockPrice.toString()))}
+					{Number(formatUnits($balancesStore.stats[$selectedCyToken.name].lockPrice, 18))}
 				{/if}
 			</div>
 			<img src={mintMobile} alt="diagram" class="h-60" />
@@ -274,7 +284,12 @@
 				{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
 					{#key $balancesStore.stats[$selectedCyToken.name].lockPrice}
 						<span data-testid="calculated-cysflr-mobile"
-							>{!amountToLock ? '0' : formatEther($balancesStore.swapQuotes.cyTokenOutput)}</span
+							>{!amountToLock
+								? '0'
+								: formatUnits(
+										$balancesStore.swapQuotes.cyTokenOutput,
+										$selectedCyToken.decimals
+									)}</span
 						>
 					{/key}
 				{:else}

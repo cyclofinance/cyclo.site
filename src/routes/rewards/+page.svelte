@@ -5,7 +5,13 @@
 	import RewardsInfo from '$lib/components/RewardsInfo.svelte';
 	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import { signerAddress } from 'svelte-wagmi';
-	import { selectedCyToken, tokens, selectedNetwork, isFlareNetwork, supportedNetworks } from '$lib/stores';
+	import {
+		selectedCyToken,
+		tokens,
+		selectedNetwork,
+		isFlareNetwork,
+		supportedNetworks
+	} from '$lib/stores';
 	import { wagmiConfig } from 'svelte-wagmi';
 	import { switchChain } from '@wagmi/core';
 	import { flare } from '@wagmi/core/chains';
@@ -49,7 +55,8 @@
 					<div>
 						<h3 class="text-lg font-semibold text-yellow-500">Flare Network Required</h3>
 						<p class="text-sm text-yellow-400">
-							Rewards are only available on the Flare network. Please switch to Flare to view rewards.
+							Rewards are only available on the Flare network. Please switch to Flare to view
+							rewards.
 						</p>
 					</div>
 				</div>

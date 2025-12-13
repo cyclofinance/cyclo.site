@@ -43,6 +43,10 @@ describe('balancesStore', () => {
 				cysFLR: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
+				},
+				'cyFXRP.ftso': {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			stats: {
@@ -54,6 +58,13 @@ describe('balancesStore', () => {
 					usdTvl: BigInt(0)
 				},
 				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				'cyFXRP.ftso': {
 					lockPrice: BigInt(0),
 					price: BigInt(0),
 					supply: BigInt(0),
@@ -139,6 +150,10 @@ describe('balancesStore', () => {
 				cysFLR: {
 					signerBalance: BigInt(0),
 					signerUnderlyingBalance: BigInt(0)
+				},
+				'cyFXRP.ftso': {
+					signerBalance: BigInt(0),
+					signerUnderlyingBalance: BigInt(0)
 				}
 			},
 			stats: {
@@ -150,6 +165,13 @@ describe('balancesStore', () => {
 					usdTvl: BigInt(0)
 				},
 				cysFLR: {
+					lockPrice: BigInt(0),
+					price: BigInt(0),
+					supply: BigInt(0),
+					underlyingTvl: BigInt(0),
+					usdTvl: BigInt(0)
+				},
+				'cyFXRP.ftso': {
 					lockPrice: BigInt(0),
 					price: BigInt(0),
 					supply: BigInt(0),
