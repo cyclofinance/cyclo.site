@@ -15,7 +15,7 @@ vi.mock('ethers', async (importOriginal) => {
 			ZeroAddress: '0x0000000000000000000000000000000000000000'
 		},
 		formatEther: vi.fn().mockImplementation((value: bigint) => value.toString()),
-		formatUnits: vi.fn().mockImplementation((value: bigint, decimals?: number) => value.toString())
+		formatUnits: vi.fn().mockImplementation((value: bigint) => value.toString())
 	};
 });
 
@@ -47,7 +47,7 @@ vi.mock('$lib/constants', () => {
 		}
 	];
 	return {
-		tokensForNetwork: vi.fn((key: string) => mockTokens),
+		tokensForNetwork: vi.fn(() => mockTokens),
 		tokens: mockTokens
 	};
 });
@@ -56,7 +56,7 @@ vi.mock('$lib/stores', async () => {
 	const { writable } = await import('svelte/store');
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { flare } = require('@wagmi/core/chains');
-	
+
 	const mockCyToken = {
 		address: '0xdef4560000000000000000000000000000000000',
 		symbol: 'TEST',
@@ -76,8 +76,10 @@ vi.mock('$lib/stores', async () => {
 		usdcAddress: '0xFbDa5F676cB37624f28265A144A48B0d6e87d3b6',
 		explorerApiUrl: 'https://flare-explorer.flare.network/api',
 		explorerUrl: 'https://flarescan.com',
-		orderbookSubgraphUrl: 'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
-		rewardsSubgraphUrl: 'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-11-ab43/gn',
+		orderbookSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
+		rewardsSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-11-ab43/gn',
 		tokens: [mockCyToken]
 	};
 

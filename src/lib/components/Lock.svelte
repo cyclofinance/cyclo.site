@@ -302,7 +302,9 @@
 				{#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
 					<span class="text-base" data-testid="calculated-cysflr-mobile"
 						>{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-							{!amountToLock ? '0' : formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}
+							{!amountToLock
+								? '0'
+								: formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}
 						{:else}
 							Stale Price / Incorrect price
 						{/if}}</span
@@ -433,9 +435,5 @@
 		100% {
 			stroke-dasharray: 282 0;
 		}
-	}
-	.refresh-icon {
-		width: 20px;
-		height: 20px;
 	}
 </style>

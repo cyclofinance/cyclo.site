@@ -2,12 +2,7 @@
 	import AccountStatus from '$lib/components/AccountStatus.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { page } from '$app/stores';
-	import {
-		selectedCyToken,
-		tokens,
-		selectedNetwork,
-		isFlareNetwork
-	} from '$lib/stores';
+	import { selectedCyToken, tokens, selectedNetwork, isFlareNetwork } from '$lib/stores';
 
 	$: if ($tokens.length > 0 && !$selectedCyToken) {
 		$selectedCyToken = $tokens[0];
@@ -38,5 +33,4 @@
 			</div>
 		</Card>
 	{/if}
-	
 </div>

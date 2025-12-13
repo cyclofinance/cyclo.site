@@ -13,7 +13,7 @@ vi.mock('ethers', async (importOriginal) => {
 			ZeroAddress: '0x0000000000000000000000000000000000000000'
 		},
 		formatEther: vi.fn().mockImplementation((value: bigint) => value.toString()),
-		formatUnits: vi.fn().mockImplementation((value: bigint, decimals?: number) => value.toString())
+		formatUnits: vi.fn().mockImplementation((value: bigint) => value.toString())
 	};
 });
 

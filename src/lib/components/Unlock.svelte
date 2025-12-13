@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
+	import { signerAddress, web3Modal } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
 	import { refreshAllReceipts } from '$lib/queries/refreshAllReceipts';
 	import { formatUnits } from 'ethers';
@@ -9,7 +9,6 @@
 	import { fade } from 'svelte/transition';
 	import { selectedCyToken, tokens, selectedNetwork } from '$lib/stores';
 	import { myReceipts } from '$lib/stores';
-	import type { Hex } from 'viem';
 
 	let loading = true;
 	let progressMessage = '';
@@ -34,8 +33,7 @@
 		isRefreshing = true;
 		previousSignerAddress = $signerAddress;
 		previousNetworkKey = $selectedNetwork.key;
-		
-		
+
 		refreshAllReceipts($signerAddress, setLoading).finally(() => {
 			isRefreshing = false;
 		});

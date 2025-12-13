@@ -215,29 +215,16 @@ export const selectedNetwork = activeNetworkConfig;
 
 // Derived stores for easy access to current network values
 export const targetNetwork = derived(activeNetworkConfig, (config) => config.chain);
-export const wFLRAddress = derived(
-	activeNetworkConfig,
-	(config) => config.wFLRAddress
-);
-export const quoterAddress = derived(
-	activeNetworkConfig,
-	(config) => config.quoterAddress
-);
-export const cusdxAddress = derived(
-	activeNetworkConfig,
-	(config) => config.cusdxAddress
-);
-export const usdcAddress = derived(
-	activeNetworkConfig,
-	(config) => config.usdcAddress
-);
+export const wFLRAddress = derived(activeNetworkConfig, (config) => config.wFLRAddress);
+export const quoterAddress = derived(activeNetworkConfig, (config) => config.quoterAddress);
+export const cusdxAddress = derived(activeNetworkConfig, (config) => config.cusdxAddress);
+export const usdcAddress = derived(activeNetworkConfig, (config) => config.usdcAddress);
 export const tokens = derived(activeNetworkConfig, (config) => config.tokens);
 
 // Wrong network check - checks if connected to a different network than selected
 export const wrongNetwork = derived(
 	[chainId, signerAddress, targetNetwork],
-	([$chainId, $signerAddress, $targetNetwork]) =>
-		$signerAddress && $chainId !== $targetNetwork.id
+	([$chainId, $signerAddress, $targetNetwork]) => $signerAddress && $chainId !== $targetNetwork.id
 );
 
 // Helper functions to set active network

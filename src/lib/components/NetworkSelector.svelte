@@ -1,20 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { availableNetworks, activeNetworkKey, setActiveNetwork, setActiveNetworkByChainId } from '$lib/stores';
+	import {
+		availableNetworks,
+		activeNetworkKey,
+		setActiveNetwork,
+		setActiveNetworkByChainId
+	} from '$lib/stores';
 	import { switchNetwork } from '@wagmi/core';
 	import { wagmiConfig, chainId, signerAddress } from 'svelte-wagmi';
 
 	// Sync UI to wallet's chain on initial page load (handles hard refresh case)
 	onMount(() => {
 		let hasSynced = false;
-		
+
 		const syncToWalletChain = () => {
 			if (hasSynced) return;
-			
+
 			const currentChainId = get(chainId);
 			const currentSignerAddress = get(signerAddress);
-			
+
 			// Only sync once when wallet is connected and we have a chainId
 			if (currentChainId && currentSignerAddress) {
 				// Check if the wallet's chain matches any supported network
@@ -26,7 +31,7 @@
 				}
 			}
 		};
-		
+
 		// Subscribe to both chainId and signerAddress to handle wallet connection timing
 		const unsubscribeChainId = chainId.subscribe(() => syncToWalletChain());
 		const unsubscribeSignerAddress = signerAddress.subscribe(() => syncToWalletChain());

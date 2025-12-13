@@ -2,7 +2,11 @@
 	import Input from '$lib/components/Input.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import { tokensForNetwork } from '$lib/constants';
-	import { tokens as cyTokens, selectedCyToken as storeSelectedCyToken, selectedNetwork } from '$lib/stores';
+	import {
+		tokens as cyTokens,
+		selectedCyToken as storeSelectedCyToken,
+		selectedNetwork
+	} from '$lib/stores';
 	import { get } from 'svelte/store';
 	import type { CyToken, Token } from '$lib/types';
 	import TradeAmountInput from '$lib/components/TradeAmountInput.svelte';
@@ -67,9 +71,10 @@
 	let overrideDepositAmount: bigint;
 	let inputVaultId: Hex | undefined;
 	let outputVaultId: Hex | undefined;
-	$: selectedAmountToken = selectedBuyOrSell == 'Buy' 
-		? (selectedToken || (networkTokens.length > 0 ? networkTokens[0] : undefined))
-		: selectedCyToken;
+	$: selectedAmountToken =
+		selectedBuyOrSell == 'Buy'
+			? selectedToken || (networkTokens.length > 0 ? networkTokens[0] : undefined)
+			: selectedCyToken;
 	$: depositAmount = chooseOverrideDepositAmount ? overrideDepositAmount : selectedAmount;
 
 	// errors
@@ -102,7 +107,7 @@
 
 	const handleDeploy = () => {
 		if (!selectedToken || !selectedAmountToken) return;
-		
+
 		transactionStore.handleDeployDca(
 			{
 				selectedCyToken,
@@ -162,7 +167,7 @@
 			<Select
 				options={networkTokens}
 				bind:selected={selectedToken}
-				getOptionLabel={(token) => token.name}
+				getOptionLabel={(token) => token?.name || ''}
 				dataTestId="token-select"
 			/>
 		{/if}
@@ -223,9 +228,9 @@
 					>The {selectedBuyOrSell == 'Buy' ? 'highest' : 'lowest'} price at which the strategy will {selectedBuyOrSell ==
 					'Buy'
 						? 'buy'
-						: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but note
-					the budget set above is still accruing, meaning the strategy will attempt to "catch up" when
-					the market comes back within range.
+						: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but
+					note the budget set above is still accruing, meaning the strategy will attempt to "catch
+					up" when the market comes back within range.
 				</InfoTooltip>
 			</div>
 
@@ -237,7 +242,11 @@
 				validate={validateBaseline}
 				bind:isError={selectedBaselineError}
 			/>
-			<TradePrice inputToken={selectedToken} outputToken={selectedCyToken} dataTestId="trade-price" />
+			<TradePrice
+				inputToken={selectedToken}
+				outputToken={selectedCyToken}
+				dataTestId="trade-price"
+			/>
 		{/if}
 	</div>
 

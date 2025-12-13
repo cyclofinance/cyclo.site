@@ -247,7 +247,10 @@ const balancesStore = () => {
 						lockPrice,
 						supply: cysFlrSupply,
 						underlyingTvl: underlyingBalanceLockedInCysToken,
-						usdTvl: lockPrice > 0n ? (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18) : BigInt(0)
+						usdTvl:
+							lockPrice > 0n
+								? (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
+								: BigInt(0)
 					}
 				}
 			};

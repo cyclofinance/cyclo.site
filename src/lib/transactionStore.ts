@@ -23,7 +23,15 @@ import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { wagmiConfig } from 'svelte-wagmi';
 import { getDcaDeploymentArgs, type DcaDeploymentArgs } from './trade/getDeploymentArgs';
 import type { DataFetcher } from 'sushi';
-import { CYCLO_VAULT_ABI, extractParsedTimes, extractPublishTime, fetchUpdateBlobs, I_PYTH_ABI, PYTH_ORACLE_ABI, toU64 } from './pyth';
+import {
+	CYCLO_VAULT_ABI,
+	extractParsedTimes,
+	extractPublishTime,
+	fetchUpdateBlobs,
+	I_PYTH_ABI,
+	PYTH_ORACLE_ABI,
+	toU64
+} from './pyth';
 
 export const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 export const ONE = BigInt('1000000000000000000');
@@ -280,10 +288,7 @@ const transactionStore = () => {
 			const currentNetwork = get(selectedNetwork);
 			if (currentNetwork.key !== initialNetworkKey || currentNetwork.chain.id !== initialChainId) {
 				clearInterval(interval);
-				return transactionError(
-					TransactionErrorMessage.NETWORK_SWITCHED_DURING_DEPLOYMENT,
-					hash
-				);
+				return transactionError(TransactionErrorMessage.NETWORK_SWITCHED_DURING_DEPLOYMENT, hash);
 			}
 
 			// Check for timeout
@@ -320,7 +325,7 @@ const transactionStore = () => {
 	const handlePythPriceUpdate = async () => {
 		const config = get(wagmiConfig);
 		if (!config) throw new Error('Wagmi config not found');
-		
+
 		const selectedToken = get(selectedCyToken);
 		if (!selectedToken) {
 			return transactionError(TransactionErrorMessage.USER_REJECTED_LOCK, '');

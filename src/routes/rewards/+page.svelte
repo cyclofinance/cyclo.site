@@ -6,12 +6,7 @@
 	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { signerAddress } from 'svelte-wagmi';
-	import {
-		selectedCyToken,
-		tokens,
-		selectedNetwork,
-		isFlareNetwork
-	} from '$lib/stores';
+	import { selectedCyToken, tokens, selectedNetwork, isFlareNetwork } from '$lib/stores';
 
 	$: if ($tokens.length > 0 && !$selectedCyToken) {
 		$selectedCyToken = $tokens[0];
