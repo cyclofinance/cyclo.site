@@ -34,16 +34,22 @@ vi.mock('$lib/constants', () => ({
 	]
 }));
 
-vi.mock('$lib/stores', () => ({
-	tokens: [
-		{
-			address: '0xdef4560000000000000000000000000000000000',
-			symbol: 'TEST',
-			name: 'Test Token',
-			decimals: 18
-		}
-	]
-}));
+vi.mock('$lib/stores', async () => {
+	const { writable } = await import('svelte/store');
+	const mockCyToken = {
+		address: '0xdef4560000000000000000000000000000000000',
+		symbol: 'TEST',
+		name: 'Test Token',
+		decimals: 18,
+		underlyingAddress: '0x1234560000000000000000000000000000000000',
+		underlyingSymbol: 'UNDERLYING',
+		receiptAddress: '0xabcdef0000000000000000000000000000000000'
+	};
+	return {
+		tokens: writable([mockCyToken]),
+		selectedCyToken: writable(mockCyToken)
+	};
+});
 
 describe('DCA Page', () => {
 	const mockDataFetcher = {

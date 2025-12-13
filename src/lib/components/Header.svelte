@@ -1,5 +1,6 @@
 <script lang="ts">
 	import WalletConnect from './WalletConnect.svelte';
+	import NetworkSelector from './NetworkSelector.svelte';
 	import logo from '$lib/images/logo-white.svg';
 	import spiralLogo from '$lib/images/spiral-logo.svg';
 	import { base } from '$app/paths';
@@ -20,6 +21,7 @@
 		<NavButtons {launched} />
 	</div>
 	<div class="flex items-center justify-center gap-4">
+		<NetworkSelector />
 		<SocialLinks />
 		<WalletConnect />
 	</div>

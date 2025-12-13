@@ -2,13 +2,16 @@ query TopAccounts {
 	eligibleTotals(id: "SINGLETON") {
 		id
 		totalEligibleSum
-		totalEligibleCysFLR
-		totalEligibleCyWETH
 	}
 	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 1000) {
 		id
-		cysFLRBalance
-		cyWETHBalance
+		vaultBalances {
+			vault {
+				address
+				totalEligible
+			}
+			balance
+		}
 		totalCyBalance
 	}
 }
