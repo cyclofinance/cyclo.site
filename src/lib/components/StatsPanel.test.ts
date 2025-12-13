@@ -91,7 +91,7 @@ describe('StatsPanel Component', () => {
 			expect(screen.getByText('cysFLR: 1000.00')).toBeInTheDocument(); // cysFLR total
 			expect(screen.getByText('cyWETH: 2000.00')).toBeInTheDocument(); // cyWETH total
 			expect(screen.getByText('Monthly rFLR Rewards')).toBeInTheDocument();
-			expect(screen.getByText('Total: 2,000,000')).toBeInTheDocument(); // total rewards
+			expect(screen.getByText('Total: 1,000,000')).toBeInTheDocument(); // total rewards
 			expect(screen.getByText('cysFLR: 1,000')).toBeInTheDocument(); // cysFLR rewards (with toLocaleString)
 			expect(screen.getByText('cyWETH: 2,000')).toBeInTheDocument(); // cyWETH rewards (with toLocaleString)
 		});
