@@ -24,43 +24,43 @@ export interface NetworkConfig {
 const flareConfig: NetworkConfig = {
 	key: 'flare',
 	chain: flare,
-	wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
-	quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
+	wFLRAddress: '0x1d80c49bbbcd1c0911346656b529df9e5c2f783d' as Hex,
+	quoterAddress: '0x5b5513c55fd06e2658010c121c37b07fc8e8b705' as Hex,
 	cusdxAddress: '0xfe2907dfa8db6e320cdbf45f0aa888f6135ec4f8' as Hex,
-	usdcAddress: '0xFbDa5F676cB37624f28265A144A48B0d6e87d3b6' as Hex,
+	usdcAddress: '0xfbda5f676cb37624f28265a144a48b0d6e87d3b6' as Hex,
 	explorerApiUrl: 'https://flare-explorer.flare.network/api',
 	explorerUrl: 'https://flarescan.com',
 	orderbookSubgraphUrl:
 		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
 	rewardsSubgraphUrl:
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-11-ab43/gn',
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-18-2f13/gn',
 	tokens: [
 		{
 			name: 'cysFLR',
 			symbol: 'cysFLR',
 			decimals: 18,
-			address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
-			underlyingAddress: '0x12e605bc104e93B45e1aD99F9e555f659051c2BB' as Hex, // sFlr
+			address: '0x19831cfb53a0dbead9866c43557c1d48dff76567' as Hex,
+			underlyingAddress: '0x12e605bc104e93b45e1ad99f9e555f659051c2bb' as Hex, // sFlr
 			underlyingSymbol: 'sFLR',
-			receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex
+			receiptAddress: '0xd387fc43e19a63036d8fced559e81f5ddef7ef09' as Hex
 		},
 		{
 			name: 'cyWETH',
 			symbol: 'cyWETH',
 			decimals: 18,
-			address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex,
+			address: '0xd8bf1d2720e9ffd01a2f9a2efc3e101a05b852b4' as Hex,
 			underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex, // weth
 			underlyingSymbol: 'WETH',
-			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex
+			receiptAddress: '0xbe2615a0fcb54a49a1eb472be30d992599fe0968' as Hex
 		},
 		{
 			name: 'cyFXRP.ftso',
 			symbol: 'cyFXRP.ftso',
 			decimals: 6,
-			address: '0xF23595Ede14b54817397B1dAb899bA061BdCe7b5' as Hex,
-			underlyingAddress: '0xAd552A648C74D49E10027AB8a618A3ad4901c5bE' as Hex, // fxrp
+			address: '0xf23595ede14b54817397b1dab899ba061bdce7b5' as Hex,
+			underlyingAddress: '0xad552a648c74d49e10027ab8a618a3ad4901c5be' as Hex, // fxrp
 			underlyingSymbol: 'FXRP',
-			receiptAddress: '0xC46600cEbD84Ed2FE60Ec525dF13E341D24642f2' as Hex
+			receiptAddress: '0xc46600cebd84ed2fe60ec525df13e341d24642f2' as Hex
 		}
 	]
 };
