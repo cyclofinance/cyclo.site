@@ -410,7 +410,7 @@ const transactionStore = () => {
 			});
 		} catch (e) {
 			console.log(e);
-			return transactionError(TransactionErrorMessage.USER_REJECTED_LOCK, '');
+			return transactionError(TransactionErrorMessage.USER_REJECTED_PRICE_UPDATE, '');
 		}
 
 		// Wait for transaction receipt

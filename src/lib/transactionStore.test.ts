@@ -440,7 +440,7 @@ describe('transactionStore', () => {
 			await handlePythPriceUpdate();
 
 			expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
-			expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_LOCK);
+			expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_PRICE_UPDATE);
 		});
 
 		it('should handle transaction timeout during Pyth price update', async () => {
