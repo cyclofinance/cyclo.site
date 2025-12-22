@@ -4,10 +4,10 @@ import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
 import { ONE } from '$lib/constants';
 import { calculateRewardsPools } from './calculateRewardsPools';
+import { aggregateTotalEligibleFromVaults } from './vaultUtils';
 import type { GlobalStats } from '$lib/types';
 import { get } from 'svelte/store';
 import { tokens, selectedNetwork } from '$lib/stores';
-import { isAddressEqual } from 'viem';
 
 // Map of token symbols to their price quote functions
 const priceQuoteFunctions: Record<string, () => Promise<bigint>> = {
@@ -27,46 +27,6 @@ export const calculateApy = (rewardPool: bigint, totalEligible: bigint, price: b
 	return denominator > 0n ? numerator / denominator : 0n;
 };
 
-/**
- * Aggregate total eligible amounts from cycloVaults
- */
-function aggregateTotalEligible(cycloVaults: StatsQuery['cycloVaults']): Record<string, bigint> {
-	const currentTokens = get(tokens);
-	const totals: Record<string, bigint> = {};
-
-	if (!cycloVaults) {
-		// Initialize with zeros for all tokens
-		for (const token of currentTokens) {
-			totals[token.symbol] = 0n;
-		}
-		return totals;
-	}
-
-	// Aggregate totals from cycloVaults
-	for (const vault of cycloVaults) {
-		const vaultAddress = vault?.address;
-		const totalEligible = BigInt(vault?.totalEligible || '0');
-
-		if (!vaultAddress || totalEligible === 0n) continue;
-
-		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
-		if (token) {
-			if (!(token.symbol in totals)) {
-				totals[token.symbol] = 0n;
-			}
-			totals[token.symbol] += totalEligible;
-		}
-	}
-
-	// Ensure all tokens have entries (even if 0)
-	for (const token of currentTokens) {
-		if (!(token.symbol in totals)) {
-			totals[token.symbol] = 0n;
-		}
-	}
-
-	return totals;
-}
 
 export async function fetchStats(): Promise<GlobalStats> {
 	const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
@@ -84,7 +44,7 @@ export async function fetchStats(): Promise<GlobalStats> {
 	const currentTokens = get(tokens);
 
 	// Aggregate totals from cycloVaults
-	const totalEligible = aggregateTotalEligible(data.cycloVaults);
+	const totalEligible = aggregateTotalEligibleFromVaults(data.cycloVaults);
 	const totalEligibleSum = Object.values(totalEligible).reduce((sum, val) => sum + val, 0n);
 	const eligibleHolders = (data.accounts ?? []).length;
 

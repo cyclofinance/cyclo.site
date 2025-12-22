@@ -3,9 +3,9 @@ query Stats {
 		id
 		totalEligibleSum
 	}
-	cycloVaults{
+	cycloVaults {
 		address
-		totalEligible    
+		totalEligible
 	}
 	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
 		id
