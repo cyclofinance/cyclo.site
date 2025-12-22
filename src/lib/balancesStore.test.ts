@@ -121,7 +121,9 @@ describe('balancesStore', () => {
 			underlyingSymbol: 'sFLR',
 			receiptAddress: '0xeeff5678',
 			symbol: 'cysFLR',
-			decimals: 18
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare'
 		};
 
 		await refreshPrices(mockWagmiConfigStore as unknown as Config, mockToken);

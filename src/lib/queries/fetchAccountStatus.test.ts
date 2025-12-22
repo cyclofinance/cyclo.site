@@ -16,7 +16,9 @@ const { mockTokens, MOCKED_SUBGRAPH_URL } = vi.hoisted(() => {
 			address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
 			underlyingAddress: '0x12e605bc104e93B45e1aD99F9e555f659051c2BB' as Hex,
 			underlyingSymbol: 'sFLR',
-			receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex
+			receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,
+			chainId: 14,
+			networkName: 'Flare'
 		},
 		{
 			name: 'cyWETH',
@@ -25,7 +27,9 @@ const { mockTokens, MOCKED_SUBGRAPH_URL } = vi.hoisted(() => {
 			address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex,
 			underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex,
 			underlyingSymbol: 'WETH',
-			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex
+			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex,
+			chainId: 14,
+			networkName: 'Flare'
 		}
 	];
 	return { mockTokens: tokens, MOCKED_SUBGRAPH_URL };

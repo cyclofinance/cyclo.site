@@ -4,7 +4,7 @@
 	import { RefreshOutline } from 'flowbite-svelte-icons';
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
-	import { cusdxAddress, selectedCyToken, selectedNetwork } from '$lib/stores';
+	import { cusdxAddress, selectedCyToken } from '$lib/stores';
 	import { base } from '$app/paths';
 	import mintDia from '$lib/images/mint-dia.svg';
 	import mintMobile from '$lib/images/mint-mobile.svg';
@@ -69,7 +69,7 @@
 	};
 
 	const refreshSelectedTokenData = async () => {
-		if ($selectedNetwork.chain.id === arbitrum.id) {
+		if ($selectedCyToken?.chainId === arbitrum.id) {
 			transactionStore.handlePythPriceUpdate();
 		}
 	};
@@ -101,7 +101,7 @@
 			<Select
 				options={$tokens}
 				bind:selected={$selectedCyToken}
-				getOptionLabel={(option) => `${option.symbol} · ${$selectedNetwork.chain.name}`}
+				getOptionLabel={(option) => `${option.symbol} · ${option.networkName}`}
 			/>
 		</div>
 
@@ -148,7 +148,7 @@
 						{:else}
 							Stale or Incorrect price
 						{/if}
-						{#if $selectedNetwork.chain.id === arbitrum.id}
+						{#if $selectedCyToken?.chainId === arbitrum.id}
 							<button
 								class="refresh-button rounded border border-white/40 px-2 py-1 text-xs font-medium text-white transition hover:border-white hover:text-white/80 disabled:opacity-60"
 								on:click={refreshSelectedTokenData}
@@ -379,7 +379,7 @@
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>
 				Cyclo relies on oracles to determine the ${$selectedCyToken.underlyingSymbol}/USD price.
-				These are maintained by providers on {$selectedNetwork.chain.name}.
+				These are maintained by providers on {$selectedCyToken.networkName}.
 			</li>
 			<li class="relative pl-2">
 				<span class="absolute -left-4">•</span>

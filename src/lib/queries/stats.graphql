@@ -1,5 +1,5 @@
 query Stats {
-  eligibleTotals(id: "SINGLETON") {
+	eligibleTotals(id: "SINGLETON") {
 		id
 		totalEligibleSum
 	}
@@ -10,9 +10,4 @@ query Stats {
 	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
 		id
 	}
-  
 }
-
-
-
-  

@@ -76,7 +76,9 @@ describe('getDcaDeploymentArgs', () => {
 			decimals: 18,
 			underlyingSymbol: 'TEST',
 			underlyingAddress: '0xdef456' as `0x${string}`,
-			receiptAddress: '0xfed789' as `0x${string}`
+			receiptAddress: '0xfed789' as `0x${string}`,
+			chainId: 14,
+			networkName: 'Flare'
 		},
 		selectedToken: {
 			address: '0xdef456' as `0x${string}`,

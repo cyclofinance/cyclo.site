@@ -19,7 +19,9 @@ const { mockTokensStore, mockSelectedNetworkStore } = vi.hoisted(() => {
 			underlyingSymbol: 'sFLR',
 			receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,
 			symbol: 'cysFLR',
-			decimals: 18
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare'
 		},
 		{
 			name: 'cyWETH',
@@ -28,7 +30,9 @@ const { mockTokensStore, mockSelectedNetworkStore } = vi.hoisted(() => {
 			underlyingSymbol: 'WETH',
 			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex,
 			symbol: 'cyWETH',
-			decimals: 18
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare'
 		}
 	];
 	return {

@@ -1,4 +1,4 @@
-import { derived, writable } from 'svelte/store';
+import { derived, writable, get } from 'svelte/store';
 import { chainId, signerAddress } from 'svelte-wagmi';
 import { type Chain } from '@wagmi/core/chains';
 import type { Hex } from 'viem';
@@ -42,7 +42,9 @@ const flareConfig: NetworkConfig = {
 			address: '0x19831cfb53a0dbead9866c43557c1d48dff76567' as Hex,
 			underlyingAddress: '0x12e605bc104e93b45e1ad99f9e555f659051c2bb' as Hex, // sFlr
 			underlyingSymbol: 'sFLR',
-			receiptAddress: '0xd387fc43e19a63036d8fced559e81f5ddef7ef09' as Hex
+			receiptAddress: '0xd387fc43e19a63036d8fced559e81f5ddef7ef09' as Hex,
+			chainId: flare.id,
+			networkName: 'Flare'
 		},
 		{
 			name: 'cyWETH',
@@ -51,7 +53,9 @@ const flareConfig: NetworkConfig = {
 			address: '0xd8bf1d2720e9ffd01a2f9a2efc3e101a05b852b4' as Hex,
 			underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex, // weth
 			underlyingSymbol: 'WETH',
-			receiptAddress: '0xbe2615a0fcb54a49a1eb472be30d992599fe0968' as Hex
+			receiptAddress: '0xbe2615a0fcb54a49a1eb472be30d992599fe0968' as Hex,
+			chainId: flare.id,
+			networkName: 'Flare'
 		},
 		{
 			name: 'cyFXRP.ftso',
@@ -60,7 +64,9 @@ const flareConfig: NetworkConfig = {
 			address: '0xf23595ede14b54817397b1dab899ba061bdce7b5' as Hex,
 			underlyingAddress: '0xad552a648c74d49e10027ab8a618a3ad4901c5be' as Hex, // fxrp
 			underlyingSymbol: 'FXRP',
-			receiptAddress: '0xc46600cebd84ed2fe60ec525df13e341d24642f2' as Hex
+			receiptAddress: '0xc46600cebd84ed2fe60ec525df13e341d24642f2' as Hex,
+			chainId: flare.id,
+			networkName: 'Flare'
 		}
 	]
 };
@@ -86,7 +92,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x28C7747D7eA25ED3dDCd075c6CCC3634313a0F59' as Hex,
 			underlyingAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
 			underlyingSymbol: 'WETH',
-			receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319' as Hex
+			receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyWBTC.pyth',
@@ -95,7 +103,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x229917ac2842Eaab42060a1A9213CA78e01b572a' as Hex,
 			underlyingAddress: '0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f' as Hex,
 			underlyingSymbol: 'WBTC',
-			receiptAddress: '0x922A293D4d0af30D67A51e5510a487916a2bb494' as Hex
+			receiptAddress: '0x922A293D4d0af30D67A51e5510a487916a2bb494' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cycbBTC.pyth',
@@ -104,7 +114,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x9fC9dA918552df0DAd6C00051351e335656da100' as Hex,
 			underlyingAddress: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf' as Hex,
 			underlyingSymbol: 'cbBTC',
-			receiptAddress: '0x3a5eDe5AE4EC55F61c4aFf2CDfC920b5029Abf05' as Hex
+			receiptAddress: '0x3a5eDe5AE4EC55F61c4aFf2CDfC920b5029Abf05' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyLINK.pyth',
@@ -113,7 +125,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x715aa5f9A5b3C2b51c432C9028C8692029BCE609' as Hex,
 			underlyingAddress: '0xf97f4df75117a78c1A5a0DBb814Af92458539FB4' as Hex,
 			underlyingSymbol: 'LINK',
-			receiptAddress: '0xDF66e921C8C29e1b1CA729848790A4D0bd6cbde9' as Hex
+			receiptAddress: '0xDF66e921C8C29e1b1CA729848790A4D0bd6cbde9' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyDOT.pyth',
@@ -122,7 +136,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0xEE6a7019679f96CED1Ea861Aae0c88D4481c7226' as Hex,
 			underlyingAddress: '0x8d010bf9C26881788b4e6bf5Fd1bdC358c8F90b8' as Hex,
 			underlyingSymbol: 'DOT',
-			receiptAddress: '0x3B22b5cE7F9901fe6a676E57E079873775aAA331' as Hex
+			receiptAddress: '0x3B22b5cE7F9901fe6a676E57E079873775aAA331' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyUNI.pyth',
@@ -131,7 +147,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x7Cad3F864639738f9cC25952433cd844c07D16a4' as Hex,
 			underlyingAddress: '0xFa7F8980b0f1E64A2062791cc3b0871572f1F7f0' as Hex,
 			underlyingSymbol: 'UNI',
-			receiptAddress: '0xBF979c720c730738e25D766748F7063f223F1d27' as Hex
+			receiptAddress: '0xBF979c720c730738e25D766748F7063f223F1d27' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyPEPE.pyth',
@@ -140,7 +158,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x4DD4230F3B4d6118D905eD0B6f5f20A3b2472166' as Hex,
 			underlyingAddress: '0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00' as Hex,
 			underlyingSymbol: 'PEPE',
-			receiptAddress: '0xdb2C91313aAAaE40aedf6E91a1E78443241a64c0' as Hex
+			receiptAddress: '0xdb2C91313aAAaE40aedf6E91a1E78443241a64c0' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyENA.pyth',
@@ -149,7 +169,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x5D938CAf878BD56ACcF2B27Fad9F697aA206dF40' as Hex,
 			underlyingAddress: '0x58538e6A46E07434d7E7375Bc268D3cb839C0133' as Hex,
 			underlyingSymbol: 'ENA',
-			receiptAddress: '0x7426ddC75b522e40552ea24D647898fAcE0E2360' as Hex
+			receiptAddress: '0x7426ddC75b522e40552ea24D647898fAcE0E2360' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyARB.pyth',
@@ -158,7 +180,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0xc83563177290bdd391DB56553Ed828413b7689bc' as Hex,
 			underlyingAddress: '0x912CE59144191C1204E64559FE8253a0e49E6548' as Hex,
 			underlyingSymbol: 'ARB',
-			receiptAddress: '0x3fEe841c184dCF93f15CD28144b6E5514fFfC18e' as Hex
+			receiptAddress: '0x3fEe841c184dCF93f15CD28144b6E5514fFfC18e' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cywstETH.pyth',
@@ -167,7 +191,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0xC43ee790dc819dB728e2c5bB6285359BBdE7E016' as Hex,
 			underlyingAddress: '0x5979D7b546E38E414F7E9822514be443A4800529' as Hex,
 			underlyingSymbol: 'wstETH',
-			receiptAddress: '0x8C1843A9f3278C94f6d79cebA9828596F524E898' as Hex
+			receiptAddress: '0x8C1843A9f3278C94f6d79cebA9828596F524E898' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyXAUt0.pyth',
@@ -176,7 +202,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x6Ddc84F2FC195AE372501B01Bb1CA25CA3221776' as Hex,
 			underlyingAddress: '0x40461291347e1eCbb09499F3371D3f17f10d7159' as Hex,
 			underlyingSymbol: 'XAUt0',
-			receiptAddress: '0x45D63e1C4cb7201ed45d75Af771BCfA9116a99Be' as Hex
+			receiptAddress: '0x45D63e1C4cb7201ed45d75Af771BCfA9116a99Be' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		},
 		{
 			name: 'cyPYTH.pyth',
@@ -185,7 +213,9 @@ const arbitrumConfig: NetworkConfig = {
 			address: '0x87f7B55D7CCc9Be93B0a8aE601801d79FA96FD4f' as Hex,
 			underlyingAddress: '0xE4D5c6aE46ADFAF04313081e8C0052A30b6Dd724' as Hex,
 			underlyingSymbol: 'PYTH',
-			receiptAddress: '0x93AC50B43aFf21aDD1Ad2a626CF6E88C5e00ea39' as Hex
+			receiptAddress: '0x93AC50B43aFf21aDD1Ad2a626CF6E88C5e00ea39' as Hex,
+			chainId: arbitrum.id,
+			networkName: 'Arbitrum One'
 		}
 	]
 };
@@ -246,11 +276,23 @@ export const setActiveNetworkByChainId = (id: number) => {
 export const myReceipts = writable<Receipt[]>([]);
 
 // Selected cyToken - writable store that updates when network changes
-export const selectedCyToken = writable<CyToken>(flareConfig.tokens[0]);
+const initialTokens = get(tokens);
+export const selectedCyToken = writable<CyToken>(initialTokens[0]);
 
-// Update selectedCyToken when network changes
-activeNetworkConfig.subscribe((network) => {
-	selectedCyToken.set(network.tokens[0]);
+// Update selectedCyToken when network changes - only reset if current token isn't valid for new network
+tokens.subscribe((tokenList) => {
+	const current = get(selectedCyToken);
+	if (!tokenList.length) return;
+	const isCurrentInList = current
+		? tokenList.some(
+				(token) =>
+					token.address.toLowerCase() === current.address.toLowerCase() &&
+					token.chainId === current.chainId
+			)
+		: false;
+	if (!isCurrentInList) {
+		selectedCyToken.set(tokenList[0]);
+	}
 });
 
 /**

@@ -27,7 +27,6 @@ export const calculateApy = (rewardPool: bigint, totalEligible: bigint, price: b
 	return denominator > 0n ? numerator / denominator : 0n;
 };
 
-
 export async function fetchStats(): Promise<GlobalStats> {
 	const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
 	const response = await fetch(subgraphUrl, {

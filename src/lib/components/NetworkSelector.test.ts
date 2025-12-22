@@ -13,7 +13,8 @@ const { mockSelectedNetwork, mockSupportedNetworks, mockSwitchChain } = vi.hoist
 	const { writable } = require('svelte/store');
 	const { flare } = require('@wagmi/core/chains');
 
-	const mockSelectedNetwork = writable<NetworkConfig>({
+	const mockSelectedNetwork = writable({
+		key: 'flare',
 		chain: flare,
 		wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
 		quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
@@ -30,6 +31,7 @@ const { mockSelectedNetwork, mockSupportedNetworks, mockSwitchChain } = vi.hoist
 
 	const mockSupportedNetworks: NetworkConfig[] = [
 		{
+			key: 'flare',
 			chain: flare,
 			wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
 			quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
@@ -44,6 +46,7 @@ const { mockSelectedNetwork, mockSupportedNetworks, mockSwitchChain } = vi.hoist
 			tokens: []
 		},
 		{
+			key: 'test',
 			chain: { ...flare, id: 999, name: 'Test Network' },
 			wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
 			quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
@@ -226,4 +229,3 @@ describe('NetworkSelector', () => {
 		consoleErrorSpy.mockRestore();
 	});
 });
-

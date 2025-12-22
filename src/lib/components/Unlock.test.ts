@@ -49,7 +49,9 @@ const {
 		underlyingSymbol: 'sFLR',
 		receiptAddress: '0xeeff5678',
 		symbol: 'cysFLR',
-		decimals: 18
+		decimals: 18,
+		chainId: 14,
+		networkName: 'Flare'
 	};
 
 	const receipts: Receipt[] = [
@@ -86,7 +88,9 @@ const {
 			underlyingSymbol: 'WETH',
 			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex,
 			symbol: 'cyWETH',
-			decimals: 18
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare'
 		},
 		{
 			name: 'cyFXRP.ftso',
@@ -95,7 +99,9 @@ const {
 			underlyingSymbol: 'FXRP',
 			receiptAddress: '0xC46600cEbD84Ed2FE60Ec525dF13E341D24642f2' as Hex,
 			symbol: 'cyFXRP.ftso',
-			decimals: 6
+			decimals: 6,
+			chainId: 14,
+			networkName: 'Flare'
 		}
 	];
 
