@@ -37,6 +37,7 @@ export interface CyToken extends Token {
 	receiptAddress: Hex;
 	chainId: number;
 	networkName: string;
+	active: boolean;
 }
 
 export type InitiateLockTransactionArgs = {

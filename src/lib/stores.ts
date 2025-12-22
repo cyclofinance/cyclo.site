@@ -44,7 +44,8 @@ const flareConfig: NetworkConfig = {
 			underlyingSymbol: 'sFLR',
 			receiptAddress: '0xd387fc43e19a63036d8fced559e81f5ddef7ef09' as Hex,
 			chainId: flare.id,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		},
 		{
 			name: 'cyWETH',
@@ -55,7 +56,8 @@ const flareConfig: NetworkConfig = {
 			underlyingSymbol: 'WETH',
 			receiptAddress: '0xbe2615a0fcb54a49a1eb472be30d992599fe0968' as Hex,
 			chainId: flare.id,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		},
 		{
 			name: 'cyFXRP.ftso',
@@ -66,9 +68,10 @@ const flareConfig: NetworkConfig = {
 			underlyingSymbol: 'FXRP',
 			receiptAddress: '0xc46600cebd84ed2fe60ec525df13e341d24642f2' as Hex,
 			chainId: flare.id,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		}
-	]
+	].filter((token) => token.active)
 };
 
 const arbitrumConfig: NetworkConfig = {
@@ -94,7 +97,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'WETH',
 			receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyWBTC.pyth',
@@ -105,7 +109,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'WBTC',
 			receiptAddress: '0x922A293D4d0af30D67A51e5510a487916a2bb494' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cycbBTC.pyth',
@@ -116,7 +121,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'cbBTC',
 			receiptAddress: '0x3a5eDe5AE4EC55F61c4aFf2CDfC920b5029Abf05' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyLINK.pyth',
@@ -127,7 +133,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'LINK',
 			receiptAddress: '0xDF66e921C8C29e1b1CA729848790A4D0bd6cbde9' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyDOT.pyth',
@@ -138,7 +145,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'DOT',
 			receiptAddress: '0x3B22b5cE7F9901fe6a676E57E079873775aAA331' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyUNI.pyth',
@@ -149,7 +157,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'UNI',
 			receiptAddress: '0xBF979c720c730738e25D766748F7063f223F1d27' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyPEPE.pyth',
@@ -160,7 +169,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'PEPE',
 			receiptAddress: '0xdb2C91313aAAaE40aedf6E91a1E78443241a64c0' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyENA.pyth',
@@ -171,7 +181,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'ENA',
 			receiptAddress: '0x7426ddC75b522e40552ea24D647898fAcE0E2360' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyARB.pyth',
@@ -182,7 +193,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'ARB',
 			receiptAddress: '0x3fEe841c184dCF93f15CD28144b6E5514fFfC18e' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cywstETH.pyth',
@@ -193,7 +205,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'wstETH',
 			receiptAddress: '0x8C1843A9f3278C94f6d79cebA9828596F524E898' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyXAUt0.pyth',
@@ -204,7 +217,8 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'XAUt0',
 			receiptAddress: '0x45D63e1C4cb7201ed45d75Af771BCfA9116a99Be' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		},
 		{
 			name: 'cyPYTH.pyth',
@@ -215,9 +229,10 @@ const arbitrumConfig: NetworkConfig = {
 			underlyingSymbol: 'PYTH',
 			receiptAddress: '0x93AC50B43aFf21aDD1Ad2a626CF6E88C5e00ea39' as Hex,
 			chainId: arbitrum.id,
-			networkName: 'Arbitrum One'
+			networkName: 'Arbitrum One',
+			active: true
 		}
-	]
+	].filter((token) => token.active)
 };
 
 // Supported networks
