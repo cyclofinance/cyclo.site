@@ -86,4 +86,3 @@ export function aggregateTotalEligibleFromVaults(
 
 	return totals;
 }
-

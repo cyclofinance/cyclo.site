@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import NetworkSelector from './NetworkSelector.svelte';
-import { writable } from 'svelte/store';
 import type { NetworkConfig } from '$lib/stores';
 import { flare } from '@wagmi/core/chains';
 import type { Hex } from 'viem';
@@ -10,10 +9,12 @@ import type { Config } from '@wagmi/core';
 
 // Hoist mock stores before vi.mock calls
 const { mockSelectedNetwork, mockSupportedNetworks, mockSwitchChain } = vi.hoisted(() => {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { flare } = require('@wagmi/core/chains');
 
-	const mockSelectedNetwork = writable<NetworkConfig>({
+	const mockSelectedNetwork = writable({
 		chain: flare,
 		wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
 		quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
@@ -226,4 +227,3 @@ describe('NetworkSelector', () => {
 		consoleErrorSpy.mockRestore();
 	});
 });
-

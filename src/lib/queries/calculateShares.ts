@@ -13,7 +13,6 @@ type AccountWithVaults =
 	  >
 	| NonNullable<TopAccountsQuery['accountsByCyBalance']>[0];
 
-
 export const calculateShares = (
 	account: AccountWithVaults,
 	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']>,
