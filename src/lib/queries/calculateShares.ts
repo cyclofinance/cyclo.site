@@ -14,23 +14,63 @@ type AccountWithVaults =
 	| NonNullable<TopAccountsQuery['accountsByCyBalance']>[0];
 
 /**
- * Extract token balances and total eligible from vaultBalances
+ * Aggregate total eligible amounts from cycloVaults by token symbol
  */
-function extractVaultData(vaultBalances: AccountWithVaults['vaultBalances']): {
-	balances: Record<string, bigint>;
-	totals: Record<string, bigint>;
-} {
+function aggregateTotalEligibleFromVaults(
+	cycloVaults?: AccountStatusQuery['cycloVaults']
+): Record<string, bigint> {
+	const currentTokens = get(tokens);
+	const totals: Record<string, bigint> = {};
+
+	if (!cycloVaults) {
+		// Initialize with zeros for all tokens
+		for (const token of currentTokens) {
+			totals[token.symbol] = 0n;
+		}
+		return totals;
+	}
+
+	// Aggregate totals from cycloVaults by token symbol
+	for (const vault of cycloVaults) {
+		const vaultAddress = vault?.address;
+		const totalEligible = BigInt(vault?.totalEligible || '0');
+
+		if (!vaultAddress || totalEligible === 0n) continue;
+
+		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
+		if (token) {
+			if (!(token.symbol in totals)) {
+				totals[token.symbol] = 0n;
+			}
+			totals[token.symbol] += totalEligible;
+		}
+	}
+
+	// Ensure all tokens have entries (even if 0)
+	for (const token of currentTokens) {
+		if (!(token.symbol in totals)) {
+			totals[token.symbol] = 0n;
+		}
+	}
+
+	return totals;
+}
+
+/**
+ * Extract token balances from vaultBalances
+ */
+function extractBalances(
+	vaultBalances: AccountWithVaults['vaultBalances']
+): Record<string, bigint> {
 	const currentTokens = get(tokens);
 	const balances: Record<string, bigint> = {};
-	const totals: Record<string, bigint> = {};
 
 	if (!vaultBalances) {
 		// Initialize with zeros for all tokens
 		for (const token of currentTokens) {
 			balances[token.symbol] = 0n;
-			totals[token.symbol] = 0n;
 		}
-		return { balances, totals };
+		return balances;
 	}
 
 	for (const vaultBalance of vaultBalances) {
@@ -40,13 +80,7 @@ function extractVaultData(vaultBalances: AccountWithVaults['vaultBalances']): {
 		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
 		if (token) {
 			const balance = BigInt(vaultBalance.balance || '0');
-			// totalEligible may not be present in all query types (e.g., AccountStatusQuery)
-			// It's only present in TopAccountsQuery and StatsQuery, not AccountStatusQuery
-			const vault = vaultBalance.vault as { totalEligible?: string | null };
-			const totalEligible = BigInt(vault?.totalEligible || '0');
-
 			balances[token.symbol] = balance;
-			totals[token.symbol] = totalEligible;
 		}
 	}
 
@@ -55,17 +89,15 @@ function extractVaultData(vaultBalances: AccountWithVaults['vaultBalances']): {
 		if (!(token.symbol in balances)) {
 			balances[token.symbol] = 0n;
 		}
-		if (!(token.symbol in totals)) {
-			totals[token.symbol] = 0n;
-		}
 	}
 
-	return { balances, totals };
+	return balances;
 }
 
 export const calculateShares = (
 	account: AccountWithVaults,
-	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']>
+	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']>,
+	cycloVaults?: AccountStatusQuery['cycloVaults']
 ): Shares => {
 	const currentTokens = get(tokens);
 
@@ -82,8 +114,11 @@ export const calculateShares = (
 		return shares;
 	}
 
-	// Extract balances and totals from vaultBalances
-	const { balances, totals } = extractVaultData(account.vaultBalances);
+	// Extract account balances from vaultBalances
+	const balances = extractBalances(account.vaultBalances);
+
+	// Aggregate total eligible amounts from cycloVaults (same as fetchStats does)
+	const totals = aggregateTotalEligibleFromVaults(cycloVaults);
 
 	// Create eligibleTotals structure for calculateRewardsPools
 	const totalEligibleSum = Object.values(totals).reduce((sum, val) => sum + val, 0n);
@@ -106,7 +141,7 @@ export const calculateShares = (
 		const total = totals[token.symbol] || 0n;
 		const poolReward = rewardsPools[token.symbol] || 0n;
 
-		// Calculate percentage share
+		// Calculate percentage share (same logic as old code: balance / totalEligible)
 		shares[token.symbol].percentageShare =
 			balance > 0n && total > 0n ? (balance * ONE) / total : 0n;
 

@@ -3,6 +3,10 @@ query AccountStatus($account: ID!) {
 		id
 		totalEligibleSum
 	}
+	cycloVaults{
+		address
+		totalEligible    
+	}
 	account(id: $account) {
 		vaultBalances {
 			balance
