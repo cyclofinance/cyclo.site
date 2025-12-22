@@ -42,12 +42,10 @@
 
 	const checkBalance = () => {
 		if (amountToLock) {
-			const bigNumValue = BigInt(
-				parseUnits(amountToLock.toString(), $selectedCyToken.decimals).toString()
-			);
-			assets = bigNumValue;
+			assets = parseUnits(amountToLock.toString(), $selectedCyToken.decimals);
+
 			insufficientFunds =
-				($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance || 0n) < assets;
+				($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance ?? 0n) < assets;
 		}
 	};
 
