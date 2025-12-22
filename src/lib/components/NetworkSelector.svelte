@@ -6,6 +6,9 @@
 	const handleChange = async (event: Event) => {
 		const target = event.target as HTMLSelectElement;
 		const networkKey = target.value;
+
+		if (networkKey === $activeNetworkKey) return;
+
 		const selectedNetwork = availableNetworks.find((network) => network.key === networkKey);
 
 		setActiveNetwork(networkKey);
@@ -32,9 +35,7 @@
 		data-testid="network-switcher"
 	>
 		{#each availableNetworks as network}
-			<option value={network.key} class="text-black">
-				{network.chain.name}
-			</option>
+			<option value={network.key} class="text-black">{network.chain.name}</option>
 		{/each}
 	</select>
 </label>

@@ -19,7 +19,6 @@ import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from '$lib/types';
 import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 import balancesStore from './balancesStore';
-import { arbitrum } from '@wagmi/core/chains';
 import { fetchUpdateBlobs, extractParsedTimes, extractPublishTime } from './pyth';
 
 vi.mock('$lib/queries/getReceipts', () => ({
