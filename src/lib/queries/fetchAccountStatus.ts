@@ -58,7 +58,7 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 	const eligibleTotals = data.eligibleTotals;
 	if (!eligibleTotals) throw 'No eligible totals';
 
-	const shares = calculateShares(accountData, eligibleTotals);
+	const shares = calculateShares(accountData, eligibleTotals, data.cycloVaults);
 	const balances = extractBalancesFromVaults(accountData.vaultBalances);
 
 	return {

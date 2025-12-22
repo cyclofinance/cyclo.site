@@ -54,7 +54,7 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	}
 
 	const accountsWithShares = (data.accountsByCyBalance ?? []).map((account) => {
-		const shares = calculateShares(account, eligibleTotals);
+		const shares = calculateShares(account, eligibleTotals, data.cycloVaults);
 		const balances = extractBalancesFromVaults(account.vaultBalances);
 		return {
 			account: account.id,
