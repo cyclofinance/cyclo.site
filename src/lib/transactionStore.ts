@@ -9,7 +9,7 @@ import {
 	writeErc20PriceOracleReceiptVaultRedeem
 } from '../generated';
 import balancesStore from './balancesStore';
-import { myReceipts } from './stores';
+import { myReceipts, selectedNetwork } from './stores';
 import { refreshAllReceipts } from './queries/refreshAllReceipts';
 import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from './types';
@@ -138,7 +138,7 @@ const transactionStore = () => {
 			// UPDATE BALANCES AND RECEIPTS
 			try {
 				await balancesStore.refreshBalances(config, signerAddress as Hex);
-				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}
@@ -221,7 +221,7 @@ const transactionStore = () => {
 			// UPDATE BALANCES AND RECEIPTS
 			try {
 				await balancesStore.refreshBalances(config, signerAddress as Hex);
-				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex, config);
+				const getReceiptsResult = await refreshAllReceipts(signerAddress as Hex);
 				if (getReceiptsResult) {
 					myReceipts.set(getReceiptsResult);
 				}
@@ -259,11 +259,9 @@ const transactionStore = () => {
 		});
 
 		// Poll for the order to be added to the orderbook
+		const orderbookSubgraphUrl = get(selectedNetwork).orderbookSubgraphUrl;
 		const interval = setInterval(async () => {
-			const orders = await getTransactionAddOrders(
-				'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
-				hash
-			);
+			const orders = await getTransactionAddOrders(orderbookSubgraphUrl, hash);
 			if (orders.length > 0) {
 				clearInterval(interval);
 				const orderHash = orders[0].order.orderHash;

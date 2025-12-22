@@ -4,6 +4,7 @@ import { formatEther } from 'ethers';
 import { readErc1155BalanceOf } from '../../generated';
 import type { Config } from '@wagmi/core';
 import type { Hex } from 'viem';
+import type { NetworkConfig } from '$lib/stores';
 
 interface PaginationParams {
 	items_count?: number;
@@ -16,6 +17,7 @@ export const getSingleTokenReceipts = async (
 	address: string,
 	erc1155Address: string,
 	config: Config,
+	networkConfig: NetworkConfig,
 	onProgress?: (page: number, totalItems: number) => void
 ) => {
 	const getBalance = async (tokenId: bigint) => {
@@ -29,7 +31,7 @@ export const getSingleTokenReceipts = async (
 	const fetchPage = async (
 		paginationParams?: PaginationParams
 	): Promise<{ items: Receipt[]; nextPageParams?: PaginationParams }> => {
-		let query: string = `https://flare-explorer.flare.network/api/v2/addresses/${address}/nft?type=ERC-1155`;
+		let query: string = `${networkConfig.explorerApiUrl}/v2/addresses/${address}/nft?type=ERC-1155`;
 
 		// Add pagination parameters if provided
 		if (paginationParams) {
