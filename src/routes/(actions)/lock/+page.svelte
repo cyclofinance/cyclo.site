@@ -6,4 +6,3 @@
 {#key $activeNetworkKey}
 	<Lock />
 {/key}
-

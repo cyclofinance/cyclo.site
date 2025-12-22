@@ -5,7 +5,7 @@ import { mockWeb3Config } from '$lib/mocks/mockWagmiConfig';
 
 const { mockActiveNetworkKey, mockSupportedNetworks, mockSwitchNetwork } = vi.hoisted(() => {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
-	const { writable, get } = require('svelte/store');
+	const { writable } = require('svelte/store');
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { flare } = require('@wagmi/core/chains');
 
@@ -98,101 +98,98 @@ describe('NetworkSelector', () => {
 	});
 	it('trims option labels (DOM whitespace safe)', () => {
 		render(NetworkSelector);
-	  
+
 		const selector = screen.getByTestId('network-switcher') as HTMLSelectElement;
 		const options = Array.from(selector.options);
-	  
+
 		expect(options[0].textContent?.trim()).toBe(mockSupportedNetworks[0].chain.name);
 		expect(options[1].textContent?.trim()).toBe(mockSupportedNetworks[1].chain.name);
-	  });
-	  
-	  it('calls setActiveNetwork for any change (even if wagmiConfig is null)', async () => {
-		// @ts-expect-error
+	});
+
+	it('calls setActiveNetwork for any change (even if wagmiConfig is null)', async () => {
+		// @ts-expect-error - mockSetSubscribeValue expects a Config object, but we're passing null
 		mockWagmiConfigStore.mockSetSubscribeValue(null);
-	  
+
 		render(NetworkSelector);
-	  
+
 		const selector = screen.getByTestId('network-switcher') as HTMLSelectElement;
 		const setSpy = vi.spyOn(mockActiveNetworkKey, 'set');
-	  
+
 		await fireEvent.change(selector, { target: { value: 'test' } });
-	  
+
 		expect(setSpy).toHaveBeenCalledWith('test');
-	  });
-	  
-	  it('does not call switchNetwork if selected key is not in availableNetworks', async () => {
+	});
+
+	it('does not call switchNetwork if selected key is not in availableNetworks', async () => {
 		mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
-	  
+
 		render(NetworkSelector);
-	  
+
 		const selector = screen.getByTestId('network-switcher') as HTMLSelectElement;
-	  
+
 		// Force an invalid value (not a real user interaction, but edge-case)
 		await fireEvent.change(selector, { target: { value: 'unknown' } });
-	  
+
 		// Should NOT call switchNetwork (since selectedNetwork lookup fails)
 		expect(mockSwitchNetwork).not.toHaveBeenCalled();
-	  
+
 		// Your mocked setActiveNetwork only sets if key exists → store stays 'flare'
 		expect(selector.value).toBe(''); // DOM behavior for invalid selection in jsdom
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		const { get } = require('svelte/store');
 		expect(get(mockActiveNetworkKey)).toBe('flare');
-	  });
-	  
-	  
-	  it('updates the select value if activeNetworkKey changes externally', async () => {
+	});
+
+	it('updates the select value if activeNetworkKey changes externally', async () => {
 		render(NetworkSelector);
-	  
+
 		const selector = screen.getByTestId('network-switcher') as HTMLSelectElement;
 		expect(selector.value).toBe('flare');
-	  
+
 		mockActiveNetworkKey.set('test');
-	  
+
 		// let Svelte flush
 		await new Promise((r) => setTimeout(r, 0));
-	  
+
 		expect(selector.value).toBe('test');
-	  });
-	  
-	  it('calls switchNetwork with the right arguments exactly once per change', async () => {
+	});
+
+	it('calls switchNetwork with the right arguments exactly once per change', async () => {
 		mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
-	  
+
 		render(NetworkSelector);
-	  
+
 		const selector = screen.getByTestId('network-switcher') as HTMLSelectElement;
-	  
+
 		await fireEvent.change(selector, { target: { value: 'test' } });
-	  
+
 		expect(mockSwitchNetwork).toHaveBeenCalledTimes(1);
 		expect(mockSwitchNetwork).toHaveBeenCalledWith(mockWeb3Config, { chainId: 999 });
-	  });
-	  
-	  it('switches wallet network after updating the store (order check)', async () => {
+	});
+
+	it('switches wallet network after updating the store (order check)', async () => {
 		mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
-	  
+
 		// capture call order
 		const calls: string[] = [];
 		const originalSet = mockActiveNetworkKey.set.bind(mockActiveNetworkKey);
-	  
-		vi.spyOn(mockActiveNetworkKey, 'set').mockImplementation((v: string) => {
-		  calls.push(`set:${v}`);
-		  originalSet(v);
+
+		vi.spyOn(mockActiveNetworkKey, 'set').mockImplementation((v: unknown) => {
+			calls.push(`set:${v}`);
+			originalSet(v as string);
 		});
-	  
+
 		mockSwitchNetwork.mockImplementation(async () => {
-		  calls.push('switchNetwork');
+			calls.push('switchNetwork');
 		});
-	  
+
 		render(NetworkSelector);
-	  
+
 		const selector = screen.getByTestId('network-switcher') as HTMLSelectElement;
 		await fireEvent.change(selector, { target: { value: 'test' } });
-	  
+
 		expect(calls[0]).toBe('set:test');
 		expect(calls).toContain('switchNetwork');
 		expect(calls.indexOf('set:test')).toBeLessThan(calls.indexOf('switchNetwork'));
-	  });
-	
-	  
+	});
 });
