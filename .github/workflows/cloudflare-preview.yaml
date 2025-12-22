@@ -43,6 +43,7 @@ jobs:
           BASE_PATH: '/${{ github.event.repository.name }}'
           PUBLIC_WALLETCONNECT_ID: ${{ secrets.PUBLIC_WALLETCONNECT_ID }}
           PUBLIC_LAUNCHED: ${{ vars.PUBLIC_LAUNCHED }}
+          PUBLIC_ETHERSCAN_API_KEY: ${{ secrets.PUBLIC_ETHERSCAN_API_KEY }}
 
       - name: Publish
         uses: cloudflare/pages-action@v1

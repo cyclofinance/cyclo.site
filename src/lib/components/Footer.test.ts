@@ -4,10 +4,16 @@ import { describe, it, vi, expect, beforeEach } from 'vitest';
 
 const { mockBalancesStore } = await vi.hoisted(() => import('$lib/mocks/mockStores'));
 
-vi.mock('ethers', async () => {
+vi.mock('ethers', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('ethers')>();
 	return {
-		formatEther: vi.fn().mockImplementation((value) => value.toString()),
-		formatUnits: vi.fn().mockImplementation((value) => value.toString())
+		...actual,
+		ethers: {
+			...actual.ethers,
+			ZeroAddress: '0x0000000000000000000000000000000000000000'
+		},
+		formatEther: vi.fn().mockImplementation((value: bigint) => value.toString()),
+		formatUnits: vi.fn().mockImplementation((value: bigint) => value.toString())
 	};
 });
 

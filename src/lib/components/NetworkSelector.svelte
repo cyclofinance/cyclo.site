@@ -1,42 +1,41 @@
 <script lang="ts">
-	import { selectedNetwork, supportedNetworks } from '$lib/stores';
+	import { availableNetworks, activeNetworkKey, setActiveNetwork } from '$lib/stores';
+	import { switchNetwork } from '@wagmi/core';
 	import { wagmiConfig } from 'svelte-wagmi';
-	import { switchChain } from '@wagmi/core';
 
-	function handleNetworkChange(networkConfig: (typeof supportedNetworks)[0]) {
-		if ($selectedNetwork.chain.id === networkConfig.chain.id) {
-			return;
-		}
+	const handleChange = async (event: Event) => {
+		const target = event.target as HTMLSelectElement;
+		const networkKey = target.value;
 
-		selectedNetwork.set(networkConfig);
+		if (networkKey === $activeNetworkKey) return;
 
-		// Try to switch chain if wallet is connected and wagmi config is available
-		if ($wagmiConfig) {
+		const selectedNetwork = availableNetworks.find((network) => network.key === networkKey);
+
+		setActiveNetwork(networkKey);
+
+		if (selectedNetwork) {
 			try {
-				switchChain($wagmiConfig, { chainId: networkConfig.chain.id }).catch((error) => {
-					console.error('Failed to switch chain:', error);
-					// User might have rejected the switch, but we still update the selected network
-				});
+				const config = $wagmiConfig;
+				if (config) {
+					await switchNetwork(config, { chainId: selectedNetwork.chain.id });
+				}
 			} catch (error) {
-				console.error('Error switching chain:', error);
+				console.warn(`Failed to switch wallet network to ${selectedNetwork.key}:`, error);
 			}
 		}
-	}
+	};
 </script>
 
-<select
-	class="cursor-pointer rounded border border-white bg-transparent px-2 py-1 text-sm text-white"
-	value={$selectedNetwork.chain.id}
-	on:change={(e) => {
-		const selectedId = Number(e.currentTarget.value);
-		const network = supportedNetworks.find((n) => n.chain.id === selectedId);
-		if (network) {
-			handleNetworkChange(network);
-		}
-	}}
-	data-testid="network-selector"
->
-	{#each supportedNetworks as network}
-		<option value={network.chain.id}>{network.chain.name}</option>
-	{/each}
-</select>
+<label class="flex items-center gap-2 text-xs font-semibold text-white sm:text-sm">
+	<span class="hidden sm:inline">Network</span>
+	<select
+		class="rounded border border-white/40 bg-[#1C02B8] px-2 py-1 text-white focus:border-white focus:outline-none"
+		value={$activeNetworkKey}
+		on:change={handleChange}
+		data-testid="network-switcher"
+	>
+		{#each availableNetworks as network}
+			<option value={network.key} class="text-black">{network.chain.name}</option>
+		{/each}
+	</select>
+</label>

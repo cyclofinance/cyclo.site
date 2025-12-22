@@ -34,11 +34,16 @@ vi.mock('@rainlanguage/orderbook/js_api', () => ({
 const { mockSelectedNetworkStore, MOCKED_ORDERBOOK_SUBGRAPH_URL } = vi.hoisted(() => {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const { flare } = require('@wagmi/core/chains');
 	const MOCKED_ORDERBOOK_SUBGRAPH_URL =
 		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn';
-	const mockSelectedNetworkWritable = writable({
+	const mockNetworkConfig = {
+		key: 'flare',
+		chain: flare,
 		orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL
-	});
+	};
+	const mockSelectedNetworkWritable = writable(mockNetworkConfig);
 	const mockSelectedNetworkStore = {
 		subscribe: mockSelectedNetworkWritable.subscribe,
 		set: mockSelectedNetworkWritable.set
@@ -53,12 +58,18 @@ vi.mock('./stores', () => ({
 
 vi.mock('svelte/store', async () => {
 	const actual = await vi.importActual('svelte/store');
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const { flare } = require('@wagmi/core/chains');
 	return {
 		...actual,
 		get: vi.fn().mockImplementation((store) => {
 			if (store === transactionStore) return transactionStore;
 			if (store === mockSelectedNetworkStore) {
-				return { orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL };
+				return {
+					key: 'flare',
+					chain: flare,
+					orderbookSubgraphUrl: MOCKED_ORDERBOOK_SUBGRAPH_URL
+				};
 			}
 			return mockWagmiConfigStore;
 		})
@@ -98,7 +109,11 @@ describe('transactionStore.handleDeployDca', () => {
 			decimals: 18
 		},
 		selectedAmount: BigInt(1000000000000000000), // 1 TEST
-		selectedBaseline: '1.5'
+		selectedBaseline: '1.5',
+		inputVaultId: undefined,
+		outputVaultId: undefined,
+		depositAmount: BigInt(1000000000000000000),
+		selectedNetworkKey: 'flare'
 	};
 
 	const mockDataFetcher = new DataFetcher(flare.id);
