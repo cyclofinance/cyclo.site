@@ -117,7 +117,8 @@ describe('transactionStore', () => {
 		symbol: 'cysFLR',
 		decimals: 18,
 		chainId: 14,
-		networkName: 'Flare'
+		networkName: 'Flare',
+		active: true
 	};
 	const mockTokenId = '1';
 	const mockAssets = BigInt(1000);

@@ -23,7 +23,8 @@ const mockTokens: CyToken[] = [
 		underlyingSymbol: 'sFLR',
 		receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,
 		chainId: 14,
-		networkName: 'Flare'
+		networkName: 'Flare',
+		active: true
 	},
 	{
 		name: 'cyWETH',
@@ -34,7 +35,8 @@ const mockTokens: CyToken[] = [
 		underlyingSymbol: 'WETH',
 		receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex,
 		chainId: 14,
-		networkName: 'Flare'
+		networkName: 'Flare',
+		active: true
 	}
 ];
 

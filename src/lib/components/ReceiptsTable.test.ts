@@ -17,7 +17,8 @@ describe('ReceiptsTable Component', () => {
 		symbol: 'cysFLR',
 		decimals: 18,
 		chainId: 14,
-		networkName: 'Flare'
+		networkName: 'Flare',
+		active: true
 	};
 
 	it('renders the receipts table with correct headers and data', async () => {

@@ -34,7 +34,8 @@ describe('ReceiptModal Component', () => {
 		symbol: 'cysFLR',
 		decimals: 18,
 		chainId: 14,
-		networkName: 'Flare'
+		networkName: 'Flare',
+		active: true
 	};
 
 	beforeEach(() => {

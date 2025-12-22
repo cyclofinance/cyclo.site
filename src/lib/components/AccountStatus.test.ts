@@ -21,7 +21,8 @@ const { mockTokensStore, mockSelectedNetworkStore } = vi.hoisted(() => {
 			symbol: 'cysFLR',
 			decimals: 18,
 			chainId: 14,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		},
 		{
 			name: 'cyWETH',
@@ -32,7 +33,8 @@ const { mockTokensStore, mockSelectedNetworkStore } = vi.hoisted(() => {
 			symbol: 'cyWETH',
 			decimals: 18,
 			chainId: 14,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		}
 	];
 	return {

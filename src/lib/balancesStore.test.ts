@@ -123,7 +123,8 @@ describe('balancesStore', () => {
 			symbol: 'cysFLR',
 			decimals: 18,
 			chainId: 14,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		};
 
 		await refreshPrices(mockWagmiConfigStore as unknown as Config, mockToken);

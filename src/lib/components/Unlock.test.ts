@@ -51,7 +51,8 @@ const {
 		symbol: 'cysFLR',
 		decimals: 18,
 		chainId: 14,
-		networkName: 'Flare'
+		networkName: 'Flare',
+		active: true
 	};
 
 	const receipts: Receipt[] = [
@@ -90,7 +91,8 @@ const {
 			symbol: 'cyWETH',
 			decimals: 18,
 			chainId: 14,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		},
 		{
 			name: 'cyFXRP.ftso',
@@ -101,7 +103,8 @@ const {
 			symbol: 'cyFXRP.ftso',
 			decimals: 6,
 			chainId: 14,
-			networkName: 'Flare'
+			networkName: 'Flare',
+			active: true
 		}
 	];
 
