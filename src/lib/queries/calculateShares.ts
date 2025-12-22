@@ -2,9 +2,9 @@ import { ONE } from '$lib/constants';
 import type { Shares } from '$lib/types';
 import type { AccountStatusQuery, TopAccountsQuery } from '../../generated-graphql';
 import { calculateRewardsPools } from './calculateRewardsPools';
+import { aggregateTotalEligibleFromVaults, extractBalancesFromVaults } from './vaultUtils';
 import { get } from 'svelte/store';
 import { tokens } from '$lib/stores';
-import { isAddressEqual } from 'viem';
 
 type AccountWithVaults =
 	| Omit<
@@ -13,86 +13,6 @@ type AccountWithVaults =
 	  >
 	| NonNullable<TopAccountsQuery['accountsByCyBalance']>[0];
 
-/**
- * Aggregate total eligible amounts from cycloVaults by token symbol
- */
-function aggregateTotalEligibleFromVaults(
-	cycloVaults?: AccountStatusQuery['cycloVaults']
-): Record<string, bigint> {
-	const currentTokens = get(tokens);
-	const totals: Record<string, bigint> = {};
-
-	if (!cycloVaults) {
-		// Initialize with zeros for all tokens
-		for (const token of currentTokens) {
-			totals[token.symbol] = 0n;
-		}
-		return totals;
-	}
-
-	// Aggregate totals from cycloVaults by token symbol
-	for (const vault of cycloVaults) {
-		const vaultAddress = vault?.address;
-		const totalEligible = BigInt(vault?.totalEligible || '0');
-
-		if (!vaultAddress || totalEligible === 0n) continue;
-
-		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
-		if (token) {
-			if (!(token.symbol in totals)) {
-				totals[token.symbol] = 0n;
-			}
-			totals[token.symbol] += totalEligible;
-		}
-	}
-
-	// Ensure all tokens have entries (even if 0)
-	for (const token of currentTokens) {
-		if (!(token.symbol in totals)) {
-			totals[token.symbol] = 0n;
-		}
-	}
-
-	return totals;
-}
-
-/**
- * Extract token balances from vaultBalances
- */
-function extractBalances(
-	vaultBalances: AccountWithVaults['vaultBalances']
-): Record<string, bigint> {
-	const currentTokens = get(tokens);
-	const balances: Record<string, bigint> = {};
-
-	if (!vaultBalances) {
-		// Initialize with zeros for all tokens
-		for (const token of currentTokens) {
-			balances[token.symbol] = 0n;
-		}
-		return balances;
-	}
-
-	for (const vaultBalance of vaultBalances) {
-		const vaultAddress = vaultBalance.vault?.address;
-		if (!vaultAddress) continue;
-
-		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
-		if (token) {
-			const balance = BigInt(vaultBalance.balance || '0');
-			balances[token.symbol] = balance;
-		}
-	}
-
-	// Ensure all tokens have entries (even if 0)
-	for (const token of currentTokens) {
-		if (!(token.symbol in balances)) {
-			balances[token.symbol] = 0n;
-		}
-	}
-
-	return balances;
-}
 
 export const calculateShares = (
 	account: AccountWithVaults,
@@ -115,9 +35,9 @@ export const calculateShares = (
 	}
 
 	// Extract account balances from vaultBalances
-	const balances = extractBalances(account.vaultBalances);
+	const balances = extractBalancesFromVaults(account.vaultBalances);
 
-	// Aggregate total eligible amounts from cycloVaults (same as fetchStats does)
+	// Aggregate total eligible amounts from cycloVaults
 	const totals = aggregateTotalEligibleFromVaults(cycloVaults);
 
 	// Create eligibleTotals structure for calculateRewardsPools
