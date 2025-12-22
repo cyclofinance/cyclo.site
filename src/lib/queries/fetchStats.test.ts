@@ -96,21 +96,18 @@ describe('fetchStats', () => {
 					id: 'SINGLETON',
 					totalEligibleSum: totalEligibleSum.toString()
 				},
+				cycloVaults: [
+					{
+						address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR
+						totalEligible: totalEligibleCysFLR.toString()
+					},
+					{
+						address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH
+						totalEligible: totalEligibleCyWETH.toString()
+					}
+				],
 				accounts: Array(96).fill({
-					vaultBalances: [
-						{
-							vault: {
-								address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR
-								totalEligible: '20000000000000000000' // totalEligibleCysFLR / 96
-							}
-						},
-						{
-							vault: {
-								address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH
-								totalEligible: '10000000000000000000' // totalEligibleCyWETH / 96
-							}
-						}
-					]
+					id: '0x1234567890abcdef'
 				})
 			}
 		};

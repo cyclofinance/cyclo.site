@@ -64,13 +64,24 @@ const eligibleTotals = {
 	totalEligibleSum: (ONE + ONE * 2n).toString()
 } as NonNullable<AccountStatusQuery['eligibleTotals']> & Record<string, string | undefined>;
 
+const cycloVaults = [
+	{
+		address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR address
+		totalEligible: (ONE * 2n).toString() // total eligible for cysFLR
+	},
+	{
+		address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH address
+		totalEligible: ONE.toString() // total eligible for cyWETH
+	}
+] as AccountStatusQuery['cycloVaults'];
+
 describe('calculateShares', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it('calculates the right shares', () => {
-		const shares = calculateShares(account, eligibleTotals);
+		const shares = calculateShares(account, eligibleTotals, cycloVaults);
 
 		// this account has 50% of the cysFLR and 50% of the cyWETH
 		expect(shares.cysFLR.percentageShare).toBe(ONE / 2n);
