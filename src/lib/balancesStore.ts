@@ -1,4 +1,4 @@
-import { getBlock, type Config } from '@wagmi/core';
+import { type Config } from '@wagmi/core';
 import {
 	readErc20BalanceOf,
 	readErc20TotalSupply,
@@ -10,7 +10,7 @@ import { get, writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import { ZeroAddress } from 'ethers';
 import type { CyToken } from './types';
-import { supportedNetworks, tokens, type NetworkConfig } from './stores';
+import { supportedNetworks, tokens, quoterAddress, type NetworkConfig } from './stores';
 import blockNumberStore from './blockNumberStore';
 
 interface StatsState {
@@ -37,8 +37,7 @@ interface StatsState {
 	};
 }
 
-const getAllTokensAcrossNetworks = () =>
-	supportedNetworks.flatMap((network) => network.tokens);
+const getAllTokensAcrossNetworks = () => supportedNetworks.flatMap((network) => network.tokens);
 
 // Helper function to create initial state from tokens
 const createInitialState = (tokens: CyToken[]): StatsState => {

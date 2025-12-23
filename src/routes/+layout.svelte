@@ -7,7 +7,7 @@
 	import { browser } from '$app/environment';
 	import { PUBLIC_LAUNCHED } from '$env/static/public';
 	import { setActiveNetworkByChainId, supportedNetworks } from '$lib/stores';
-	import { cusdxAddress, quoterAddress, selectedCyToken } from '$lib/stores';
+	import { selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
 	import { onDestroy } from 'svelte';

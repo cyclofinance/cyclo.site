@@ -61,7 +61,7 @@
 					</div>
 
 					{#each network.tokens as token (token.name)}
-						<div class="flex flex-col gap-2 border border-white/10 bg-white/5 px-3 py-2 rounded-lg">
+						<div class="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
 							<div class="font-bold">
 								{token.symbol}
 								<span class="text-xs font-normal text-white/70">({token.networkName})</span>
@@ -94,9 +94,7 @@
 									<span>Total {token.symbol} supply</span>
 									<span>
 										{formatNumberWithAbbreviations(
-											Number(
-												formatUnits($balancesStore.stats[token.name].supply, token.decimals)
-											)
+											Number(formatUnits($balancesStore.stats[token.name].supply, token.decimals))
 										)}
 									</span>
 								</div>
@@ -118,7 +116,10 @@
 								</span>
 							</div>
 							{#if $balancesStore.stats[token.name]?.underlyingTvl}
-								<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="tvl">
+								<div
+									class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
+									data-testId="tvl"
+								>
 									<span>Total Value Locked</span>
 									<span>
 										{Number(

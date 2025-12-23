@@ -6,7 +6,13 @@
 	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
-	import { selectedCyToken, tokens, selectedNetwork, isFlareNetwork, setActiveNetwork } from '$lib/stores';
+	import {
+		selectedCyToken,
+		tokens,
+		selectedNetwork,
+		isFlareNetwork,
+		setActiveNetwork
+	} from '$lib/stores';
 	import { switchNetwork } from '@wagmi/core';
 	import { flare } from '@wagmi/core/chains';
 

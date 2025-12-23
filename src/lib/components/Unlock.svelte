@@ -7,7 +7,13 @@
 	import Button from '$lib/components/Button.svelte';
 	import balancesStore from '$lib/balancesStore';
 	import { fade } from 'svelte/transition';
-	import { selectedCyToken, allTokens, selectedNetwork, setActiveNetworkByChainId, myReceipts } from '$lib/stores';
+	import {
+		selectedCyToken,
+		allTokens,
+		selectedNetwork,
+		setActiveNetworkByChainId,
+		myReceipts
+	} from '$lib/stores';
 	import Select from '$lib/components/Select.svelte';
 	import { switchNetwork } from '@wagmi/core';
 
@@ -133,14 +139,19 @@
 	</Button>
 {:else}
 	<Card size="lg">
-		<div class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row sm:text-xl md:text-xl">
+		<div
+			class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row sm:text-xl md:text-xl"
+		>
 			<span>BALANCES</span>
 			<div class="flex flex-col gap-4 sm:items-end">
 				{#each $allTokens as token}
 					<div class="flex flex-row gap-2" data-testid="{token.symbol.toLowerCase()}-balance">
 						{#key $balancesStore.balances[token.name]?.signerBalance}
 							<span in:fade={{ duration: 700 }}>
-								{formatUnits($balancesStore.balances[token.name]?.signerBalance || 0n, token.decimals)}
+								{formatUnits(
+									$balancesStore.balances[token.name]?.signerBalance || 0n,
+									token.decimals
+								)}
 							</span>
 						{/key}
 						<span>{token.symbol}</span>
@@ -150,7 +161,9 @@
 		</div>
 	</Card>
 	<Card size="lg">
-		<div class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl">
+		<div
+			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
+		>
 			<span>SELECT TOKEN</span>
 			<Select
 				options={$allTokens}
@@ -161,7 +174,9 @@
 	</Card>
 
 	{#if loading}
-		<div class="flex w-full flex-col items-center justify-center text-center text-lg font-semibold text-white md:text-xl">
+		<div
+			class="flex w-full flex-col items-center justify-center text-center text-lg font-semibold text-white md:text-xl"
+		>
 			<div>LOADING...</div>
 			{#if progressMessage}
 				<div class="mt-2 text-sm text-gray-300">{progressMessage}</div>
@@ -171,7 +186,9 @@
 		<!-- NOTE: $myReceipts now contains ONLY selected token receipts -->
 		<ReceiptsTable token={$selectedCyToken} receipts={$myReceipts} />
 	{:else}
-		<div class="flex w-full items-center justify-center text-center text-lg font-semibold text-white md:text-xl">
+		<div
+			class="flex w-full items-center justify-center text-center text-lg font-semibold text-white md:text-xl"
+		>
 			NO {$selectedCyToken.name} RECEIPTS FOUND...
 		</div>
 	{/if}

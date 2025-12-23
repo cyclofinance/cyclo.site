@@ -37,8 +37,7 @@
 		[arbitrum.id]: 'arbitrum'
 	};
 
-	const getDexSlug = (chain: Chain) =>
-		dexSlugByChainId[chain.id] || getDexScreenerChainName(chain);
+	const getDexSlug = (chain: Chain) => dexSlugByChainId[chain.id] || getDexScreenerChainName(chain);
 
 	let chartUrl = '';
 	let isLoading = false;
@@ -63,11 +62,10 @@
 		const dexScreenerChain = getDexSlug(networkForToken.chain);
 		const networkConfigs = chartConfigs[dexScreenerChain] || {};
 		// Use explicit config if present; otherwise fallback to token's own address
-		const chartConfig =
-			networkConfigs[$selectedCyToken.symbol as keyof typeof networkConfigs] || {
-				address: $selectedCyToken.address,
-				name: $selectedCyToken.symbol
-			};
+		const chartConfig = networkConfigs[$selectedCyToken.symbol as keyof typeof networkConfigs] || {
+			address: $selectedCyToken.address,
+			name: $selectedCyToken.symbol
+		};
 
 		if (chartConfig && chartConfig.address) {
 			isLoading = true;

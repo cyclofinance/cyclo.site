@@ -51,7 +51,9 @@ export const refreshReceiptsForToken = async (
 		while (hasMore) {
 			pageCount += 1;
 			if (pageCount > MAX_PAGES) {
-				console.warn(`refreshReceiptsForToken: hit MAX_PAGES (${MAX_PAGES}), stopping to avoid runaway loop.`);
+				console.warn(
+					`refreshReceiptsForToken: hit MAX_PAGES (${MAX_PAGES}), stopping to avoid runaway loop.`
+				);
 				break;
 			}
 

@@ -4,7 +4,13 @@
 	import { RefreshOutline } from 'flowbite-svelte-icons';
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
-	import { cusdxAddress, selectedCyToken, allTokens, setActiveNetworkByChainId, selectedNetwork } from '$lib/stores';
+	import {
+		cusdxAddress,
+		selectedCyToken,
+		allTokens,
+		setActiveNetworkByChainId,
+		selectedNetwork
+	} from '$lib/stores';
 	import { base } from '$app/paths';
 	import mintDia from '$lib/images/mint-dia.svg';
 	import mintMobile from '$lib/images/mint-mobile.svg';
