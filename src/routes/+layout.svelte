@@ -34,7 +34,7 @@
 	const getPricesAndBalances = () => {
 		blockNumberStore.refresh($wagmiConfig);
 		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
-		balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
+		balancesStore.refreshFooterStats($wagmiConfig);
 		if ($signerAddress) {
 			balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 		}
@@ -54,7 +54,7 @@
 	}
 
 	const startGettingPricesAndBalances = () => {
-		intervalId = setInterval(getPricesAndBalances, 3000);
+		intervalId = setInterval(getPricesAndBalances, 10000);
 	};
 
 	function stopGettingPriceRatio() {

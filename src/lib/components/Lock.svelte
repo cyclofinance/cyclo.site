@@ -4,7 +4,7 @@
 	import { RefreshOutline } from 'flowbite-svelte-icons';
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
-	import { cusdxAddress, selectedCyToken } from '$lib/stores';
+	import { cusdxAddress, selectedCyToken, allTokens, setActiveNetworkByChainId, selectedNetwork } from '$lib/stores';
 	import { base } from '$app/paths';
 	import mintDia from '$lib/images/mint-dia.svg';
 	import mintMobile from '$lib/images/mint-mobile.svg';
@@ -15,7 +15,7 @@
 	import { signerAddress, wagmiConfig, web3Modal } from 'svelte-wagmi';
 	import { fade } from 'svelte/transition';
 	import Select from './Select.svelte';
-	import { tokens } from '$lib/stores';
+	import { switchNetwork } from '@wagmi/core';
 	import { formatUnits, parseUnits, type Hex } from 'viem';
 	import { arbitrum } from '@wagmi/core/chains';
 
@@ -38,6 +38,21 @@
 
 	$: if ($signerAddress) {
 		checkBalance();
+	}
+
+	// Auto-switch network when token is selected (only if network is different)
+	$: if ($selectedCyToken && $selectedNetwork.chain.id !== $selectedCyToken.chainId) {
+		// Align app state to token network
+		setActiveNetworkByChainId($selectedCyToken.chainId);
+
+		// Attempt wallet network switch whenever config and signer are ready.
+		// Include $wagmiConfig in this reactive block to retry once it becomes available after navigation.
+		const config = $wagmiConfig;
+		if ($signerAddress && config) {
+			switchNetwork(config, { chainId: $selectedCyToken.chainId }).catch((error) => {
+				console.warn(`Failed to switch wallet network to ${$selectedCyToken.chainId}:`, error);
+			});
+		}
 	}
 
 	const checkBalance = () => {
@@ -97,7 +112,7 @@
 		>
 			<span>SELECT TOKEN</span>
 			<Select
-				options={$tokens}
+				options={$allTokens}
 				bind:selected={$selectedCyToken}
 				getOptionLabel={(option) => `${option.symbol} · ${option.networkName}`}
 			/>

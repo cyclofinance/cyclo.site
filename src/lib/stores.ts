@@ -266,6 +266,11 @@ export const cusdxAddress = derived(activeNetworkConfig, (config) => config.cusd
 export const usdcAddress = derived(activeNetworkConfig, (config) => config.usdcAddress);
 export const tokens = derived(activeNetworkConfig, (config) => config.tokens);
 
+// Combined tokens from all networks
+export const allTokens = writable<CyToken[]>(
+	supportedNetworks.flatMap((network) => network.tokens)
+);
+
 // Wrong network check - checks if connected to a different network than selected
 export const wrongNetwork = derived(
 	[chainId, signerAddress, targetNetwork],

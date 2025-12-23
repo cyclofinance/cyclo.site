@@ -1,4 +1,4 @@
-import { type Config } from '@wagmi/core';
+import { getBlock, type Config } from '@wagmi/core';
 import {
 	readErc20BalanceOf,
 	readErc20TotalSupply,
@@ -10,7 +10,7 @@ import { get, writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import { ZeroAddress } from 'ethers';
 import type { CyToken } from './types';
-import { quoterAddress, tokens } from './stores';
+import { supportedNetworks, tokens, type NetworkConfig } from './stores';
 import blockNumberStore from './blockNumberStore';
 
 interface StatsState {
@@ -36,6 +36,9 @@ interface StatsState {
 		cusdxOutput: bigint;
 	};
 }
+
+const getAllTokensAcrossNetworks = () =>
+	supportedNetworks.flatMap((network) => network.tokens);
 
 // Helper function to create initial state from tokens
 const createInitialState = (tokens: CyToken[]): StatsState => {
@@ -110,7 +113,8 @@ const getCyTokenUsdPrice = async (
 	config: Config,
 	quoterAddress: Hex,
 	cusdxAddress: Hex,
-	selectedToken: CyToken
+	selectedToken: CyToken,
+	chainId?: number
 ) => {
 	try {
 		const data = await simulateQuoterQuoteExactOutputSingle(config, {
@@ -124,7 +128,8 @@ const getCyTokenUsdPrice = async (
 					sqrtPriceLimitX96: BigInt(0)
 				}
 			],
-			account: ZeroAddress as `0x${string}`
+			account: ZeroAddress as `0x${string}`,
+			chainId
 		});
 		return data.result[0] || 0n;
 	} catch {
@@ -141,7 +146,8 @@ const getCyTokenUsdPrice = async (
 						sqrtPriceLimitX96: BigInt(0)
 					}
 				],
-				account: ZeroAddress as `0x${string}`
+				account: ZeroAddress as `0x${string}`,
+				chainId
 			});
 			return data.result[0] || 0n;
 		} catch (error) {
@@ -151,18 +157,20 @@ const getCyTokenUsdPrice = async (
 	}
 };
 
-const getLockPrice = async (config: Config, selectedToken: CyToken) => {
+const getLockPrice = async (config: Config, selectedToken: CyToken, chainId?: number) => {
 	const { result } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
 		address: selectedToken.address,
 		args: [BigInt(1e18), 0n],
-		account: ZeroAddress as `0x${string}`
+		account: ZeroAddress as `0x${string}`,
+		chainId
 	});
 	return result;
 };
 
-const getcysFLRSupply = async (config: Config, selectedToken: CyToken) => {
+const getcysFLRSupply = async (config: Config, selectedToken: CyToken, chainId?: number) => {
 	const data = await readErc20TotalSupply(config, {
-		address: selectedToken.address
+		address: selectedToken.address,
+		chainId
 	});
 	return data;
 };
@@ -172,26 +180,38 @@ const getUnderlyingBalanceLockedInCysToken = async (
 	config: Config,
 	selectedToken: CyToken,
 	underlyingAddress: Hex,
-	currentBlock: bigint
+	currentBlock?: bigint,
+	chainId?: number
 ) => {
-	const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(config, {
+	const request: Record<string, unknown> = {
 		address: underlyingAddress,
-		args: [selectedToken.address],
-		blockNumber: currentBlock
-	});
+		args: [selectedToken.address]
+	};
+
+	if (typeof currentBlock !== 'undefined') {
+		request.blockNumber = currentBlock;
+	}
+
+	if (typeof chainId !== 'undefined') {
+		request.chainId = chainId;
+	}
+
+	const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(
+		config,
+		request as Parameters<typeof readErc20BalanceOf>[1]
+	);
 	return underlyingBalanceLockedInCysToken;
 };
 
 const balancesStore = () => {
 	// Initialize with current tokens
-	const initialTokens = get(tokens);
+	const initialTokens = getAllTokensAcrossNetworks();
 	const initialState = createInitialState(initialTokens);
 
 	const { subscribe, set, update } = writable<StatsState>(initialState);
 
 	const reset = () => {
-		const currentTokens = get(tokens);
-		set(createInitialState(currentTokens));
+		set(createInitialState(getAllTokensAcrossNetworks()));
 	};
 
 	const refreshPrices = async (config: Config, selectedToken: CyToken) => {
@@ -315,19 +335,24 @@ const balancesStore = () => {
 		}));
 	};
 
-	const refreshFooterStats = async (config: Config, quoterAddress: Hex, cusdxAddress: Hex) => {
-		const { blockNumber } = get(blockNumberStore);
-		const getTokenStats = async (token: CyToken) => {
+	const refreshFooterStats = async (config: Config) => {
+		const getTokenStats = async (token: CyToken, network: NetworkConfig) => {
 			const [supplyResult, priceResult, lockPriceResult, tvlResult] = await Promise.all([
-				getcysFLRSupply(config, token).catch((error) => {
+				getcysFLRSupply(config, token, token.chainId).catch((error) => {
 					console.log(`Failed to fetch supply for ${token.name}:`, error);
 					return BigInt(0);
 				}),
-				getCyTokenUsdPrice(config, quoterAddress, cusdxAddress, token).catch((error) => {
+				getCyTokenUsdPrice(
+					config,
+					network.quoterAddress,
+					network.cusdxAddress,
+					token,
+					token.chainId
+				).catch((error) => {
 					console.log(`Failed to fetch price for ${token.name}:`, error);
 					return BigInt(0);
 				}),
-				getLockPrice(config, token).catch((error) => {
+				getLockPrice(config, token, token.chainId).catch((error) => {
 					console.log(`Failed to fetch lock price for ${token.name}:`, error);
 					return BigInt(0);
 				}),
@@ -335,7 +360,8 @@ const balancesStore = () => {
 					config,
 					token,
 					token.underlyingAddress,
-					blockNumber
+					undefined,
+					token.chainId
 				).catch((error) => {
 					console.log(`Failed to fetch TVL for ${token.name}:`, error);
 					return BigInt(0);
@@ -353,9 +379,10 @@ const balancesStore = () => {
 			return { tokenName: token.name, stats };
 		};
 
-		const currentTokens: CyToken[] = get(tokens);
 		const tokenStatsResults = await Promise.all(
-			currentTokens.map(async (token: CyToken) => await getTokenStats(token))
+			supportedNetworks.flatMap((network) =>
+				network.tokens.map((token: CyToken) => getTokenStats(token, network))
+			)
 		);
 
 		update((state) => {

@@ -1,10 +1,22 @@
 <script lang="ts">
-	import { tokens, selectedCyToken, selectedNetwork, getDexScreenerChainName } from '$lib/stores';
+	import {
+		allTokens,
+		selectedCyToken,
+		selectedNetwork,
+		getDexScreenerChainName,
+		supportedNetworks,
+		setActiveNetworkByChainId
+	} from '$lib/stores';
 	import Select from '$lib/components/Select.svelte';
 	import { onMount } from 'svelte';
+	import { flare, arbitrum } from '@wagmi/core/chains';
+	import type { Chain } from '@wagmi/core/chains';
+	import { switchNetwork } from '@wagmi/core';
+	import { wagmiConfig } from 'svelte-wagmi';
 
 	// Chart configurations per network
-	// Note: Chart addresses may differ per network - update with actual addresses when available
+	// Note: Chart addresses may differ per network - update with actual pool addresses when available.
+	// If a token isn't listed here, we fall back to using the cyToken address directly.
 	const chartConfigs: Record<string, Record<string, { address: string; name: string }>> = {
 		flare: {
 			cysFLR: {
@@ -15,36 +27,66 @@
 				address: '0x650a36213419fc19892b375595960180e272e16b',
 				name: 'cyWETH/USDC.e'
 			}
-		}
+		},
+		arbitrum: {}
 	};
+
+	// DexScreener chain slug overrides (more reliable than name normalization)
+	const dexSlugByChainId: Record<number, string> = {
+		[flare.id]: 'flare',
+		[arbitrum.id]: 'arbitrum'
+	};
+
+	const getDexSlug = (chain: Chain) =>
+		dexSlugByChainId[chain.id] || getDexScreenerChainName(chain);
 
 	let chartUrl = '';
 	let isLoading = false;
 
 	function updateChart() {
-		const network = $selectedNetwork;
-		const dexScreenerChain = getDexScreenerChainName(network.chain);
-		const networkConfigs = chartConfigs[dexScreenerChain] || chartConfigs.flare; // Fallback to flare if network not found
-		const config = networkConfigs[$selectedCyToken.symbol as keyof typeof networkConfigs];
+		// Use the network that matches the selected token's chainId; fall back to current selected network
+		const networkForToken =
+			supportedNetworks.find((n) => n.chain.id === $selectedCyToken.chainId) || $selectedNetwork;
 
-		if (config && config.address) {
+		// Switch app network to match the token
+		if (networkForToken.chain.id !== $selectedNetwork.chain.id) {
+			setActiveNetworkByChainId(networkForToken.chain.id);
+		}
+		// Attempt wallet switch if config is available
+		const walletConfig = $wagmiConfig;
+		if (walletConfig) {
+			switchNetwork(walletConfig, { chainId: networkForToken.chain.id }).catch((error) =>
+				console.warn(`Failed to switch wallet network to ${networkForToken.chain.id}:`, error)
+			);
+		}
+
+		const dexScreenerChain = getDexSlug(networkForToken.chain);
+		const networkConfigs = chartConfigs[dexScreenerChain] || {};
+		// Use explicit config if present; otherwise fallback to token's own address
+		const chartConfig =
+			networkConfigs[$selectedCyToken.symbol as keyof typeof networkConfigs] || {
+				address: $selectedCyToken.address,
+				name: $selectedCyToken.symbol
+			};
+
+		if (chartConfig && chartConfig.address) {
 			isLoading = true;
 			// Ensure address is lowercase (DexScreener expects lowercase addresses)
-			const address = config.address.toLowerCase();
+			const address = chartConfig.address.toLowerCase();
 			chartUrl = `https://dexscreener.com/${dexScreenerChain}/${address}?embed=1&theme=dark&chartTheme=dark&chartType=usd&interval=1d&chartLeftToolbar=1&chartRightToolbar=1`;
 			console.log('Chart URL generated:', {
-				chainId: network.chain.id,
-				chainName: network.chain.name,
+				chainId: networkForToken.chain.id,
+				chainName: networkForToken.chain.name,
 				dexScreenerChain,
 				tokenSymbol: $selectedCyToken.symbol,
-				address: config.address,
+				address: chartConfig.address,
 				lowercaseAddress: address,
 				chartUrl
 			});
 		} else {
 			console.warn('Chart config not found for:', {
-				chainId: network.chain.id,
-				chainName: network.chain.name,
+				chainId: networkForToken.chain.id,
+				chainName: networkForToken.chain.name,
 				dexScreenerChain,
 				tokenSymbol: $selectedCyToken.symbol,
 				availableConfigs: Object.keys(networkConfigs)
@@ -72,9 +114,9 @@
 		class="flex w-full flex-col items-center gap-3 text-base font-semibold text-white sm:flex-row sm:justify-center sm:gap-6 sm:text-xl"
 	>
 		<span>CHART</span>
-		{#if $tokens.length > 0}
+		{#if $allTokens.length > 0}
 			<Select
-				options={$tokens}
+				options={$allTokens}
 				bind:selected={$selectedCyToken}
 				getOptionLabel={(option) => option.name}
 				dataTestId="chart-token-select"

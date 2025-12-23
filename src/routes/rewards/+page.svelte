@@ -5,14 +5,27 @@
 	import RewardsInfo from '$lib/components/RewardsInfo.svelte';
 	import StatsPanel from '$lib/components/StatsPanel.svelte';
 	import Card from '$lib/components/Card.svelte';
-	import { signerAddress } from 'svelte-wagmi';
-	import { selectedCyToken, tokens, selectedNetwork, isFlareNetwork } from '$lib/stores';
+	import { signerAddress, wagmiConfig } from 'svelte-wagmi';
+	import { selectedCyToken, tokens, selectedNetwork, isFlareNetwork, setActiveNetwork } from '$lib/stores';
+	import { switchNetwork } from '@wagmi/core';
+	import { flare } from '@wagmi/core/chains';
 
 	$: if ($tokens.length > 0 && !$selectedCyToken) {
 		$selectedCyToken = $tokens[0];
 	}
 
 	$: isFlare = isFlareNetwork($selectedNetwork);
+
+	// Ensure rewards page runs on Flare: auto-switch app + wallet when not on Flare
+	$: if (!isFlare) {
+		setActiveNetwork('flare');
+		const config = $wagmiConfig;
+		if (config) {
+			switchNetwork(config, { chainId: flare.id }).catch((error) =>
+				console.warn('Failed to switch wallet network to flare:', error)
+			);
+		}
+	}
 </script>
 
 <div class="mx-auto max-w-7xl space-y-8 px-4 py-8">
