@@ -24,6 +24,19 @@ vi.mock('$lib/dataFetcher', () => ({
 	useDataFetcher: vi.fn()
 }));
 
+vi.mock('@wagmi/core', () => ({
+	switchNetwork: vi.fn()
+}));
+
+vi.mock('svelte-wagmi', async () => {
+	const { writable } = await import('svelte/store');
+	return {
+		wagmiConfig: writable(undefined),
+		chainId: writable(undefined),
+		signerAddress: writable(undefined)
+	};
+});
+
 vi.mock('$lib/transactionStore', () => ({
 	default: {
 		handleDeployDca: vi.fn()
@@ -85,8 +98,11 @@ vi.mock('$lib/stores', async () => {
 
 	return {
 		tokens: writable([mockCyToken]),
+		allTokens: writable([mockCyToken]),
 		selectedCyToken: writable(mockCyToken),
-		selectedNetwork: writable(mockNetworkConfig)
+		selectedNetwork: writable(mockNetworkConfig),
+		supportedNetworks: [mockNetworkConfig],
+		setActiveNetwork: vi.fn()
 	};
 });
 
@@ -105,6 +121,12 @@ describe('DCA Page', () => {
 	const mockRoute = {
 		amountOutBI: 1500000000000000000n, // 1.5 output tokens
 		status: 'Success'
+	};
+
+	const fillRequiredFields = async () => {
+		await fireEvent.input(screen.getByTestId('amount-input'), { target: { value: '100' } });
+		await fireEvent.input(screen.getByTestId('period-input'), { target: { value: '7' } });
+		await fireEvent.input(screen.getByTestId('baseline-input'), { target: { value: '1.5' } });
 	};
 
 	beforeEach(() => {
@@ -146,6 +168,8 @@ describe('DCA Page', () => {
 	it('should call handleDeployDca when Deploy is clicked', async () => {
 		render(Page);
 
+		await fillRequiredFields();
+
 		// Click the Deploy button
 		const deployButton = screen.getByRole('button', { name: 'Deploy' });
 		await fireEvent.click(deployButton);
@@ -156,6 +180,8 @@ describe('DCA Page', () => {
 
 	it('should update selectedAmountToken when Buy/Sell selection changes', async () => {
 		render(Page);
+
+		await fillRequiredFields();
 
 		// Find the select element for Buy/Sell
 		const selectElements = screen.getAllByRole('combobox');
@@ -183,6 +209,9 @@ describe('DCA Page', () => {
 	it('should pass form values to handleDeployDca', async () => {
 		// Render the component
 		render(Page);
+
+		// Fill required fields
+		await fillRequiredFields();
 
 		// Find the inputs using test IDs
 		const periodInput = screen.getByTestId('period-input');

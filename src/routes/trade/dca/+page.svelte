@@ -3,11 +3,13 @@
 	import Select from '$lib/components/Select.svelte';
 	import { tokensForNetwork } from '$lib/constants';
 	import {
-		tokens as cyTokens,
+		allTokens,
 		selectedCyToken as storeSelectedCyToken,
-		selectedNetwork
+		supportedNetworks,
+		setActiveNetwork
 	} from '$lib/stores';
-	import { get } from 'svelte/store';
+	import { switchNetwork } from '@wagmi/core';
+	import { wagmiConfig } from 'svelte-wagmi';
 	import type { CyToken, Token } from '$lib/types';
 	import TradeAmountInput from '$lib/components/TradeAmountInput.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -26,29 +28,64 @@
 	} from '$lib/trade/validateDeploymentArgs';
 	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
 
-	// selected values - initialize from store and update when network changes
+	// selected values - initialize from store
 	let selectedCyToken: CyToken = $storeSelectedCyToken;
-	let previousTokens: CyToken[] = $cyTokens;
 
-	// Get tokens for the current network
-	$: networkTokens = tokensForNetwork($selectedNetwork.key);
+	let selectedNetworkForCyToken = supportedNetworks[0];
+	let networkTokens: Token[] = [];
+	let lastSyncedNetworkKey: string | undefined;
+	let lastSwitchedChainId: number | undefined;
 
-	// Update selectedCyToken only when network changes (tokens array reference changes), not on every render
-	$: if ($cyTokens.length > 0 && $cyTokens !== previousTokens) {
-		const currentTokens = $cyTokens;
+	// Keep selected cyToken aligned with available tokens and the store
+	$: if ($allTokens.length > 0) {
+		const currentTokens = $allTokens;
 		const storeToken = $storeSelectedCyToken;
+		const storeTokenValid = currentTokens.some((t) => t.name === storeToken.name);
 
-		// If store token exists in current tokens, use it; otherwise use first token
-		const tokenToUse = currentTokens.find((t) => t.name === storeToken.name) || currentTokens[0];
-		selectedCyToken = tokenToUse;
-		previousTokens = $cyTokens;
+		// If the store token became invalid, fall back to the first available token
+		if (!storeTokenValid) {
+			const fallback = currentTokens[0];
+			selectedCyToken = fallback;
+			storeSelectedCyToken.set(fallback);
+		} else if (!selectedCyToken) {
+			// Initialize local selection from the store
+			selectedCyToken = storeToken;
+		}
 	}
 
-	// Initialize and update selectedToken based on network
+	// Persist user-driven selection back to the store
+	$: if (selectedCyToken) {
+		storeSelectedCyToken.set(selectedCyToken);
+	}
+
+	// Resolve network for the selected cyToken and get the matching spend/receive tokens
+	$: selectedNetworkForCyToken =
+		supportedNetworks.find((network) => network.chain.id === selectedCyToken?.chainId) ||
+		supportedNetworks[0];
+
+	// Keep the app's active network aligned with the selected cyToken's network
+	$: if (selectedNetworkForCyToken?.key && selectedNetworkForCyToken.key !== lastSyncedNetworkKey) {
+		setActiveNetwork(selectedNetworkForCyToken.key);
+		lastSyncedNetworkKey = selectedNetworkForCyToken.key;
+
+		// Prompt the wallet to switch chains to match the selected token's network
+		const config = $wagmiConfig;
+		const targetChainId = selectedNetworkForCyToken.chain.id;
+		if (config && targetChainId !== lastSwitchedChainId) {
+			switchNetwork(config, { chainId: targetChainId }).catch((error) =>
+				console.warn(`Failed to switch wallet network to ${selectedNetworkForCyToken.key}:`, error)
+			);
+			lastSwitchedChainId = targetChainId;
+		}
+	}
+
+	$: networkTokens = tokensForNetwork(selectedNetworkForCyToken.key);
+
+	// Initialize and update selectedToken based on the selected cyToken's network
 	let selectedToken: Token | undefined;
 	let previousNetworkKey: string | undefined;
 	$: if (networkTokens.length > 0) {
-		const currentNetworkKey = $selectedNetwork.key;
+		const currentNetworkKey = selectedNetworkForCyToken.key;
 		// If network changed or selectedToken is not initialized or not in current network tokens
 		if (
 			currentNetworkKey !== previousNetworkKey ||
@@ -108,6 +145,9 @@
 	const handleDeploy = () => {
 		if (!selectedToken || !selectedAmountToken) return;
 
+		// Ensure the active network matches the selected cyToken's network
+		setActiveNetwork(selectedNetworkForCyToken.key);
+
 		transactionStore.handleDeployDca(
 			{
 				selectedCyToken,
@@ -121,7 +161,7 @@
 				depositAmount,
 				inputVaultId,
 				outputVaultId,
-				selectedNetworkKey: get(selectedNetwork).key
+				selectedNetworkKey: selectedNetworkForCyToken.key
 			},
 			dataFetcher
 		);
@@ -150,9 +190,9 @@
 		/>
 
 		<!-- token to buy or sell -->
-		{#if $cyTokens.length > 0}
+		{#if $allTokens.length > 0}
 			<Select
-				options={$cyTokens}
+				options={$allTokens}
 				bind:selected={selectedCyToken}
 				getOptionLabel={(token) => token.name}
 				dataTestId="cy-token-select"
