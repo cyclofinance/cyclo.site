@@ -64,7 +64,7 @@ describe('fetchAccountStatus', () => {
 			data: {
 				eligibleTotals: {
 					id: 'SINGLETON',
-					totalEligibleSum: '3000000000000000000000',
+					totalEligibleSum: '2000000000000000000000',
 					totalEligibleSumSnapshot: '3000000000000000000000'
 				},
 				account: {
@@ -73,14 +73,14 @@ describe('fetchAccountStatus', () => {
 					totalCyBalanceSnapshot: (300n * ONE).toString(),
 					vaultBalances: [
 						{
-							balance: (100n * ONE).toString(),
+							balance: (110n * ONE).toString(),
 							balanceAvgSnapshot: (100n * ONE).toString(),
 							vault: {
 								address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex // cysFLR address
 							}
 						},
 						{
-							balance: (200n * ONE).toString(),
+							balance: (210n * ONE).toString(),
 							balanceAvgSnapshot: (200n * ONE).toString(),
 							vault: {
 								address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex // cyWETH address
@@ -151,23 +151,23 @@ describe('fetchAccountStatus', () => {
 			data: {
 				eligibleTotals: {
 					id: 'SINGLETON',
-					totalEligibleSum: '3000000000000000000000',
+					totalEligibleSum: '2000000000000000000000',
 					totalEligibleSumSnapshot: '3000000000000000000000'
 				},
 				account: {
 					id: account,
-					totalCyBalance: '300000000000000000000',
+					totalCyBalance: '200000000000000000000',
 					totalCyBalanceSnapshot: '300000000000000000000',
 					vaultBalances: [
 						{
-							balance: '100000000000000000000',
+							balance: '200000000000000000000',
 							balanceAvgSnapshot: '100000000000000000000',
 							vault: {
 								address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex // cysFLR address
 							}
 						},
 						{
-							balance: '200000000000000000000',
+							balance: '100000000000000000000',
 							balanceAvgSnapshot: '200000000000000000000',
 							vault: {
 								address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex // cyWETH address
