@@ -48,36 +48,44 @@ const account = {
 	vaultBalances: [
 		{
 			balance: ONE.toString(),
+			balanceAvgSnapshot: ONE.toString(),
 			vault: {
 				address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR address
-				totalEligible: (ONE * 2n).toString() // total eligible for cysFLR
+				totalEligible: (ONE * 2n).toString(), // total eligible for cysFLR
+				totalEligibleSnapshot: (ONE * 2n).toString() // total eligible snapshot for cysFLR
 			}
 		},
 		{
 			balance: (ONE / 2n).toString(),
+			balanceAvgSnapshot: (ONE / 2n).toString(),
 			vault: {
 				address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH address
-				totalEligible: ONE.toString() // total eligible for cyWETH
+				totalEligible: ONE.toString(), // total eligible for cyWETH
+				totalEligibleSnapshot: ONE.toString() // total eligible snapshot for cyWETH
 			}
 		}
 	],
-	totalCyBalance: (ONE + ONE / 2n).toString()
+	totalCyBalance: (ONE + ONE / 2n).toString(),
+	totalCyBalanceSnapshot: (ONE + ONE / 2n).toString(),
 };
 
 const eligibleTotals = {
 	__typename: 'EligibleTotals',
 	id: 'SINGLETON',
-	totalEligibleSum: (ONE + ONE * 2n).toString()
+	totalEligibleSum: (ONE + ONE * 2n).toString(),
+	totalEligibleSumSnapshot: (ONE + ONE * 2n).toString()
 } as NonNullable<AccountStatusQuery['eligibleTotals']> & Record<string, string | undefined>;
 
 const cycloVaults = [
 	{
 		address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR address
-		totalEligible: (ONE * 2n).toString() // total eligible for cysFLR
+		totalEligible: (ONE * 2n).toString(), // total eligible for cysFLR
+		totalEligibleSnapshot: (ONE * 2n).toString() // total eligible snapshot for cysFLR
 	},
 	{
 		address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH address
-		totalEligible: ONE.toString() // total eligible for cyWETH
+		totalEligible: ONE.toString(), // total eligible for cyWETH
+		totalEligibleSnapshot: ONE.toString() // total eligible snapshot for cyWETH
 	}
 ] as AccountStatusQuery['cycloVaults'];
 

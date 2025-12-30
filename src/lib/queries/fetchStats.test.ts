@@ -100,16 +100,19 @@ describe('fetchStats', () => {
 			data: {
 				eligibleTotals: {
 					id: 'SINGLETON',
-					totalEligibleSum: totalEligibleSum.toString()
+					totalEligibleSum: totalEligibleSum.toString(),
+					totalEligibleSumSnapshot: totalEligibleSum.toString()
 				},
 				cycloVaults: [
 					{
 						address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR
-						totalEligible: totalEligibleCysFLR.toString()
+						totalEligible: totalEligibleCysFLR.toString(),
+						totalEligibleSnapshot: totalEligibleCysFLR.toString(),
 					},
 					{
 						address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH
-						totalEligible: totalEligibleCyWETH.toString()
+						totalEligible: totalEligibleCyWETH.toString(),
+						totalEligibleSnapshot: totalEligibleCyWETH.toString()
 					}
 				],
 				accounts: Array(96).fill({
