@@ -19,7 +19,7 @@
 			| NonNullable<AccountStats['transfers']['in'][0]>
 			| NonNullable<AccountStats['liquidityChanges'][0]>
 	): boolean {
-		return 'LiquidityChangeType' in transfer && String(transfer.LiquidityChangeType) === 'Deposit';
+		return 'liquidityChangeType' in transfer && String(transfer.liquidityChangeType) === 'Deposit';
 	}
 
 	let loading = true;
@@ -102,7 +102,7 @@
 										{/if}
 									{:else}
 										<span class="text-error"
-											>Liquidity {transfer.LiquidityChangeType.toLowerCase()}</span
+											>Liquidity {transfer.liquidityChangeType.toLowerCase()}</span
 										>
 									{/if}
 								</div>

@@ -29,7 +29,7 @@ export function extractBalancesFromVaults(
 
 		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
 		if (token) {
-			balances[token.symbol] = BigInt(vaultBalance.balance || '0');
+			balances[token.symbol] = BigInt(vaultBalance.balanceAvgSnapshot || '0');
 		}
 	}
 
@@ -64,7 +64,7 @@ export function aggregateTotalEligibleFromVaults(
 	// Aggregate totals from cycloVaults by token symbol
 	for (const vault of cycloVaults) {
 		const vaultAddress = vault?.address;
-		const totalEligible = BigInt(vault?.totalEligible || '0');
+		const totalEligible = BigInt(vault?.totalEligibleSnapshot || '0');
 
 		if (!vaultAddress || totalEligible === 0n) continue;
 
