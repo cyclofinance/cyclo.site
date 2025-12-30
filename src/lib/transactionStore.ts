@@ -21,7 +21,12 @@ import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from './types';
 import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { wagmiConfig } from 'svelte-wagmi';
-import { getDcaDeploymentArgs, type DcaDeploymentArgs } from './trade/getDeploymentArgs';
+import {
+	getDcaDeploymentArgs,
+	getDsfDeploymentArgs,
+	type DcaDeploymentArgs,
+	type DsfDeploymentArgs
+} from './trade/getDeploymentArgs';
 import type { DataFetcher } from 'sushi';
 import {
 	CYCLO_VAULT_ABI,
@@ -251,23 +256,31 @@ const transactionStore = () => {
 		writeUnlock();
 	};
 
-	const handleDeployDca = async (options: DcaDeploymentArgs, dataFetcher: DataFetcher) => {
+	// Shared deployment logic
+	const deployStrategy = async (
+		deploymentArgs:
+			| Awaited<ReturnType<typeof getDcaDeploymentArgs>>['deploymentArgs']
+			| Awaited<ReturnType<typeof getDsfDeploymentArgs>>['deploymentArgs'],
+		strategyName: string
+	) => {
 		const config = get(wagmiConfig);
 		if (!config) throw new Error('Wagmi config not found');
 
-		awaitWalletConfirmation(`Preparing strategy...`);
-
-		const { deploymentArgs, outputToken } = await getDcaDeploymentArgs(options, dataFetcher);
-
-		if (deploymentArgs.approvals.length > 0) {
-			awaitWalletConfirmation(`Awaiting wallet confirmation to approve ${outputToken.symbol}...`);
-			await sendTransaction(config, {
-				data: deploymentArgs.approvals[0].calldata as Hex,
-				to: deploymentArgs.approvals[0].token as `0x${string}`
+		// Handle approvals
+		for (const approval of deploymentArgs.approvals) {
+			awaitWalletConfirmation(`Awaiting wallet confirmation to approve ${approval.symbol}...`);
+			const hash = await sendTransaction(config, {
+				data: approval.calldata as Hex,
+				to: approval.token as `0x${string}`
 			});
+			awaitApprovalTx(hash);
+			await waitForTransactionReceipt(config, { hash: hash });
 		}
 
-		awaitWalletConfirmation(`Awaiting wallet confirmation to deploy your DCA strategy...`);
+		// Deploy the strategy
+		awaitWalletConfirmation(
+			`Awaiting wallet confirmation to deploy your ${strategyName} strategy...`
+		);
 
 		const hash = await sendTransaction(config, {
 			data: deploymentArgs.deploymentCalldata as Hex,
@@ -320,6 +333,18 @@ const transactionStore = () => {
 				console.error('Error polling for order:', error);
 			}
 		}, 2000);
+	};
+
+	const handleDeployDca = async (options: DcaDeploymentArgs, dataFetcher: DataFetcher) => {
+		awaitWalletConfirmation(`Preparing strategy...`);
+		const { deploymentArgs } = await getDcaDeploymentArgs(options, dataFetcher);
+		await deployStrategy(deploymentArgs, 'DCA');
+	};
+
+	const handleDeployDsf = async (options: DsfDeploymentArgs, dataFetcher: DataFetcher) => {
+		awaitWalletConfirmation(`Preparing strategy...`);
+		const { deploymentArgs } = await getDsfDeploymentArgs(options, dataFetcher);
+		await deployStrategy(deploymentArgs, 'DSF');
 	};
 
 	const handlePythPriceUpdate = async () => {
@@ -436,7 +461,8 @@ const transactionStore = () => {
 		awaitUnlockTx,
 		transactionSuccess,
 		transactionError,
-		handleDeployDca
+		handleDeployDca,
+		handleDeployDsf
 	};
 };
 
