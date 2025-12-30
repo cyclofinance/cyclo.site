@@ -21,7 +21,12 @@ import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from './types';
 import { getTransactionAddOrders } from '@rainlanguage/orderbook/js_api';
 import { wagmiConfig } from 'svelte-wagmi';
-import { getDcaDeploymentArgs, getDsfDeploymentArgs, type DcaDeploymentArgs, type DsfDeploymentArgs } from './trade/getDeploymentArgs';
+import {
+	getDcaDeploymentArgs,
+	getDsfDeploymentArgs,
+	type DcaDeploymentArgs,
+	type DsfDeploymentArgs
+} from './trade/getDeploymentArgs';
 import type { DataFetcher } from 'sushi';
 import {
 	CYCLO_VAULT_ABI,
@@ -253,7 +258,9 @@ const transactionStore = () => {
 
 	// Shared deployment logic
 	const deployStrategy = async (
-		deploymentArgs: Awaited<ReturnType<typeof getDcaDeploymentArgs>>['deploymentArgs'] | Awaited<ReturnType<typeof getDsfDeploymentArgs>>['deploymentArgs'],
+		deploymentArgs:
+			| Awaited<ReturnType<typeof getDcaDeploymentArgs>>['deploymentArgs']
+			| Awaited<ReturnType<typeof getDsfDeploymentArgs>>['deploymentArgs'],
 		strategyName: string
 	) => {
 		const config = get(wagmiConfig);
@@ -261,8 +268,7 @@ const transactionStore = () => {
 
 		// Handle approvals
 		for (const approval of deploymentArgs.approvals) {
-			const symbol = (approval as any).symbol || (approval as any).token?.symbol || 'token';
-			awaitWalletConfirmation(`Awaiting wallet confirmation to approve ${symbol}...`);
+			awaitWalletConfirmation(`Awaiting wallet confirmation to approve ${approval.symbol}...`);
 			const hash = await sendTransaction(config, {
 				data: approval.calldata as Hex,
 				to: approval.token as `0x${string}`
@@ -272,7 +278,9 @@ const transactionStore = () => {
 		}
 
 		// Deploy the strategy
-		awaitWalletConfirmation(`Awaiting wallet confirmation to deploy your ${strategyName} strategy...`);
+		awaitWalletConfirmation(
+			`Awaiting wallet confirmation to deploy your ${strategyName} strategy...`
+		);
 
 		const hash = await sendTransaction(config, {
 			data: deploymentArgs.deploymentCalldata as Hex,

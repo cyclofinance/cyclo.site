@@ -250,7 +250,9 @@ describe('DSF Page', () => {
 		// Toggle custom deposit amount - find the checkbox near "Custom deposit amount" text
 		const customDepositText = screen.getByText('Custom deposit amount');
 		const customDepositContainer = customDepositText.closest('div');
-		const customDepositToggle = customDepositContainer?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		const customDepositToggle = customDepositContainer?.querySelector(
+			'input[type="checkbox"]'
+		) as HTMLInputElement;
 		expect(customDepositToggle).toBeTruthy();
 		await fireEvent.click(customDepositToggle!);
 
@@ -268,7 +270,7 @@ describe('DSF Page', () => {
 
 		// Find all vault ID inputs
 		const vaultIdInputs = screen.getAllByRole('textbox');
-		
+
 		// Should have 4 vault ID inputs
 		expect(vaultIdInputs.length).toBeGreaterThanOrEqual(4);
 
@@ -368,7 +370,9 @@ describe('DSF Page', () => {
 		// Toggle custom deposit amount - find the checkbox near "Custom deposit amount" text
 		const customDepositText = screen.getByText('Custom deposit amount');
 		const customDepositContainer = customDepositText.closest('div');
-		const customDepositToggle = customDepositContainer?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+		const customDepositToggle = customDepositContainer?.querySelector(
+			'input[type="checkbox"]'
+		) as HTMLInputElement;
 		expect(customDepositToggle).toBeTruthy();
 		await fireEvent.click(customDepositToggle!);
 
@@ -379,7 +383,7 @@ describe('DSF Page', () => {
 		// Fill in custom deposit amounts
 		const depositAmountInput = screen.getByTestId('deposit-amount-input');
 		const rotateDepositAmountInput = screen.getByTestId('rotate-deposit-amount-input');
-		
+
 		await fireEvent.input(depositAmountInput, { target: { value: '50' } });
 		await fireEvent.input(rotateDepositAmountInput, { target: { value: '25' } });
 

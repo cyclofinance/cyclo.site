@@ -139,6 +139,7 @@ export type DsfDeploymentArgs = {
 
 export const getDsfDeploymentArgs = async (
 	options: DsfDeploymentArgs,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	_dataFetcher: DataFetcher
 ) => {
 	const {

@@ -294,7 +294,10 @@ describe('transactionStore.handleDeployDsf', () => {
 			rotateTokenDepositAmount: BigInt(0)
 		};
 
-		const deployPromise = transactionStore.handleDeployDsf(optionsWithZeroDeposits, mockDataFetcher);
+		const deployPromise = transactionStore.handleDeployDsf(
+			optionsWithZeroDeposits,
+			mockDataFetcher
+		);
 
 		// Advance timers to allow async operations to complete
 		await vi.runAllTimersAsync();
@@ -311,7 +314,10 @@ describe('transactionStore.handleDeployDsf', () => {
 			timePerEpoch: '7200'
 		};
 
-		const deployPromise = transactionStore.handleDeployDsf(optionsWithCustomAdvanced, mockDataFetcher);
+		const deployPromise = transactionStore.handleDeployDsf(
+			optionsWithCustomAdvanced,
+			mockDataFetcher
+		);
 
 		// Advance timers to allow async operations to complete
 		await vi.runAllTimersAsync();
