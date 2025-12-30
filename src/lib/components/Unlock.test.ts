@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 import Unlock from './Unlock.svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import { mockConnectedStore, mockSignerAddressStore } from '$lib/mocks/mockStores';
-import { refreshAllReceipts } from '$lib/queries/refreshAllReceipts';
+import { refreshReceiptsForToken } from '$lib/queries/refreshReceiptsForToken';
 import userEvent from '@testing-library/user-event';
 import type { CyToken, Receipt } from '$lib/types';
 import type { Hex } from 'viem';
@@ -13,8 +13,8 @@ vi.mock('$lib/queries/getReceipts', () => ({
 	getSingleTokenReceipts: vi.fn()
 }));
 
-vi.mock('$lib/queries/refreshAllReceipts', () => ({
-	refreshAllReceipts: vi.fn()
+vi.mock('$lib/queries/refreshReceiptsForToken', () => ({
+	refreshReceiptsForToken: vi.fn()
 }));
 
 vi.mock('$lib/balancesStore', async () => {
@@ -33,11 +33,14 @@ const {
 	mockTokensStore,
 	mockSelectedCyTokenStore,
 	mockMyReceiptsStore,
+	mockSelectedNetworkStore,
 	selectedCyToken,
 	receipts
 } = vi.hoisted(() => {
 	// eslint-disable-next-line @typescript-eslint/no-require-imports
 	const { writable } = require('svelte/store');
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const { flare } = require('@wagmi/core/chains');
 
 	const selectedCyToken: CyToken = {
 		name: 'cysFLR',
@@ -46,7 +49,10 @@ const {
 		underlyingSymbol: 'sFLR',
 		receiptAddress: '0xeeff5678',
 		symbol: 'cysFLR',
-		decimals: 18
+		decimals: 18,
+		chainId: 14,
+		networkName: 'Flare',
+		active: true
 	};
 
 	const receipts: Receipt[] = [
@@ -83,7 +89,10 @@ const {
 			underlyingSymbol: 'WETH',
 			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex,
 			symbol: 'cyWETH',
-			decimals: 18
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare',
+			active: true
 		},
 		{
 			name: 'cyFXRP.ftso',
@@ -92,14 +101,34 @@ const {
 			underlyingSymbol: 'FXRP',
 			receiptAddress: '0xC46600cEbD84Ed2FE60Ec525dF13E341D24642f2' as Hex,
 			symbol: 'cyFXRP.ftso',
-			decimals: 6
+			decimals: 6,
+			chainId: 14,
+			networkName: 'Flare',
+			active: true
 		}
 	];
+
+	const mockNetworkConfig = {
+		key: 'flare',
+		chain: flare,
+		wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d' as Hex,
+		quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705' as Hex,
+		cusdxAddress: '0xfe2907dfa8db6e320cdbf45f0aa888f6135ec4f8' as Hex,
+		usdcAddress: '0xFbDa5F676cB37624f28265A144A48B0d6e87d3b6' as Hex,
+		explorerApiUrl: 'https://flare-explorer.flare.network/api',
+		explorerUrl: 'https://flarescan.com',
+		orderbookSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
+		rewardsSubgraphUrl:
+			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-11-ab43/gn',
+		tokens: tokens
+	};
 
 	return {
 		mockTokensStore: writable(tokens),
 		mockSelectedCyTokenStore: writable(selectedCyToken),
 		mockMyReceiptsStore: writable([]),
+		mockSelectedNetworkStore: writable(mockNetworkConfig),
 		selectedCyToken,
 		receipts
 	};
@@ -107,8 +136,11 @@ const {
 
 vi.mock('$lib/stores', () => ({
 	tokens: mockTokensStore,
+	allTokens: mockTokensStore,
 	selectedCyToken: mockSelectedCyTokenStore,
-	myReceipts: mockMyReceiptsStore
+	myReceipts: mockMyReceiptsStore,
+	selectedNetwork: mockSelectedNetworkStore,
+	setActiveNetworkByChainId: vi.fn()
 }));
 
 describe('Unlock Component', () => {
@@ -116,10 +148,12 @@ describe('Unlock Component', () => {
 		vi.clearAllMocks();
 		mockMyReceiptsStore.set([]);
 		mockSelectedCyTokenStore.set(selectedCyToken);
-		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, setLoading) => {
-			if (setLoading) setLoading(false);
-			return [];
-		});
+		vi.mocked(refreshReceiptsForToken).mockImplementation(
+			async (_signerAddress, _tokenName, setLoading) => {
+				if (setLoading) setLoading(false);
+				return [];
+			}
+		);
 		mockBalancesStore.mockSetSubscribeValue(
 			'Ready',
 			false,
@@ -177,7 +211,8 @@ describe('Unlock Component', () => {
 	});
 
 	it('should show loading state while fetching receipts', async () => {
-		vi.mocked(refreshAllReceipts).mockImplementation(() => new Promise(() => {}));
+		mockSignerAddressStore.mockSetSubscribeValue('0xloading');
+		vi.mocked(refreshReceiptsForToken).mockImplementation(() => new Promise(() => {}));
 		render(Unlock);
 
 		await waitFor(() => {
@@ -189,20 +224,24 @@ describe('Unlock Component', () => {
 		mockSignerAddressStore.mockSetSubscribeValue('0xmockAddress');
 		mockConnectedStore.mockSetSubscribeValue(true);
 
-		const { refreshAllReceipts } = await import('$lib/queries/refreshAllReceipts');
-		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, setLoading) => {
-			const store = await import('$lib/stores');
-			store.myReceipts.set(receipts);
-			if (setLoading) setLoading(false);
-			return receipts;
-		});
+		const { refreshReceiptsForToken } = await import('$lib/queries/refreshReceiptsForToken');
+		vi.mocked(refreshReceiptsForToken).mockImplementation(
+			async (_signerAddress, _tokenName, setLoading) => {
+				const store = await import('$lib/stores');
+				store.myReceipts.set(receipts);
+				if (setLoading) setLoading(false);
+				return receipts;
+			}
+		);
 
 		render(Unlock);
 
 		await waitFor(() => {
 			expect(screen.queryByText('NO cysFLR RECEIPTS FOUND...')).not.toBeInTheDocument();
 			expect(screen.queryByText('LOADING...')).not.toBeInTheDocument();
-			expect(screen.getByText('1.60000')).toBeInTheDocument();
+			const rows = screen.getAllByTestId(/receipt-row-/);
+			expect(rows).toHaveLength(receipts.length);
+			expect(screen.getByTestId('total-locked-0')).toHaveTextContent('1.60000');
 		});
 	});
 
@@ -210,10 +249,12 @@ describe('Unlock Component', () => {
 		mockSignerAddressStore.mockSetSubscribeValue('0xmockAddress');
 		mockConnectedStore.mockSetSubscribeValue(true);
 
-		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, setLoading) => {
-			if (setLoading) setLoading(false);
-			return [];
-		});
+		vi.mocked(refreshReceiptsForToken).mockImplementation(
+			async (_signerAddress, _tokenName, setLoading) => {
+				if (setLoading) setLoading(false);
+				return [];
+			}
+		);
 
 		render(Unlock);
 
@@ -226,10 +267,12 @@ describe('Unlock Component', () => {
 		mockSignerAddressStore.mockSetSubscribeValue('0xmockAddress');
 		mockConnectedStore.mockSetSubscribeValue(true);
 
-		vi.mocked(refreshAllReceipts).mockImplementation(async (signerAddress, setLoading) => {
-			if (setLoading) setLoading(false);
-			return [];
-		});
+		vi.mocked(refreshReceiptsForToken).mockImplementation(
+			async (_signerAddress, _tokenName, setLoading) => {
+				if (setLoading) setLoading(false);
+				return [];
+			}
+		);
 
 		render(Unlock);
 
@@ -239,8 +282,9 @@ describe('Unlock Component', () => {
 		});
 
 		// Simulate selecting a different token
-		const newTokenButton = screen.getByTestId('cyWETH-button');
-		await userEvent.click(newTokenButton);
+		const select = screen.getByRole('combobox');
+		const targetOption = screen.getByRole('option', { name: 'cyWETH · Flare' });
+		await userEvent.selectOptions(select, targetOption);
 
 		await waitFor(() => {
 			expect(screen.getByText('NO cyWETH RECEIPTS FOUND...')).toBeInTheDocument();

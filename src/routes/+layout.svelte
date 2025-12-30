@@ -1,13 +1,13 @@
 <script lang="ts">
 	import '../app.css';
-	import { defaultConfig, signerAddress, wagmiConfig } from 'svelte-wagmi';
+	import { defaultConfig, signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
 	import { injected, walletConnect } from '@wagmi/connectors';
 	import Header from '$lib/components/Header.svelte';
 	import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
 	import { browser } from '$app/environment';
 	import { PUBLIC_LAUNCHED } from '$env/static/public';
-	import { supportedNetworks } from '$lib/stores';
-	import { cusdxAddress, quoterAddress, selectedCyToken } from '$lib/stores';
+	import { setActiveNetworkByChainId, supportedNetworks } from '$lib/stores';
+	import { selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
 	import { onDestroy } from 'svelte';
@@ -15,6 +15,8 @@
 	import DataFetcherProvider from '$lib/components/DataFetcherProvider.svelte';
 
 	let intervalId: ReturnType<typeof setInterval>;
+	let lastChainId: number | null = null;
+	const isBrowser = typeof window !== 'undefined';
 	const initWallet = async () => {
 		// Get all chains from supported networks
 		const chains = supportedNetworks.map((network) => network.chain);
@@ -32,7 +34,7 @@
 	const getPricesAndBalances = () => {
 		blockNumberStore.refresh($wagmiConfig);
 		balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
-		balancesStore.refreshFooterStats($wagmiConfig, $quoterAddress, $cusdxAddress);
+		balancesStore.refreshFooterStats($wagmiConfig);
 		if ($signerAddress) {
 			balancesStore.refreshBalances($wagmiConfig, $signerAddress as Hex);
 		}
@@ -42,8 +44,17 @@
 		initWallet();
 	}
 
+	$: if (isBrowser) {
+		if ($chainId && $chainId !== lastChainId) {
+			lastChainId = $chainId;
+			setActiveNetworkByChainId($chainId);
+		} else if (!$chainId && lastChainId !== null) {
+			lastChainId = null;
+		}
+	}
+
 	const startGettingPricesAndBalances = () => {
-		intervalId = setInterval(getPricesAndBalances, 3000);
+		intervalId = setInterval(getPricesAndBalances, 10000);
 	};
 
 	function stopGettingPriceRatio() {
