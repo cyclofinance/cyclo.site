@@ -35,9 +35,6 @@ export interface CyToken extends Token {
 	underlyingAddress: Hex;
 	underlyingSymbol: string;
 	receiptAddress: Hex;
-	chainId: number;
-	networkName: string;
-	active: boolean;
 }
 
 export type InitiateLockTransactionArgs = {
@@ -47,7 +44,10 @@ export type InitiateLockTransactionArgs = {
 	assets: bigint;
 };
 
-export type RewardsPools = Record<string, bigint>;
+export type RewardsPools = {
+	cysFlr: bigint;
+	cyWeth: bigint;
+};
 
 export type Share = {
 	percentageShare: bigint;
@@ -55,14 +55,17 @@ export type Share = {
 };
 
 export type Shares = {
-	[key: string]: Share;
-} & {
+	cysFLR: Share;
+	cyWETH: Share;
 	totalRewards: bigint;
 };
 
 export type AccountStats = {
 	account: Hex;
-	eligibleBalances: Record<string, bigint>;
+	eligibleBalances: {
+		cysFLR: bigint;
+		cyWETH: bigint;
+	};
 	shares: Shares;
 	transfers: {
 		in: NonNullable<AccountStatusQuery['account']>['transfersIn'];
@@ -75,8 +78,10 @@ export type LeaderboardEntry = Omit<AccountStats, 'transfers' | 'liquidityChange
 
 export type GlobalStats = {
 	eligibleHolders: number;
-	totalEligible: Record<string, bigint>;
+	totalEligibleCysFLR: bigint;
+	totalEligibleCyWETH: bigint;
 	totalEligibleSum: bigint;
 	rewardsPools: RewardsPools;
-	apy: Record<string, bigint>;
+	cysFLRApy: bigint;
+	cyWETHApy: bigint;
 };

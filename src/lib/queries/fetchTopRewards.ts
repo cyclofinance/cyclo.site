@@ -1,14 +1,11 @@
 import { type TopAccountsQuery } from '../../generated-graphql';
 import TopAccounts from '$lib/queries/top-rewards.graphql?raw';
+import { SUBGRAPH_URL } from '$lib/constants';
 import type { LeaderboardEntry } from '$lib/types';
 import { calculateShares } from './calculateShares';
-import { extractBalancesFromVaults } from './vaultUtils';
-import { get } from 'svelte/store';
-import { selectedNetwork } from '$lib/stores';
 
 export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
-	const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
-	const response = await fetch(subgraphUrl, {
+	const response = await fetch(SUBGRAPH_URL, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
@@ -23,11 +20,13 @@ export async function fetchTopRewards(): Promise<LeaderboardEntry[]> {
 	}
 
 	const accountsWithShares = (data.accountsByCyBalance ?? []).map((account) => {
-		const shares = calculateShares(account, eligibleTotals, data.cycloVaults);
-		const balances = extractBalancesFromVaults(account.vaultBalances);
+		const shares = calculateShares(account, eligibleTotals);
 		return {
 			account: account.id,
-			eligibleBalances: balances,
+			eligibleBalances: {
+				cysFLR: BigInt(account.cysFLRBalance),
+				cyWETH: BigInt(account.cyWETHBalance)
+			},
 			shares
 		};
 	});

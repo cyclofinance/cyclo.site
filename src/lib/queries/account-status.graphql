@@ -1,19 +1,13 @@
 query AccountStatus($account: ID!) {
 	eligibleTotals(id: "SINGLETON") {
 		id
+		totalEligibleCyWETH
+		totalEligibleCysFLR
 		totalEligibleSum
 	}
-	cycloVaults {
-		address
-		totalEligible
-	}
 	account(id: $account) {
-		vaultBalances {
-			balance
-			vault {
-				address
-			}
-		}
+		cysFLRBalance
+		cyWETHBalance
 		totalCyBalance
 		transfersIn(orderBy: blockNumber, orderDirection: desc) {
 			fromIsApprovedSource

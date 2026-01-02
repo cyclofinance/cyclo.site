@@ -132,7 +132,7 @@ describe('Lock Component', () => {
 			const priceRatio = screen.getByTestId('price-ratio');
 			expect(priceRatio).toBeInTheDocument();
 			const calculatedCysflr = screen.getByTestId('calculated-cysflr');
-			expect(calculatedCysflr).toHaveTextContent('1234');
+			expect(calculatedCysflr).toHaveTextContent('1234.0');
 		});
 	});
 
@@ -295,7 +295,7 @@ describe('Lock Component', () => {
 
 		await waitFor(() => {
 			const usdValueElement = screen.getByTestId('calculated-cysflr-usd');
-			expect(usdValueElement).toHaveTextContent('Current market value ~$ 3000000000000');
+			expect(usdValueElement).toHaveTextContent('Current market value ~$ 3000000000000.0');
 		});
 	});
 

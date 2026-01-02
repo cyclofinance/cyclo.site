@@ -3,24 +3,14 @@
 	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
 	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
-	import { tokens, selectedNetwork } from '$lib/stores';
+	import { tokens } from '$lib/stores';
 	import { isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
 	import { formatEther } from 'viem';
 	import AccountStatsComponent from './AccountStats.svelte';
+	import { LiquidityChangeType } from '../../generated-graphql';
 
 	export let account: string;
-
-	$: explorerUrl = $selectedNetwork.explorerUrl;
-	$: currentTokens = $tokens;
-
-	function isDeposit(
-		transfer:
-			| NonNullable<AccountStats['transfers']['in'][0]>
-			| NonNullable<AccountStats['liquidityChanges'][0]>
-	): boolean {
-		return 'LiquidityChangeType' in transfer && String(transfer.LiquidityChangeType) === 'Deposit';
-	}
 
 	let loading = true;
 	let error: string | null = null;
@@ -75,13 +65,13 @@
 							return res;
 						} ) as transfer}
 						<a
-							href={`${explorerUrl}/tx/${transfer.transactionHash}`}
+							href={`https://flarescan.com/tx/${transfer.transactionHash}`}
 							target="_blank"
 							rel="noopener noreferrer"
 							class="flex items-center justify-between rounded py-2 {(
 								'fromIsApprovedSource' in transfer
 									? transfer.fromIsApprovedSource
-									: isDeposit(transfer)
+									: transfer.LiquidityChangeType === LiquidityChangeType.Deposit
 							)
 								? 'border-success bg-base-200 border-l-4'
 								: 'bg-base-200'} hover:bg-base-300"
@@ -112,8 +102,11 @@
 							</div>
 							<div class="flex items-center gap-2 truncate pl-4 font-mono text-white">
 								<span class="text-xs text-gray-300"
-									>{currentTokens.find((t) => isAddressEqual(transfer.tokenAddress, t.address))
-										?.symbol || 'Unknown'}</span
+									>{isAddressEqual(transfer.tokenAddress, tokens[0].address)
+										? 'cysFLR'
+										: isAddressEqual(transfer.tokenAddress, tokens[1].address)
+											? 'cyWETH'
+											: 'Unknown'}</span
 								>
 								<span
 									>{formatEther(

@@ -2,19 +2,13 @@ query TopAccounts {
 	eligibleTotals(id: "SINGLETON") {
 		id
 		totalEligibleSum
-	}
-	cycloVaults {
-		address
-		totalEligible
+		totalEligibleCysFLR
+		totalEligibleCyWETH
 	}
 	accountsByCyBalance: accounts(orderBy: totalCyBalance, orderDirection: desc, first: 1000) {
 		id
-		vaultBalances {
-			vault {
-				address
-			}
-			balance
-		}
+		cysFLRBalance
+		cyWETHBalance
 		totalCyBalance
 	}
 }

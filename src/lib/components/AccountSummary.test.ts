@@ -27,7 +27,7 @@ const mockStats: AccountStats = {
 			rewardsAmount: BigInt(10)
 		},
 		totalRewards: BigInt(20)
-	} as unknown as AccountStats['shares'],
+	},
 	transfers: {
 		in: [],
 		out: []

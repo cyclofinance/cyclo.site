@@ -10,7 +10,7 @@ import { get, writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import { ZeroAddress } from 'ethers';
 import type { CyToken } from './types';
-import { supportedNetworks, tokens, quoterAddress, type NetworkConfig } from './stores';
+import { quoterAddress, tokens } from './stores';
 import blockNumberStore from './blockNumberStore';
 
 interface StatsState {
@@ -37,37 +37,39 @@ interface StatsState {
 	};
 }
 
-const getAllTokensAcrossNetworks = () => supportedNetworks.flatMap((network) => network.tokens);
-
-// Helper function to create initial state from tokens
-const createInitialState = (tokens: CyToken[]): StatsState => {
-	const stats: StatsState['stats'] = {};
-	const balances: StatsState['balances'] = {};
-
-	for (const token of tokens) {
-		stats[token.name] = {
+const initialState: StatsState = {
+	status: 'Checking',
+	statsLoading: true,
+	stats: {
+		cysFLR: {
 			supply: BigInt(0),
 			price: BigInt(0),
 			lockPrice: BigInt(0),
 			underlyingTvl: BigInt(0),
 			usdTvl: BigInt(0)
-		};
-		balances[token.name] = {
+		},
+		cyWETH: {
+			supply: BigInt(0),
+			price: BigInt(0),
+			lockPrice: BigInt(0),
+			underlyingTvl: BigInt(0),
+			usdTvl: BigInt(0)
+		}
+	},
+	balances: {
+		cysFLR: {
 			signerBalance: BigInt(0),
 			signerUnderlyingBalance: BigInt(0)
-		};
-	}
-
-	return {
-		status: 'Checking',
-		statsLoading: true,
-		stats,
-		balances,
-		swapQuotes: {
-			cyTokenOutput: BigInt(0),
-			cusdxOutput: BigInt(0)
+		},
+		cyWETH: {
+			signerBalance: BigInt(0),
+			signerUnderlyingBalance: BigInt(0)
 		}
-	};
+	},
+	swapQuotes: {
+		cyTokenOutput: BigInt(0),
+		cusdxOutput: BigInt(0)
+	}
 };
 
 const getDepositPreviewSwapValue = async (
@@ -112,8 +114,7 @@ const getCyTokenUsdPrice = async (
 	config: Config,
 	quoterAddress: Hex,
 	cusdxAddress: Hex,
-	selectedToken: CyToken,
-	chainId?: number
+	selectedToken: CyToken
 ) => {
 	try {
 		const data = await simulateQuoterQuoteExactOutputSingle(config, {
@@ -127,8 +128,7 @@ const getCyTokenUsdPrice = async (
 					sqrtPriceLimitX96: BigInt(0)
 				}
 			],
-			account: ZeroAddress as `0x${string}`,
-			chainId
+			account: ZeroAddress as `0x${string}`
 		});
 		return data.result[0] || 0n;
 	} catch {
@@ -145,8 +145,7 @@ const getCyTokenUsdPrice = async (
 						sqrtPriceLimitX96: BigInt(0)
 					}
 				],
-				account: ZeroAddress as `0x${string}`,
-				chainId
+				account: ZeroAddress as `0x${string}`
 			});
 			return data.result[0] || 0n;
 		} catch (error) {
@@ -156,20 +155,18 @@ const getCyTokenUsdPrice = async (
 	}
 };
 
-const getLockPrice = async (config: Config, selectedToken: CyToken, chainId?: number) => {
+const getLockPrice = async (config: Config, selectedToken: CyToken) => {
 	const { result } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
 		address: selectedToken.address,
 		args: [BigInt(1e18), 0n],
-		account: ZeroAddress as `0x${string}`,
-		chainId
+		account: ZeroAddress as `0x${string}`
 	});
 	return result;
 };
 
-const getcysFLRSupply = async (config: Config, selectedToken: CyToken, chainId?: number) => {
+const getcysFLRSupply = async (config: Config, selectedToken: CyToken) => {
 	const data = await readErc20TotalSupply(config, {
-		address: selectedToken.address,
-		chainId
+		address: selectedToken.address
 	});
 	return data;
 };
@@ -179,110 +176,91 @@ const getUnderlyingBalanceLockedInCysToken = async (
 	config: Config,
 	selectedToken: CyToken,
 	underlyingAddress: Hex,
-	currentBlock?: bigint,
-	chainId?: number
+	currentBlock: bigint
 ) => {
-	const request: Record<string, unknown> = {
+	const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(config, {
 		address: underlyingAddress,
-		args: [selectedToken.address]
-	};
-
-	if (typeof currentBlock !== 'undefined') {
-		request.blockNumber = currentBlock;
-	}
-
-	if (typeof chainId !== 'undefined') {
-		request.chainId = chainId;
-	}
-
-	const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(
-		config,
-		request as Parameters<typeof readErc20BalanceOf>[1]
-	);
+		args: [selectedToken.address],
+		blockNumber: currentBlock
+	});
 	return underlyingBalanceLockedInCysToken;
 };
 
 const balancesStore = () => {
-	// Initialize with current tokens
-	const initialTokens = getAllTokensAcrossNetworks();
-	const initialState = createInitialState(initialTokens);
-
-	const { subscribe, set, update } = writable<StatsState>(initialState);
-
-	const reset = () => {
-		set(createInitialState(getAllTokensAcrossNetworks()));
-	};
+	const { subscribe, set, update } = writable<StatsState>({
+		status: 'Checking',
+		statsLoading: true,
+		stats: {
+			cysFLR: {
+				supply: BigInt(0),
+				price: BigInt(0),
+				lockPrice: BigInt(0),
+				underlyingTvl: BigInt(0),
+				usdTvl: BigInt(0)
+			},
+			cyWETH: {
+				supply: BigInt(0),
+				price: BigInt(0),
+				lockPrice: BigInt(0),
+				underlyingTvl: BigInt(0),
+				usdTvl: BigInt(0)
+			}
+		},
+		balances: {
+			cysFLR: {
+				signerBalance: BigInt(0),
+				signerUnderlyingBalance: BigInt(0)
+			},
+			cyWETH: {
+				signerBalance: BigInt(0),
+				signerUnderlyingBalance: BigInt(0)
+			}
+		},
+		swapQuotes: {
+			cyTokenOutput: BigInt(0),
+			cusdxOutput: BigInt(0)
+		}
+	});
+	const reset = () => set(initialState);
 
 	const refreshPrices = async (config: Config, selectedToken: CyToken) => {
 		if (!selectedToken?.address) return;
 		const { blockNumber } = get(blockNumberStore);
 
 		const [lockPrice, cysFlrSupply, underlyingBalanceLockedInCysToken] = await Promise.all([
-			getLockPrice(config, selectedToken).catch((error) => {
-				console.log(`Failed to fetch lock price for ${selectedToken.name}:`, error);
-				return BigInt(0);
-			}),
-			getcysFLRSupply(config, selectedToken).catch((error) => {
-				console.log(`Failed to fetch supply for ${selectedToken.name}:`, error);
-				return BigInt(0);
-			}),
+			getLockPrice(config, selectedToken),
+			getcysFLRSupply(config, selectedToken),
 			getUnderlyingBalanceLockedInCysToken(
 				config,
 				selectedToken,
 				selectedToken.underlyingAddress,
 				blockNumber
-			).catch((error) => {
-				console.log(`Failed to fetch TVL for ${selectedToken.name}:`, error);
-				return BigInt(0);
-			})
+			)
 		]);
 
-		update((state) => {
-			// Ensure token exists in state, initialize if missing
-			if (!state.stats[selectedToken.name]) {
-				state.stats[selectedToken.name] = {
-					supply: BigInt(0),
-					price: BigInt(0),
-					lockPrice: BigInt(0),
-					underlyingTvl: BigInt(0),
-					usdTvl: BigInt(0)
-				};
-			}
-			if (!state.balances[selectedToken.name]) {
-				state.balances[selectedToken.name] = {
-					signerBalance: BigInt(0),
-					signerUnderlyingBalance: BigInt(0)
-				};
-			}
-
-			return {
-				...state,
-				status: 'Ready',
-				stats: {
-					...state.stats,
-					[selectedToken.name]: {
-						...state.stats[selectedToken.name],
-						price: state.stats[selectedToken.name].price,
-						lockPrice,
-						supply: cysFlrSupply,
-						underlyingTvl: underlyingBalanceLockedInCysToken,
-						usdTvl:
-							lockPrice > 0n
-								? (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
-								: BigInt(0)
-					}
+		update((state) => ({
+			...state,
+			status: 'Ready',
+			stats: {
+				...state.stats,
+				[selectedToken.name]: {
+					...state.stats[selectedToken.name],
+					price: state.stats[selectedToken.name].price,
+					lockPrice,
+					supply: cysFlrSupply,
+					underlyingTvl: underlyingBalanceLockedInCysToken,
+					usdTvl: (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
 				}
-			};
-		});
+			}
+		}));
 	};
 
 	const refreshBalances = async (config: Config, signerAddress: Hex) => {
 		try {
 			update((state) => ({ ...state, status: 'Checking' }));
 
-			const currentTokens: CyToken[] = get(tokens);
 			await Promise.all(
-				currentTokens.map(async (token: CyToken) => {
+				tokens.map(async (token: CyToken) => {
 					const [underlyingBalance, balance] = await Promise.all([
 						readErc20BalanceOf(config, {
 							address: token.underlyingAddress,
@@ -334,24 +312,19 @@ const balancesStore = () => {
 		}));
 	};
 
-	const refreshFooterStats = async (config: Config) => {
-		const getTokenStats = async (token: CyToken, network: NetworkConfig) => {
+	const refreshFooterStats = async (config: Config, quoterAddress: Hex, cusdxAddress: Hex) => {
+		const { blockNumber } = get(blockNumberStore);
+		const getTokenStats = async (token: CyToken) => {
 			const [supplyResult, priceResult, lockPriceResult, tvlResult] = await Promise.all([
-				getcysFLRSupply(config, token, token.chainId).catch((error) => {
+				getcysFLRSupply(config, token).catch((error) => {
 					console.log(`Failed to fetch supply for ${token.name}:`, error);
 					return BigInt(0);
 				}),
-				getCyTokenUsdPrice(
-					config,
-					network.quoterAddress,
-					network.cusdxAddress,
-					token,
-					token.chainId
-				).catch((error) => {
+				getCyTokenUsdPrice(config, quoterAddress, cusdxAddress, token).catch((error) => {
 					console.log(`Failed to fetch price for ${token.name}:`, error);
 					return BigInt(0);
 				}),
-				getLockPrice(config, token, token.chainId).catch((error) => {
+				getLockPrice(config, token).catch((error) => {
 					console.log(`Failed to fetch lock price for ${token.name}:`, error);
 					return BigInt(0);
 				}),
@@ -359,8 +332,7 @@ const balancesStore = () => {
 					config,
 					token,
 					token.underlyingAddress,
-					undefined,
-					token.chainId
+					blockNumber
 				).catch((error) => {
 					console.log(`Failed to fetch TVL for ${token.name}:`, error);
 					return BigInt(0);
@@ -375,42 +347,27 @@ const balancesStore = () => {
 				usdTvl: lockPriceResult > 0n ? (tvlResult * lockPriceResult) / BigInt(1e18) : BigInt(0)
 			};
 
-			return { tokenName: token.name, stats };
+			return stats;
 		};
 
-		const tokenStatsResults = await Promise.all(
-			supportedNetworks.flatMap((network) =>
-				network.tokens.map((token: CyToken) => getTokenStats(token, network))
-			)
+		const [cysFLRStats, cyWETHStats] = await Promise.all(
+			tokens.map(async (token) => await getTokenStats(token))
 		);
 
-		update((state) => {
-			const updatedStats = { ...state.stats };
-
-			// Update stats for all tokens
-			for (const { tokenName, stats } of tokenStatsResults) {
-				// Ensure token exists in state, initialize if missing
-				if (!updatedStats[tokenName]) {
-					updatedStats[tokenName] = {
-						supply: BigInt(0),
-						price: BigInt(0),
-						lockPrice: BigInt(0),
-						underlyingTvl: BigInt(0),
-						usdTvl: BigInt(0)
-					};
+		update((state) => ({
+			...state,
+			statsLoading: false,
+			stats: {
+				cysFLR: {
+					...state.stats.cysFLR,
+					...cysFLRStats
+				},
+				cyWETH: {
+					...state.stats.cyWETH,
+					...cyWETHStats
 				}
-				updatedStats[tokenName] = {
-					...updatedStats[tokenName],
-					...stats
-				};
 			}
-
-			return {
-				...state,
-				statsLoading: false,
-				stats: updatedStats
-			};
-		});
+		}));
 	};
 
 	return {
