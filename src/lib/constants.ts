@@ -44,4 +44,4 @@ export const tokens: Token[] = [
 	}
 ];
 
-export const TOTAL_REWARD = 1_000_000n * ONE; // 1M rFLR
+export const TOTAL_REWARD = 500_000n * ONE; // 500k rFLR
