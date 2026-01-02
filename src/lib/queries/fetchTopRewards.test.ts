@@ -61,20 +61,25 @@ describe('fetchTopRewards', () => {
 	it('fetches and computes leaderboard entries correctly', async () => {
 		const account1 = {
 			id: '0x123',
-			totalCyBalance: '3000000000000000000000',
+			totalCyBalance: '2000000000000000000000',
+			totalCyBalanceSnapshot: '3000000000000000000000',
 			vaultBalances: [
 				{
-					balance: ONE.toString(),
+					balance: (ONE + 2n).toString(),
+					balanceAvgSnapshot: ONE.toString(),
 					vault: {
 						address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR
-						totalEligible: '2000000000000000000000'
+						totalEligible: '1000000000000000000000',
+						totalEligibleSnapshot: '2000000000000000000000'
 					}
 				},
 				{
-					balance: (2n * ONE).toString(),
+					balance: ONE.toString(),
+					balanceAvgSnapshot: (2n * ONE).toString(),
 					vault: {
 						address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH
-						totalEligible: '1000000000000000000000'
+						totalEligible: '2000000000000000000000',
+						totalEligibleSnapshot: '1000000000000000000000'
 					}
 				}
 			]
@@ -82,20 +87,25 @@ describe('fetchTopRewards', () => {
 
 		const account2 = {
 			id: '0x456',
-			totalCyBalance: '1500000000000000000000',
+			totalCyBalance: '1600000000000000000000',
+			totalCyBalanceSnapshot: '1500000000000000000000',
 			vaultBalances: [
 				{
 					balance: (ONE / 2n).toString(),
+					balanceAvgSnapshot: (ONE / 2n).toString(),
 					vault: {
 						address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR
-						totalEligible: '2000000000000000000000'
+						totalEligible: '1000000000000000000000',
+						totalEligibleSnapshot: '2000000000000000000000'
 					}
 				},
 				{
 					balance: ONE.toString(),
+					balanceAvgSnapshot: ONE.toString(),
 					vault: {
 						address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH
-						totalEligible: '1000000000000000000000'
+						totalEligible: '1100000000000000000000',
+						totalEligibleSnapshot: '1000000000000000000000'
 					}
 				}
 			]
@@ -106,7 +116,8 @@ describe('fetchTopRewards', () => {
 				accountsByCyBalance: [account1, account2],
 				eligibleTotals: {
 					id: 'SINGLETON',
-					totalEligibleSum: '3000000000000000000000'
+					totalEligibleSum: '2000000000000000000000',
+					totalEligibleSumSnapshot: '3000000000000000000000'
 				}
 			}
 		};
