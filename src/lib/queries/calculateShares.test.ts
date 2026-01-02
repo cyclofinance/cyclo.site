@@ -51,12 +51,12 @@ const account = {
 			balanceAvgSnapshot: ONE.toString(),
 			vault: {
 				address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR address
-				totalEligible: (ONE).toString(), // total eligible for cysFLR
+				totalEligible: ONE.toString(), // total eligible for cysFLR
 				totalEligibleSnapshot: (ONE * 2n).toString() // total eligible snapshot for cysFLR
 			}
 		},
 		{
-			balance: (ONE).toString(),
+			balance: ONE.toString(),
 			balanceAvgSnapshot: (ONE / 2n).toString(),
 			vault: {
 				address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex, // cyWETH address
@@ -66,7 +66,7 @@ const account = {
 		}
 	],
 	totalCyBalance: (ONE / 2n).toString(),
-	totalCyBalanceSnapshot: (ONE + ONE / 2n).toString(),
+	totalCyBalanceSnapshot: (ONE + ONE / 2n).toString()
 };
 
 const eligibleTotals = {
@@ -79,7 +79,7 @@ const eligibleTotals = {
 const cycloVaults = [
 	{
 		address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex, // cysFLR address
-		totalEligible: (ONE).toString(), // total eligible for cysFLR
+		totalEligible: ONE.toString(), // total eligible for cysFLR
 		totalEligibleSnapshot: (ONE * 2n).toString() // total eligible snapshot for cysFLR
 	},
 	{

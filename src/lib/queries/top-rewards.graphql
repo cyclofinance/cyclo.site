@@ -9,7 +9,11 @@ query TopAccounts {
 		totalEligible
 		totalEligibleSnapshot
 	}
-	accountsByCyBalance: accounts(orderBy: totalCyBalanceSnapshot, orderDirection: desc, first: 1000) {
+	accountsByCyBalance: accounts(
+		orderBy: totalCyBalanceSnapshot
+		orderDirection: desc
+		first: 1000
+	) {
 		id
 		vaultBalances {
 			vault {
