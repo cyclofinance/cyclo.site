@@ -5,37 +5,10 @@ import transactionStore from '$lib/transactionStore';
 import { useDataFetcher } from '$lib/dataFetcher';
 import { Router } from 'sushi/router';
 
-// Mock ethers
-vi.mock('ethers', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('ethers')>();
-	return {
-		...actual,
-		ethers: {
-			...actual.ethers,
-			ZeroAddress: '0x0000000000000000000000000000000000000000'
-		},
-		formatEther: vi.fn().mockImplementation((value: bigint) => value.toString()),
-		formatUnits: vi.fn().mockImplementation((value: bigint) => value.toString())
-	};
-});
-
 // Mock dependencies
 vi.mock('$lib/dataFetcher', () => ({
 	useDataFetcher: vi.fn()
 }));
-
-vi.mock('@wagmi/core', () => ({
-	switchNetwork: vi.fn()
-}));
-
-vi.mock('svelte-wagmi', async () => {
-	const { writable } = await import('svelte/store');
-	return {
-		wagmiConfig: writable(undefined),
-		chainId: writable(undefined),
-		signerAddress: writable(undefined)
-	};
-});
 
 vi.mock('$lib/transactionStore', () => ({
 	default: {
@@ -50,61 +23,27 @@ vi.mock('sushi/router', () => ({
 }));
 
 // Mock the actual tokens that are being used in the component
-vi.mock('$lib/constants', () => {
-	const mockTokens = [
+vi.mock('$lib/constants', () => ({
+	tokens: [
 		{
 			address: '0xfbda5f676cb37624f28265a144a48b0d6e87d3b6',
 			symbol: 'USDC.e',
 			name: 'Bridged USDC (Stargate)',
 			decimals: 6
 		}
-	];
-	return {
-		tokensForNetwork: vi.fn(() => mockTokens),
-		tokens: mockTokens
-	};
-});
+	]
+}));
 
-vi.mock('$lib/stores', async () => {
-	const { writable } = await import('svelte/store');
-	// eslint-disable-next-line @typescript-eslint/no-require-imports
-	const { flare } = require('@wagmi/core/chains');
-
-	const mockCyToken = {
-		address: '0xdef4560000000000000000000000000000000000',
-		symbol: 'TEST',
-		name: 'Test Token',
-		decimals: 18,
-		underlyingAddress: '0x1234560000000000000000000000000000000000',
-		underlyingSymbol: 'UNDERLYING',
-		receiptAddress: '0xabcdef0000000000000000000000000000000000'
-	};
-
-	const mockNetworkConfig = {
-		key: 'flare',
-		chain: flare,
-		wFLRAddress: '0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d',
-		quoterAddress: '0x5B5513c55fd06e2658010c121c37b07fC8e8B705',
-		cusdxAddress: '0xfe2907dfa8db6e320cdbf45f0aa888f6135ec4f8',
-		usdcAddress: '0xFbDa5F676cB37624f28265A144A48B0d6e87d3b6',
-		explorerApiUrl: 'https://flare-explorer.flare.network/api',
-		explorerUrl: 'https://flarescan.com',
-		orderbookSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
-		rewardsSubgraphUrl:
-			'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-11-ab43/gn',
-		tokens: [mockCyToken]
-	};
-
-	return {
-		tokens: writable([mockCyToken]),
-		allTokens: writable([mockCyToken]),
-		selectedCyToken: writable(mockCyToken),
-		selectedNetwork: writable(mockNetworkConfig),
-		supportedNetworks: [mockNetworkConfig],
-		setActiveNetwork: vi.fn()
-	};
-});
+vi.mock('$lib/stores', () => ({
+	tokens: [
+		{
+			address: '0xdef4560000000000000000000000000000000000',
+			symbol: 'TEST',
+			name: 'Test Token',
+			decimals: 18
+		}
+	]
+}));
 
 describe('DCA Page', () => {
 	const mockDataFetcher = {
@@ -121,12 +60,6 @@ describe('DCA Page', () => {
 	const mockRoute = {
 		amountOutBI: 1500000000000000000n, // 1.5 output tokens
 		status: 'Success'
-	};
-
-	const fillRequiredFields = async () => {
-		await fireEvent.input(screen.getByTestId('amount-input'), { target: { value: '100' } });
-		await fireEvent.input(screen.getByTestId('period-input'), { target: { value: '7' } });
-		await fireEvent.input(screen.getByTestId('baseline-input'), { target: { value: '1.5' } });
 	};
 
 	beforeEach(() => {
@@ -168,8 +101,6 @@ describe('DCA Page', () => {
 	it('should call handleDeployDca when Deploy is clicked', async () => {
 		render(Page);
 
-		await fillRequiredFields();
-
 		// Click the Deploy button
 		const deployButton = screen.getByRole('button', { name: 'Deploy' });
 		await fireEvent.click(deployButton);
@@ -180,8 +111,6 @@ describe('DCA Page', () => {
 
 	it('should update selectedAmountToken when Buy/Sell selection changes', async () => {
 		render(Page);
-
-		await fillRequiredFields();
 
 		// Find the select element for Buy/Sell
 		const selectElements = screen.getAllByRole('combobox');
@@ -209,9 +138,6 @@ describe('DCA Page', () => {
 	it('should pass form values to handleDeployDca', async () => {
 		// Render the component
 		render(Page);
-
-		// Fill required fields
-		await fillRequiredFields();
 
 		// Find the inputs using test IDs
 		const periodInput = screen.getByTestId('period-input');

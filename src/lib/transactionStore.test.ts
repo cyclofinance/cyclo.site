@@ -7,19 +7,12 @@ import {
 	writeErc20PriceOracleReceiptVaultDeposit,
 	writeErc20PriceOracleReceiptVaultRedeem
 } from '../generated';
-import {
-	waitForTransactionReceipt,
-	readContract,
-	readContracts,
-	sendTransaction,
-	type Config
-} from '@wagmi/core';
+import { waitForTransactionReceipt, type Config } from '@wagmi/core';
 import { waitFor } from '@testing-library/svelte';
 import { TransactionErrorMessage } from './types/errors';
 import type { CyToken } from '$lib/types';
 import { mockWagmiConfigStore } from '$lib/mocks/mockStores';
 import balancesStore from './balancesStore';
-import { fetchUpdateBlobs, extractParsedTimes, extractPublishTime } from './pyth';
 
 vi.mock('$lib/queries/getReceipts', () => ({
 	getReceipts: vi.fn()
@@ -46,65 +39,8 @@ vi.mock('../generated', () => ({
 }));
 
 vi.mock('@wagmi/core', () => ({
-	waitForTransactionReceipt: vi.fn(),
-	readContract: vi.fn(),
-	readContracts: vi.fn(),
-	sendTransaction: vi.fn()
+	waitForTransactionReceipt: vi.fn()
 }));
-
-vi.mock('./pyth', () => ({
-	CYCLO_VAULT_ABI: [],
-	PYTH_ORACLE_ABI: [],
-	I_PYTH_ABI: [],
-	fetchUpdateBlobs: vi.fn(),
-	extractParsedTimes: vi.fn(),
-	extractPublishTime: vi.fn().mockReturnValue(BigInt(1234567890)),
-	toU64: vi.fn((val: bigint) => val)
-}));
-
-vi.mock('viem', async () => {
-	const actual = await vi.importActual('viem');
-	return {
-		...actual,
-		encodeFunctionData: vi.fn().mockReturnValue('0xmockedEncodedData')
-	};
-});
-
-vi.mock('svelte-wagmi', () => {
-	const createMockStore = <T>(value: T) => ({
-		subscribe: (fn: (value: T) => void) => {
-			fn(value);
-			return { unsubscribe: () => {} };
-		}
-	});
-	return {
-		wagmiConfig: createMockStore({})
-	};
-});
-
-vi.mock('./stores', () => {
-	const createMockStore = <T>(value: T) => ({
-		subscribe: (fn: (value: T) => void) => {
-			fn(value);
-			return { unsubscribe: () => {} };
-		}
-	});
-	return {
-		myReceipts: { set: vi.fn() },
-		selectedNetwork: createMockStore({ chain: { id: 14 } }),
-		selectedCyToken: createMockStore({
-			name: 'cyWETH.pyth',
-			address: '0x28C7747D7eA25ED3dDCd075c6CCC3634313a0F59',
-			underlyingAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
-			underlyingSymbol: 'WETH',
-			receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319',
-			symbol: 'cyWETH.pyth',
-			decimals: 18,
-			chainId: 42161,
-			networkName: 'Arbitrum One'
-		})
-	};
-});
 
 describe('transactionStore', () => {
 	const mockSignerAddress = '0x1234567890abcdef';
@@ -115,10 +51,7 @@ describe('transactionStore', () => {
 		underlyingSymbol: 'sFLR',
 		receiptAddress: '0xeeff5678',
 		symbol: 'cysFLR',
-		decimals: 18,
-		chainId: 14,
-		networkName: 'Flare',
-		active: true
+		decimals: 18
 	};
 	const mockTokenId = '1';
 	const mockAssets = BigInt(1000);
@@ -388,87 +321,6 @@ describe('transactionStore', () => {
 		await waitFor(() => {
 			expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
 			expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_UNLOCK);
-		});
-	});
-
-	describe('handlePythPriceUpdate', () => {
-		const { handlePythPriceUpdate } = transactionStore;
-		const mockPriceOracleAddress = '0xPriceOracleAddress';
-		const mockPythContractAddress = '0xPythContractAddress';
-		const mockPriceFeedId = '0xPriceFeedId1234567890abcdef';
-
-		beforeEach(() => {
-			// Setup common mocks for Pyth price update
-			(readContract as Mock)
-				.mockResolvedValueOnce(mockPriceOracleAddress) // priceOracle
-				.mockResolvedValueOnce(mockPythContractAddress) // I_PYTH_CONTRACT
-				.mockResolvedValueOnce(mockPriceFeedId) // I_PRICE_FEED_ID
-				.mockResolvedValueOnce(BigInt(100)); // getUpdateFee
-
-			(fetchUpdateBlobs as Mock).mockResolvedValue({
-				updateData: ['0xUpdateData1'],
-				parsed: [{ id: mockPriceFeedId.toLowerCase(), price: { publish_time: 1234567890 } }]
-			});
-
-			(extractParsedTimes as Mock).mockReturnValue({
-				[mockPriceFeedId.toLowerCase()]: BigInt(1234567890)
-			});
-
-			// Re-setup extractPublishTime mock after resetAllMocks
-			(extractPublishTime as Mock).mockReturnValue(BigInt(1234567890));
-		});
-
-		it('should handle successful Pyth price update', async () => {
-			(sendTransaction as Mock).mockResolvedValue('0xPythUpdateTxHash');
-			(waitForTransactionReceipt as Mock).mockResolvedValue({
-				status: 'success',
-				transactionHash: '0xPythUpdateTxHash'
-			});
-
-			await handlePythPriceUpdate();
-
-			expect(readContract).toHaveBeenCalledTimes(4);
-			expect(fetchUpdateBlobs).toHaveBeenCalledWith([mockPriceFeedId]);
-			expect(sendTransaction).toHaveBeenCalled();
-			expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
-			expect(get(transactionStore).hash).toBe('0xPythUpdateTxHash');
-		});
-
-		it('should handle user rejecting Pyth price update transaction', async () => {
-			(sendTransaction as Mock).mockRejectedValue(new Error('UserRejectedRequestError'));
-
-			await handlePythPriceUpdate();
-
-			expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
-			expect(get(transactionStore).error).toBe(TransactionErrorMessage.USER_REJECTED_PRICE_UPDATE);
-		});
-
-		it('should handle transaction timeout during Pyth price update', async () => {
-			(sendTransaction as Mock).mockResolvedValue('0xPythUpdateTxHash');
-			(waitForTransactionReceipt as Mock).mockRejectedValue(new Error('Timeout'));
-
-			await handlePythPriceUpdate();
-
-			expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
-			expect(get(transactionStore).error).toBe(TransactionErrorMessage.TIMEOUT);
-			expect(get(transactionStore).hash).toBe('0xPythUpdateTxHash');
-		});
-
-		it('should use fallback for publish times when not in parsed response', async () => {
-			(extractParsedTimes as Mock).mockReturnValue({}); // No parsed times
-
-			(readContracts as Mock).mockResolvedValue([{ result: { publishTime: BigInt(1234567890) } }]);
-
-			(sendTransaction as Mock).mockResolvedValue('0xPythUpdateTxHash');
-			(waitForTransactionReceipt as Mock).mockResolvedValue({
-				status: 'success',
-				transactionHash: '0xPythUpdateTxHash'
-			});
-
-			await handlePythPriceUpdate();
-
-			expect(readContracts).toHaveBeenCalled();
-			expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
 		});
 	});
 });

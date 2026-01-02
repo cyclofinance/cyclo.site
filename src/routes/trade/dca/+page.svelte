@@ -1,15 +1,8 @@
 <script lang="ts">
 	import Input from '$lib/components/Input.svelte';
 	import Select from '$lib/components/Select.svelte';
-	import { tokensForNetwork } from '$lib/constants';
-	import {
-		allTokens,
-		selectedCyToken as storeSelectedCyToken,
-		supportedNetworks,
-		setActiveNetwork
-	} from '$lib/stores';
-	import { switchNetwork } from '@wagmi/core';
-	import { wagmiConfig } from 'svelte-wagmi';
+	import { tokens } from '$lib/constants';
+	import { tokens as cyTokens } from '$lib/stores';
 	import type { CyToken, Token } from '$lib/types';
 	import TradeAmountInput from '$lib/components/TradeAmountInput.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -28,90 +21,19 @@
 	} from '$lib/trade/validateDeploymentArgs';
 	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
 
-	// selected values - initialize from store
-	let selectedCyToken: CyToken = $storeSelectedCyToken;
-
-	let selectedNetworkForCyToken = supportedNetworks[0];
-	let networkTokens: Token[] = [];
-	let lastSyncedNetworkKey: string | undefined;
-	let lastSwitchedChainId: number | undefined;
-
-	// Keep selected cyToken aligned with available tokens and the store
-	$: if ($allTokens.length > 0) {
-		const currentTokens = $allTokens;
-		const storeToken = $storeSelectedCyToken;
-		const storeTokenValid = currentTokens.some((t) => t.name === storeToken.name);
-
-		// If the store token became invalid, fall back to the first available token
-		if (!storeTokenValid) {
-			const fallback = currentTokens[0];
-			selectedCyToken = fallback;
-			storeSelectedCyToken.set(fallback);
-		} else if (!selectedCyToken) {
-			// Initialize local selection from the store
-			selectedCyToken = storeToken;
-		}
-	}
-
-	// Persist user-driven selection back to the store
-	$: if (selectedCyToken) {
-		storeSelectedCyToken.set(selectedCyToken);
-	}
-
-	// Resolve network for the selected cyToken and get the matching spend/receive tokens
-	$: selectedNetworkForCyToken =
-		supportedNetworks.find((network) => network.chain.id === selectedCyToken?.chainId) ||
-		supportedNetworks[0];
-
-	// Keep the app's active network aligned with the selected cyToken's network
-	$: if (selectedNetworkForCyToken?.key && selectedNetworkForCyToken.key !== lastSyncedNetworkKey) {
-		setActiveNetwork(selectedNetworkForCyToken.key);
-		lastSyncedNetworkKey = selectedNetworkForCyToken.key;
-
-		// Prompt the wallet to switch chains to match the selected token's network
-		const config = $wagmiConfig;
-		const targetChainId = selectedNetworkForCyToken.chain.id;
-		if (config && targetChainId !== lastSwitchedChainId) {
-			switchNetwork(config, { chainId: targetChainId }).catch((error) =>
-				console.warn(`Failed to switch wallet network to ${selectedNetworkForCyToken.key}:`, error)
-			);
-			lastSwitchedChainId = targetChainId;
-		}
-	}
-
-	$: networkTokens = tokensForNetwork(selectedNetworkForCyToken.key);
-
-	// Initialize and update selectedToken based on the selected cyToken's network
-	let selectedToken: Token | undefined;
-	let previousNetworkKey: string | undefined;
-	$: if (networkTokens.length > 0) {
-		const currentNetworkKey = selectedNetworkForCyToken.key;
-		// If network changed or selectedToken is not initialized or not in current network tokens
-		if (
-			currentNetworkKey !== previousNetworkKey ||
-			!selectedToken ||
-			!networkTokens.find((t) => t.address === selectedToken!.address)
-		) {
-			// Try to find the current selectedToken in the new network's tokens
-			const tokenToUse =
-				selectedToken && networkTokens.find((t) => t.address === selectedToken!.address);
-			selectedToken = tokenToUse || networkTokens[0];
-			previousNetworkKey = currentNetworkKey;
-		}
-	}
+	// selected values
+	let selectedCyToken: CyToken = cyTokens[0];
+	let selectedToken: Token = tokens[0];
 	let selectedBuyOrSell: 'Buy' | 'Sell' = 'Buy';
 	let selectedPeriodUnit: 'Days' | 'Hours' | 'Minutes' = 'Days';
-	let selectedAmountToken: Token | undefined;
+	let selectedAmountToken: Token;
 	let selectedAmount: bigint;
 	let selectedPeriod: string;
 	let selectedBaseline: string;
 	let overrideDepositAmount: bigint;
 	let inputVaultId: Hex | undefined;
 	let outputVaultId: Hex | undefined;
-	$: selectedAmountToken =
-		selectedBuyOrSell == 'Buy'
-			? selectedToken || (networkTokens.length > 0 ? networkTokens[0] : undefined)
-			: selectedCyToken;
+	$: selectedAmountToken = selectedBuyOrSell == 'Buy' ? selectedToken : selectedCyToken;
 	$: depositAmount = chooseOverrideDepositAmount ? overrideDepositAmount : selectedAmount;
 
 	// errors
@@ -123,8 +45,6 @@
 	let overrideDepositAmountError: boolean = false;
 
 	$: disableDeploy =
-		!selectedToken ||
-		!selectedAmountToken ||
 		!selectedAmount ||
 		!selectedPeriod ||
 		!selectedBaseline ||
@@ -143,11 +63,6 @@
 	const dataFetcher: DataFetcher = useDataFetcher();
 
 	const handleDeploy = () => {
-		if (!selectedToken || !selectedAmountToken) return;
-
-		// Ensure the active network matches the selected cyToken's network
-		setActiveNetwork(selectedNetworkForCyToken.key);
-
 		transactionStore.handleDeployDca(
 			{
 				selectedCyToken,
@@ -160,8 +75,7 @@
 				selectedBaseline,
 				depositAmount,
 				inputVaultId,
-				outputVaultId,
-				selectedNetworkKey: selectedNetworkForCyToken.key
+				outputVaultId
 			},
 			dataFetcher
 		);
@@ -190,27 +104,23 @@
 		/>
 
 		<!-- token to buy or sell -->
-		{#if $allTokens.length > 0}
-			<Select
-				options={$allTokens}
-				bind:selected={selectedCyToken}
-				getOptionLabel={(token) => token.name}
-				dataTestId="cy-token-select"
-			/>
-		{/if}
+		<Select
+			options={cyTokens}
+			bind:selected={selectedCyToken}
+			getOptionLabel={(token) => token.name}
+			dataTestId="cy-token-select"
+		/>
 
 		<!-- token to spend or receive -->
 		<span class="text-sm text-gray-200" data-testid="with-for-label"
 			>{selectedBuyOrSell == 'Buy' ? 'with' : 'for'}</span
 		>
-		{#if networkTokens.length > 0}
-			<Select
-				options={networkTokens}
-				bind:selected={selectedToken}
-				getOptionLabel={(token) => token?.name || ''}
-				dataTestId="token-select"
-			/>
-		{/if}
+		<Select
+			options={tokens}
+			bind:selected={selectedToken}
+			getOptionLabel={(token) => token.name}
+			dataTestId="token-select"
+		/>
 	</div>
 
 	<!-- amount to spend or receive -->
@@ -222,15 +132,13 @@
 				time defined below. This creates a streaming budget over time.
 			</InfoTooltip></span
 		>
-		{#if selectedAmountToken}
-			<TradeAmountInput
-				amountToken={selectedAmountToken}
-				bind:amount={selectedAmount}
-				dataTestId="amount-input"
-				validate={validateSelectedAmount}
-				bind:isError={selectedAmountError}
-			/>
-		{/if}
+		<TradeAmountInput
+			amountToken={selectedAmountToken}
+			bind:amount={selectedAmount}
+			dataTestId="amount-input"
+			validate={validateSelectedAmount}
+			bind:isError={selectedAmountError}
+		/>
 	</div>
 
 	<!-- period over which to spend or receive -->
@@ -261,33 +169,27 @@
 
 	<!-- lowest price to spend or receive -->
 	<div class="flex flex-col gap-2" data-testid="baseline-container">
-		{#if selectedToken}
-			<div class="text-sm text-gray-200">
-				{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${selectedToken.symbol} per ${selectedCyToken.symbol}`})
-				<InfoTooltip
-					>The {selectedBuyOrSell == 'Buy' ? 'highest' : 'lowest'} price at which the strategy will {selectedBuyOrSell ==
-					'Buy'
-						? 'buy'
-						: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but
-					note the budget set above is still accruing, meaning the strategy will attempt to "catch
-					up" when the market comes back within range.
-				</InfoTooltip>
-			</div>
+		<div class="text-sm text-gray-200">
+			{selectedBuyOrSell == 'Buy' ? 'Highest price to buy' : 'Lowest price to sell'} at ({`${selectedToken.symbol} per ${selectedCyToken.symbol}`})
+			<InfoTooltip
+				>The {selectedBuyOrSell == 'Buy' ? 'highest' : 'lowest'} price at which the strategy will {selectedBuyOrSell ==
+				'Buy'
+					? 'buy'
+					: 'sell'}. If the market price won't allow it, the strategy will not buy or sell, but note
+				the budget set above is still accruing, meaning the strategy will attempt to "catch up" when
+				the market comes back within range.
+			</InfoTooltip>
+		</div>
 
-			<Input
-				type="number"
-				unit={selectedToken.symbol}
-				bind:amount={selectedBaseline}
-				dataTestId="baseline-input"
-				validate={validateBaseline}
-				bind:isError={selectedBaselineError}
-			/>
-			<TradePrice
-				inputToken={selectedToken}
-				outputToken={selectedCyToken}
-				dataTestId="trade-price"
-			/>
-		{/if}
+		<Input
+			type="number"
+			unit={selectedToken.symbol}
+			bind:amount={selectedBaseline}
+			dataTestId="baseline-input"
+			validate={validateBaseline}
+			bind:isError={selectedBaselineError}
+		/>
+		<TradePrice inputToken={selectedToken} outputToken={selectedCyToken} dataTestId="trade-price" />
 	</div>
 
 	<!-- advanced options -->
@@ -309,7 +211,7 @@
 						<span class="text-md text-gray-200">Custom deposit amount</span>
 						<Toggle bind:checked={chooseOverrideDepositAmount} size="small" />
 					</div>
-					{#if chooseOverrideDepositAmount && selectedAmountToken}
+					{#if chooseOverrideDepositAmount}
 						<TradeAmountInput
 							amountToken={selectedAmountToken}
 							bind:amount={overrideDepositAmount}

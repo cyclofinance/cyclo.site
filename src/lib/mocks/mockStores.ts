@@ -6,9 +6,7 @@ import { mockWeb3Config } from './mockWagmiConfig';
 import type { CyToken, Receipt } from '$lib/types';
 
 // Mock writable stores
-export const web3ModalStore = writable<{ open: () => void } | null>({
-	open: () => {}
-});
+export const web3ModalStore = writable<null>(null);
 const mockWrongNetworkWritable = writable<boolean>(false);
 const mockSignerAddressWritable = writable<string>('');
 const mockChainIdWritable = writable<number>(0);

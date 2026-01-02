@@ -1,17 +1,14 @@
 import { type AccountStatusQuery } from '../../generated-graphql';
 import AccountStatus from '$lib/queries/account-status.graphql?raw';
+import { SUBGRAPH_URL } from '$lib/constants';
 import type { AccountStats } from '$lib/types';
 import { calculateShares } from './calculateShares';
-import { extractBalancesFromVaults } from './vaultUtils';
 import { isHex } from 'viem';
-import { get } from 'svelte/store';
-import { selectedNetwork } from '$lib/stores';
 
 export async function fetchAccountStatus(account: string): Promise<AccountStats> {
 	if (!isHex(account)) throw 'Invalid account';
 
-	const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
-	const response = await fetch(subgraphUrl, {
+	const response = await fetch(SUBGRAPH_URL, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
@@ -27,12 +24,14 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 	const eligibleTotals = data.eligibleTotals;
 	if (!eligibleTotals) throw 'No eligible totals';
 
-	const shares = calculateShares(accountData, eligibleTotals, data.cycloVaults);
-	const balances = extractBalancesFromVaults(accountData.vaultBalances);
+	const shares = calculateShares(accountData, eligibleTotals);
 
 	return {
 		account,
-		eligibleBalances: balances,
+		eligibleBalances: {
+			cysFLR: BigInt(accountData.cysFLRBalance),
+			cyWETH: BigInt(accountData.cyWETHBalance)
+		},
 		shares,
 		transfers: {
 			in: accountData.transfersIn,
