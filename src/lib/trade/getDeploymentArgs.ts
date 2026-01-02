@@ -8,7 +8,7 @@ import { get } from 'svelte/store';
 import { signerAddress } from 'svelte-wagmi';
 import type { DataFetcher } from 'sushi';
 import { getBaseline, getMaxTradeAmount, getPeriodInSeconds } from './derivations';
-import { tokens } from '$lib/constants';
+import { tokensForNetwork } from '$lib/constants';
 import type { Hex } from 'viem';
 
 export type DcaDeploymentArgs = {
@@ -23,6 +23,7 @@ export type DcaDeploymentArgs = {
 	inputVaultId: Hex | undefined;
 	outputVaultId: Hex | undefined;
 	depositAmount: bigint;
+	selectedNetworkKey: string;
 };
 
 export const getDcaDeploymentArgs = async (
@@ -40,13 +41,20 @@ export const getDcaDeploymentArgs = async (
 		selectedBaseline,
 		depositAmount,
 		inputVaultId,
-		outputVaultId
+		outputVaultId,
+		selectedNetworkKey
 	} = options;
 
-	const gui = await DotrainOrderGui.chooseDeployment(dcaStrategy, 'flare');
+	const gui = await DotrainOrderGui.chooseDeployment(dcaStrategy, selectedNetworkKey);
 
 	const inputToken = selectedBuyOrSell === 'Buy' ? selectedCyToken : selectedToken;
 	const outputToken = selectedAmountToken;
+
+	const networkTokens = tokensForNetwork(selectedNetworkKey);
+	const referenceToken = networkTokens[0];
+	if (!referenceToken) {
+		throw new Error(`No reference tokens configured for network "${selectedNetworkKey}"`);
+	}
 
 	await gui.saveSelectToken('input', inputToken.address);
 	await gui.saveSelectToken('output', outputToken.address);
@@ -70,9 +78,9 @@ export const getDcaDeploymentArgs = async (
 	});
 
 	const outputTokenInUSDC =
-		outputToken.address === tokens[0].address
+		outputToken.address === referenceToken.address
 			? '1'
-			: await getPrice(tokens[0], outputToken, dataFetcher);
+			: await getPrice(referenceToken, outputToken, dataFetcher);
 
 	// The minimum trade amount should be $1 worth of the output token
 	gui.saveFieldValue('min-trade-amount', {

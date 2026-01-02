@@ -4,6 +4,7 @@
 	import transactionStore from '$lib/transactionStore';
 	import { TransactionStatus } from '$lib/transactionStore';
 	import { TransactionErrorMessage } from '$lib/types/errors';
+	import { selectedNetwork } from '$lib/stores';
 
 	const handleClose = () => {
 		return transactionStore.reset();
@@ -47,8 +48,8 @@
 				{#if $transactionStore.hash}
 					<a
 						class="whitespace-pre-wrap break-words text-center text-sm text-primary hover:underline"
-						href={`https://flarescan.com/tx/${$transactionStore.hash}`}
-						data-testid="view-transaction-link">View transaction on Flarescan</a
+						href={`${$selectedNetwork.explorerUrl}/tx/${$transactionStore.hash}`}
+						data-testid="view-transaction-link">View transaction on Scan</a
 					>
 				{/if}
 				<Button on:click={() => handleClose()} class="mt-4" dataTestId="dismiss-button"
@@ -83,8 +84,8 @@
 							<a
 								target="_blank"
 								class="whitespace-pre-wrap break-words text-center hover:underline"
-								href={`https://flarescan.com/tx/${$transactionStore.hash}`}
-								data-testid="view-transaction-link">View transaction on Flarescan</a
+								href={`${$selectedNetwork.explorerUrl}/tx/${$transactionStore.hash}`}
+								data-testid="view-transaction-link">View transaction on Explorer</a
 							>
 						</div>
 					{/if}
