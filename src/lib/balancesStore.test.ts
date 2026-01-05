@@ -9,6 +9,7 @@ import {
 import balancesStore from './balancesStore';
 import { getBlock, type Config } from '@wagmi/core';
 import type { CyToken } from '$lib/types';
+import { supportedNetworks } from './stores';
 
 const { mockWagmiConfigStore } = await vi.hoisted(() => import('./mocks/mockStores'));
 
@@ -28,46 +29,60 @@ describe('balancesStore', () => {
 
 	const { reset, refreshBalances, refreshPrices } = balancesStore;
 
-	beforeEach(() => {
-		vi.resetAllMocks();
-		reset();
-	});
+	const buildInitialState = () => {
+		const stats: Record<
+			string,
+			{
+				supply: bigint;
+				price: bigint;
+				lockPrice: bigint;
+				underlyingTvl: bigint;
+				usdTvl: bigint;
+			}
+		> = {};
 
-	it('should initialize with the correct default state', () => {
-		expect(get(balancesStore)).toEqual({
-			balances: {
-				cyWETH: {
-					signerBalance: BigInt(0),
-					signerUnderlyingBalance: BigInt(0)
-				},
-				cysFLR: {
-					signerBalance: BigInt(0),
-					signerUnderlyingBalance: BigInt(0)
-				}
-			},
-			stats: {
-				cyWETH: {
-					lockPrice: BigInt(0),
-					price: BigInt(0),
-					supply: BigInt(0),
-					underlyingTvl: BigInt(0),
-					usdTvl: BigInt(0)
-				},
-				cysFLR: {
-					lockPrice: BigInt(0),
-					price: BigInt(0),
-					supply: BigInt(0),
-					underlyingTvl: BigInt(0),
-					usdTvl: BigInt(0)
-				}
-			},
+		const balances: Record<
+			string,
+			{
+				signerBalance: bigint;
+				signerUnderlyingBalance: bigint;
+			}
+		> = {};
+
+		const allTokens = supportedNetworks.flatMap((network) => network.tokens);
+		allTokens.forEach((token) => {
+			stats[token.name] = {
+				supply: BigInt(0),
+				price: BigInt(0),
+				lockPrice: BigInt(0),
+				underlyingTvl: BigInt(0),
+				usdTvl: BigInt(0)
+			};
+			balances[token.name] = {
+				signerBalance: BigInt(0),
+				signerUnderlyingBalance: BigInt(0)
+			};
+		});
+
+		return {
+			balances,
+			stats,
 			statsLoading: true,
 			status: 'Checking',
 			swapQuotes: {
 				cusdxOutput: BigInt(0),
 				cyTokenOutput: BigInt(0)
 			}
-		});
+		};
+	};
+
+	beforeEach(() => {
+		vi.resetAllMocks();
+		reset();
+	});
+
+	it('should initialize with the correct default state', () => {
+		expect(get(balancesStore)).toEqual(buildInitialState());
 	});
 	it('should refresh cysFLR balances correctly', async () => {
 		(getBlock as Mock).mockResolvedValue({ number: BigInt(1000) });
@@ -110,7 +125,10 @@ describe('balancesStore', () => {
 			underlyingSymbol: 'sFLR',
 			receiptAddress: '0xeeff5678',
 			symbol: 'cysFLR',
-			decimals: 18
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare',
+			active: true
 		};
 
 		await refreshPrices(mockWagmiConfigStore as unknown as Config, mockToken);
@@ -130,39 +148,6 @@ describe('balancesStore', () => {
 
 		reset();
 
-		expect(get(balancesStore)).toEqual({
-			balances: {
-				cyWETH: {
-					signerBalance: BigInt(0),
-					signerUnderlyingBalance: BigInt(0)
-				},
-				cysFLR: {
-					signerBalance: BigInt(0),
-					signerUnderlyingBalance: BigInt(0)
-				}
-			},
-			stats: {
-				cyWETH: {
-					lockPrice: BigInt(0),
-					price: BigInt(0),
-					supply: BigInt(0),
-					underlyingTvl: BigInt(0),
-					usdTvl: BigInt(0)
-				},
-				cysFLR: {
-					lockPrice: BigInt(0),
-					price: BigInt(0),
-					supply: BigInt(0),
-					underlyingTvl: BigInt(0),
-					usdTvl: BigInt(0)
-				}
-			},
-			statsLoading: true,
-			status: 'Checking',
-			swapQuotes: {
-				cusdxOutput: BigInt(0),
-				cyTokenOutput: BigInt(0)
-			}
-		});
+		expect(get(balancesStore)).toEqual(buildInitialState());
 	});
 });

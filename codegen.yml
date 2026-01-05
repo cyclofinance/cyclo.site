@@ -1,4 +1,4 @@
-schema: 'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-11-25-21af/gn' # Remote endpoint
+schema: 'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-10-b807/gn' # Remote endpoint
 documents: 'src/**/*.graphql' # Where your query files live
 generates:
   src/generated-graphql.ts: # Output path
@@ -6,3 +6,8 @@ generates:
       - typescript
       - typescript-operations
       - typescript-document-nodes
+    config:
+      # Use a custom naming convention to handle nested field conflicts
+      # This prevents 'receiptAddress' and 'receipt__address' from both becoming 'ReceiptAddress'
+      namingConvention:
+        enumValues: keep

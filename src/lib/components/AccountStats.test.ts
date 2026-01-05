@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect, afterEach } from 'vitest';
 import AccountSummary from './AccountSummary.svelte';
-import type { AccountStats } from '$lib/types';
+import type { AccountStats, CyToken } from '$lib/types';
 import { ONE } from '$lib/constants';
+import type { Hex } from 'viem';
 
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
@@ -10,6 +11,44 @@ vi.mock('$app/navigation', () => ({
 
 vi.mock('$lib/queries/fetchAccountStatus', () => ({
 	fetchAccountStatus: vi.fn()
+}));
+
+const { mockTokensStore } = vi.hoisted(() => {
+	// eslint-disable-next-line @typescript-eslint/no-require-imports
+	const { writable } = require('svelte/store');
+	const tokens: CyToken[] = [
+		{
+			name: 'cysFLR',
+			address: '0x19831cfB53A0dbeAD9866C43557C1D48DfF76567' as Hex,
+			underlyingAddress: '0x12e605bc104e93B45e1aD99F9e555f659051c2BB' as Hex,
+			underlyingSymbol: 'sFLR',
+			receiptAddress: '0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09' as Hex,
+			symbol: 'cysFLR',
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare',
+			active: true
+		},
+		{
+			name: 'cyWETH',
+			address: '0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4' as Hex,
+			underlyingAddress: '0x1502fa4be69d526124d453619276faccab275d3d' as Hex,
+			underlyingSymbol: 'WETH',
+			receiptAddress: '0xBE2615A0fcB54A49A1eB472be30d992599FE0968' as Hex,
+			symbol: 'cyWETH',
+			decimals: 18,
+			chainId: 14,
+			networkName: 'Flare',
+			active: true
+		}
+	];
+	return {
+		mockTokensStore: writable(tokens)
+	};
+});
+
+vi.mock('$lib/stores', () => ({
+	tokens: mockTokensStore
 }));
 
 const mockStats: AccountStats = {
@@ -28,7 +67,7 @@ const mockStats: AccountStats = {
 			rewardsAmount: BigInt(10) * ONE
 		},
 		totalRewards: BigInt(20) * ONE
-	},
+	} as unknown as AccountStats['shares'],
 	transfers: {
 		in: [],
 		out: []

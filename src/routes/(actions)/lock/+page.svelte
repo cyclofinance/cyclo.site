@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { activeNetworkKey } from '$lib/stores';
 	import Lock from '$lib/components/Lock.svelte';
 </script>
 
-<Lock />
+{#key $activeNetworkKey}
+	<Lock />
+{/key}
