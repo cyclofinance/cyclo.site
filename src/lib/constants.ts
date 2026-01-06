@@ -90,4 +90,4 @@ export const tokensForNetwork = (key: string): Token[] => {
 // Default tokens (Flare) retained for backwards compatibility
 export const tokens: Token[] = NETWORK_TOKEN_CONFIGS[0].tokens;
 
-export const TOTAL_REWARD = 1_000_000n * ONE; // 1M rFLR
+export const TOTAL_REWARD = 500_000n * ONE; // 500k rFLR
