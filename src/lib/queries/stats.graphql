@@ -2,10 +2,14 @@ query Stats {
 	eligibleTotals(id: "SINGLETON") {
 		id
 		totalEligibleSum
-		totalEligibleCysFLR
-		totalEligibleCyWETH
+		totalEligibleSumSnapshot
 	}
-	accounts(where: { totalCyBalance_gt: "0" }, first: 1000) {
+	cycloVaults {
+		address
+		totalEligible
+		totalEligibleSnapshot
+	}
+	accounts(where: { totalCyBalanceSnapshot_gt: "0" }, first: 1000) {
 		id
 	}
 }

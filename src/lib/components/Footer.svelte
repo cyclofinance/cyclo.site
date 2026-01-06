@@ -3,15 +3,36 @@
 	import balancesStore from '$lib/balancesStore';
 	import { formatNumberWithAbbreviations } from '$lib/methods';
 	import { Spinner } from 'flowbite-svelte';
+	import { supportedNetworks } from '$lib/stores';
 
 	function calculateMarketCap(price: bigint, supply: bigint): bigint {
 		return (price * supply) / BigInt(1e6);
 	}
 
-	$: globalTvl =
-		$balancesStore.stats.cysFLR?.usdTvl && $balancesStore.stats.cyWETH?.usdTvl
-			? $balancesStore.stats.cysFLR.usdTvl + $balancesStore.stats.cyWETH.usdTvl
-			: 0n;
+	const tokensByNetwork = supportedNetworks.map((network) => ({
+		key: network.key,
+		name: network.chain?.name ?? network.key,
+		tokens: network.tokens
+	}));
+
+	$: globalTvl = tokensByNetwork.reduce((sum, network) => {
+		const networkSum = network.tokens.reduce((tokenSum, token) => {
+			const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
+			return tokenSum + usdTvl;
+		}, 0n);
+		return sum + networkSum;
+	}, 0n);
+
+	$: networkTvls = tokensByNetwork.reduce(
+		(acc, network) => ({
+			...acc,
+			[network.key]: network.tokens.reduce((tokenSum, token) => {
+				const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
+				return tokenSum + usdTvl;
+			}, 0n)
+		}),
+		{} as Record<string, bigint>
+	);
 </script>
 
 <footer
@@ -32,63 +53,85 @@
 					<span>$ {Number(formatUnits(globalTvl, 18))}</span>
 				</div>
 			</div>
-			{#each ['cysFLR', 'cyWETH'] as token}
-				<div class="flex flex-col gap-2 border-b border-white/20 pb-2 last:border-0">
-					<div class="font-bold">{token}</div>
-					<div
-						class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
-						data-testId="lock-price"
-					>
-						<span>Current Lock Price ({token} per {token.slice(2)})</span>
-						<span
-							>{Number(formatEther($balancesStore.stats[token]?.lockPrice || 0n)).toString()}</span
-						>
+			{#each tokensByNetwork as network (network.key)}
+				<div class="flex flex-col gap-3 border-b border-white/20 pb-3 last:border-0">
+					<div class="flex items-center justify-between text-sm font-semibold uppercase">
+						<span>{network.name}</span>
+						<span>$ {Number(formatUnits(networkTvls[network.key] || 0n, 18))}</span>
 					</div>
-					<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="price">
-						<span>Current {token} Price</span>
-						<span>
-							$ {Number(formatUnits($balancesStore.stats[token]?.price || 0n, 6))}
-						</span>
-					</div>
-					{#if $balancesStore.stats[token]?.supply}
-						<div
-							class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
-							data-testId="supply"
-						>
-							<span>Total {token} supply</span>
-							<span>
-								{formatNumberWithAbbreviations(
-									Number(formatEther($balancesStore.stats[token].supply))
-								)}
-							</span>
+
+					{#each network.tokens as token (token.name)}
+						<div class="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2">
+							<div class="font-bold">
+								{token.symbol}
+								<span class="text-xs font-normal text-white/70">({token.networkName})</span>
+							</div>
+							<div
+								class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
+								data-testId="lock-price"
+							>
+								<span>Current Lock Price ({token.symbol} per {token.underlyingSymbol})</span>
+								<span
+									>{Number(
+										formatEther($balancesStore.stats[token.name]?.lockPrice || 0n)
+									).toString()}</span
+								>
+							</div>
+							<div
+								class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
+								data-testId="price"
+							>
+								<span>Current {token.symbol} Price</span>
+								<span>
+									$ {Number(formatUnits($balancesStore.stats[token.name]?.price || 0n, 6))}
+								</span>
+							</div>
+							{#if $balancesStore.stats[token.name]?.supply}
+								<div
+									class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
+									data-testId="supply"
+								>
+									<span>Total {token.symbol} supply</span>
+									<span>
+										{formatNumberWithAbbreviations(
+											Number(formatUnits($balancesStore.stats[token.name].supply, token.decimals))
+										)}
+									</span>
+								</div>
+							{/if}
+							<div
+								class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
+								data-testId={`market-cap-${token.symbol}`}
+							>
+								<span>{token.symbol} Market Cap</span>
+								<span>
+									$ {Number(
+										formatEther(
+											calculateMarketCap(
+												$balancesStore.stats[token.name]?.price || 0n,
+												$balancesStore.stats[token.name]?.supply || 0n
+											)
+										)
+									)}
+								</span>
+							</div>
+							{#if $balancesStore.stats[token.name]?.underlyingTvl}
+								<div
+									class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
+									data-testId="tvl"
+								>
+									<span>Total Value Locked</span>
+									<span>
+										{Number(
+											formatUnits($balancesStore.stats[token.name].underlyingTvl, token.decimals)
+										)}
+										{token.underlyingSymbol}
+										/ $ {Number(formatUnits($balancesStore.stats[token.name].usdTvl, 18))}
+									</span>
+								</div>
+							{/if}
 						</div>
-					{/if}
-					<div
-						class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
-						data-testId={`market-cap-${token}`}
-					>
-						<span>{token} Market Cap</span>
-						<span>
-							$ {Number(
-								formatEther(
-									calculateMarketCap(
-										$balancesStore.stats[token]?.price || 0n,
-										$balancesStore.stats[token]?.supply || 0n
-									)
-								)
-							)}
-						</span>
-					</div>
-					{#if $balancesStore.stats[token]?.underlyingTvl}
-						<div class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2" data-testId="tvl">
-							<span>Total Value Locked</span>
-							<span>
-								{Number(formatEther($balancesStore.stats[token].underlyingTvl))}
-								{token.slice(2)}
-								/ $ {Number(formatUnits($balancesStore.stats[token].usdTvl, 18))}
-							</span>
-						</div>
-					{/if}
+					{/each}
 				</div>
 			{/each}
 		</div>

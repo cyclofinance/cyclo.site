@@ -1,14 +1,24 @@
 query AccountStatus($account: ID!) {
 	eligibleTotals(id: "SINGLETON") {
 		id
-		totalEligibleCyWETH
-		totalEligibleCysFLR
 		totalEligibleSum
+		totalEligibleSumSnapshot
+	}
+	cycloVaults {
+		address
+		totalEligible
+		totalEligibleSnapshot
 	}
 	account(id: $account) {
-		cysFLRBalance
-		cyWETHBalance
-		totalCyBalance
+		vaultBalances {
+			balance
+			balanceAvgSnapshot
+			vault {
+				address
+			}
+		}
+		# totalCyBalance
+		totalCyBalanceSnapshot
 		transfersIn(orderBy: blockNumber, orderDirection: desc) {
 			fromIsApprovedSource
 			transactionHash
@@ -43,7 +53,7 @@ query AccountStatus($account: ID!) {
 			__typename
 			id
 			tokenAddress
-			LiquidityChangeType
+			liquidityChangeType
 			blockNumber
 			blockTimestamp
 			liquidityChange

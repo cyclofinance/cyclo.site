@@ -1,48 +1,75 @@
 import { ONE } from '$lib/constants';
 import type { Shares } from '$lib/types';
-import type { AccountStatusQuery } from '../../generated-graphql';
+import type { AccountStatusQuery, TopAccountsQuery } from '../../generated-graphql';
 import { calculateRewardsPools } from './calculateRewardsPools';
+import { aggregateTotalEligibleFromVaults, extractBalancesFromVaults } from './vaultUtils';
+import { get } from 'svelte/store';
+import { tokens } from '$lib/stores';
+
+type AccountWithVaults =
+	| Omit<
+			NonNullable<AccountStatusQuery['account']>,
+			'transfersIn' | 'transfersOut' | 'liquidityChanges'
+	  >
+	| NonNullable<TopAccountsQuery['accountsByCyBalance']>[0];
 
 export const calculateShares = (
-	account: Omit<
-		NonNullable<AccountStatusQuery['account']>,
-		'transfersIn' | 'transfersOut' | 'liquidityChanges'
-	>,
-	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']>
+	account: AccountWithVaults,
+	eligibleTotals: NonNullable<AccountStatusQuery['eligibleTotals']>,
+	cycloVaults?: AccountStatusQuery['cycloVaults']
 ): Shares => {
-	// Calculate share for each token
-	const shares: Shares = {
-		cysFLR: { percentageShare: BigInt(0), rewardsAmount: BigInt(0) },
-		cyWETH: { percentageShare: BigInt(0), rewardsAmount: BigInt(0) },
+	const currentTokens = get(tokens);
+
+	// Initialize shares for all tokens
+	const shares = {
 		totalRewards: BigInt(0)
-	};
+	} as Shares;
+	for (const token of currentTokens) {
+		shares[token.symbol] = { percentageShare: BigInt(0), rewardsAmount: BigInt(0) };
+	}
 
 	// Skip if no eligible totals
 	if (!eligibleTotals || Object.keys(eligibleTotals).length === 0) {
 		return shares;
 	}
 
-	const rewardsPools = calculateRewardsPools(eligibleTotals);
+	// Extract account balances from vaultBalances
+	const balances = extractBalancesFromVaults(account.vaultBalances);
 
-	// Balances
-	const cysFLRBalance = BigInt(account.cysFLRBalance);
-	const cyWETHBalance = BigInt(account.cyWETHBalance);
+	// Aggregate total eligible amounts from cycloVaults
+	const totals = aggregateTotalEligibleFromVaults(cycloVaults);
 
-	// cysFLR shares
-	shares.cysFLR.percentageShare =
-		cysFLRBalance > 0 ? (cysFLRBalance * ONE) / BigInt(eligibleTotals.totalEligibleCysFLR) : 0n;
+	// Create eligibleTotals structure for calculateRewardsPools
+	const totalEligibleSum = Object.values(totals).reduce((sum, val) => sum + val, 0n);
+	const eligibleTotalsForPools = {
+		...eligibleTotals,
+		totalEligibleSum: totalEligibleSum.toString(),
+		...Object.fromEntries(
+			currentTokens.map((token) => [
+				`totalEligible${token.symbol}`,
+				totals[token.symbol]?.toString() || '0'
+			])
+		)
+	};
 
-	// cyWETH shares
-	shares.cyWETH.percentageShare =
-		cyWETHBalance > 0 ? (cyWETHBalance * ONE) / BigInt(eligibleTotals.totalEligibleCyWETH) : 0n;
+	const rewardsPools = calculateRewardsPools(eligibleTotalsForPools, currentTokens);
 
-	// cysFLR rewards
-	shares.cysFLR.rewardsAmount = (shares.cysFLR.percentageShare * rewardsPools.cysFlr) / ONE;
+	// Calculate shares for each token
+	for (const token of currentTokens) {
+		const balance = balances[token.symbol] || 0n;
+		const total = totals[token.symbol] || 0n;
+		const poolReward = rewardsPools[token.symbol] || 0n;
 
-	// cyWETH rewards
-	shares.cyWETH.rewardsAmount = (shares.cyWETH.percentageShare * rewardsPools.cyWeth) / ONE;
+		// Calculate percentage share (same logic as old code: balance / totalEligible)
+		shares[token.symbol].percentageShare =
+			balance > 0n && total > 0n ? (balance * ONE) / total : 0n;
 
-	shares.totalRewards = shares.cysFLR.rewardsAmount + shares.cyWETH.rewardsAmount;
+		// Calculate rewards amount
+		shares[token.symbol].rewardsAmount = (shares[token.symbol].percentageShare * poolReward) / ONE;
+
+		// Add to total rewards
+		shares.totalRewards += shares[token.symbol].rewardsAmount;
+	}
 
 	return shares;
 };
