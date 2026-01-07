@@ -126,7 +126,7 @@
 											formatUnits($balancesStore.stats[token.name].underlyingTvl, token.decimals)
 										)}
 										{token.underlyingSymbol}
-										/ $ {Number(formatUnits($balancesStore.stats[token.name].usdTvl, 18))}
+										/ $ {Number(formatUnits($balancesStore.stats[token.name].usdTvl, token.decimals))}
 									</span>
 								</div>
 							{/if}
