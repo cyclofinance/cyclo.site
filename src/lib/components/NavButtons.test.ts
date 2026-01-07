@@ -62,7 +62,7 @@ describe('NavButtons Component', () => {
 		expect(rewardsButton).toHaveAttribute('href', base + '/rewards');
 
 		const tradeButton = getByTestId('trade-button');
-		expect(tradeButton).toHaveAttribute('href', base + '/trade/dca');
+		expect(tradeButton).toHaveAttribute('href', base + '/trade');
 
 		const chartButton = getByTestId('chart-button');
 		expect(chartButton).toHaveAttribute('href', base + '/chart');
