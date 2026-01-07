@@ -9,7 +9,7 @@ export const calculateRewardsPools = (
 	tokens: CyToken[]
 ): RewardsPools => {
 	const pools: RewardsPools = {};
-	const totalEligibleSum = BigInt(eligibleTotals.totalEligibleSum || '0');
+	const totalEligibleSum = BigInt(eligibleTotals.totalEligibleSumSnapshot || '0');
 
 	// Calculate inverse fractions for each token
 	const inverseFractions: Record<string, bigint> = {};

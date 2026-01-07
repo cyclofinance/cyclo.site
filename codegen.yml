@@ -1,4 +1,4 @@
-schema: 'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-10-b807/gn' # Remote endpoint
+schema: 'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2025-12-30-6559/gn' # Remote endpoint
 documents: 'src/**/*.graphql' # Where your query files live
 generates:
   src/generated-graphql.ts: # Output path

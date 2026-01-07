@@ -10,7 +10,8 @@ const eligibleTotals = {
 	id: 'SINGLETON',
 	totalEligiblecyWETH: '1000000000000000000000',
 	totalEligiblecysFLR: '2000000000000000000000',
-	totalEligibleSum: '3000000000000000000000'
+	totalEligibleSum: '3000000000000000000000',
+	totalEligibleSumSnapshot: '3000000000000000000000'
 } as NonNullable<AccountStatusQuery['eligibleTotals']> & Record<string, string | undefined>;
 
 const mockTokens: CyToken[] = [
