@@ -450,4 +450,3 @@ describe('DcaStrategy Component', () => {
 		expect(screen.getByTestId('trade-price')).toBeInTheDocument();
 	});
 });
-

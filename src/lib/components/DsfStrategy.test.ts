@@ -451,4 +451,3 @@ describe('DsfStrategy Component', () => {
 		expect(callArgs.selectedNetworkKey).toBe('flare');
 	});
 });
-

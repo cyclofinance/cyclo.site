@@ -30,4 +30,3 @@
 		<DsfStrategy />
 	{/if}
 </div>
-

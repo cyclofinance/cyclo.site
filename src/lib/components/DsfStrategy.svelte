@@ -170,12 +170,12 @@
 	<div>
 		<h1 class="text-2xl text-white">Deploy a DSF strategy</h1>
 		<p class="mt-2 text-sm text-gray-200">
-			A market-making order that offers two-sided auction-based spreads that narrow over time, with a
-			defensive feature that quickly exits positions by counter-trading when market trends emerge.
+			A market-making order that offers two-sided auction-based spreads that narrow over time, with
+			a defensive feature that quickly exits positions by counter-trading when market trends emerge.
 		</p>
 		<p class="mt-2 text-sm text-gray-200">
-			This strategy is powered by Raindex. Once you've deployed you can manage your order and withdraw
-			the funds on <a target="_blank" class="underline" href="https://v2.raindex.finance"
+			This strategy is powered by Raindex. Once you've deployed you can manage your order and
+			withdraw the funds on <a target="_blank" class="underline" href="https://v2.raindex.finance"
 				>the Raindex platform</a
 			>.
 		</p>
@@ -409,4 +409,3 @@
 	<Button on:click={handleDeploy} dataTestId="deploy-button" disabled={disableDeploy}>Deploy</Button
 	>
 </div>
-
