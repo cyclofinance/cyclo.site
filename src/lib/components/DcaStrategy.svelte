@@ -169,17 +169,19 @@
 </script>
 
 <div class="grid w-full grid-cols-1 items-start gap-6">
-	<h1 class="text-2xl text-white">Deploy a DCA strategy</h1>
-	<p class="text-sm text-gray-200">
-		This is a streaming DCA strategy. You can deploy it to spread out buys or sells of cyTokens over
-		time. Very useful when the slippage is too high for a single transaction!
-	</p>
-	<p class="text-sm text-gray-200">
-		This strategy is powered by Raindex. Once you've deployed you can manage your order and withdraw
-		the funds on <a target="_blank" class="underline" href="https://v2.raindex.finance"
-			>the Raindex platform</a
-		>.
-	</p>
+	<div>
+		<h1 class="text-2xl text-white">Deploy a DCA strategy</h1>
+		<p class="mt-2 text-sm text-gray-200">
+			This is a streaming DCA strategy. You can deploy it to spread out buys or sells of cyTokens
+			over time. Very useful when the slippage is too high for a single transaction!
+		</p>
+		<p class="mt-2 text-sm text-gray-200">
+			This strategy is powered by Raindex. Once you've deployed you can manage your order and
+			withdraw the funds on <a target="_blank" class="underline" href="https://v2.raindex.finance"
+				>the Raindex platform</a
+			>.
+		</p>
+	</div>
 	<div class="flex flex-col gap-2">
 		<!-- whether to buy or sell -->
 		<Select
