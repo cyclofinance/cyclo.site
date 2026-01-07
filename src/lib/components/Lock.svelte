@@ -326,7 +326,7 @@
 								: formatUnits($balancesStore.swapQuotes.cyTokenOutput, $selectedCyToken.decimals)}
 						{:else}
 							Stale Price / Incorrect price
-						{/if}}</span
+						{/if}</span
 					>
 				{/key}
 				<span>{$selectedCyToken.name}</span>
