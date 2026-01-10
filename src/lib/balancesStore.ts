@@ -86,6 +86,22 @@ const getDepositPreviewSwapValue = async (
 				blockNumber: blockNumber
 			});
 
+		try {
+			const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
+				address: get(quoterAddress),
+				args: [
+					{
+						tokenIn: selectedToken.address,
+						tokenOut: valueToken,
+						amountIn: depositPreviewValue,
+						fee: 3000,
+						sqrtPriceLimitX96: BigInt(0)
+					}
+				]
+			});
+			return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
+		} catch {
+			// Try with fee 10000 if fee 3000 fails
 			try {
 				const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
 					address: get(quoterAddress),
@@ -94,33 +110,17 @@ const getDepositPreviewSwapValue = async (
 							tokenIn: selectedToken.address,
 							tokenOut: valueToken,
 							amountIn: depositPreviewValue,
-							fee: 3000,
+							fee: 10000,
 							sqrtPriceLimitX96: BigInt(0)
 						}
 					]
 				});
 				return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
-			} catch {
-				// Try with fee 10000 if fee 3000 fails
-				try {
-					const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
-						address: get(quoterAddress),
-						args: [
-							{
-								tokenIn: selectedToken.address,
-								tokenOut: valueToken,
-								amountIn: depositPreviewValue,
-								fee: 10000,
-								sqrtPriceLimitX96: BigInt(0)
-							}
-						]
-					});
-					return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
-				} catch (error) {
-					console.error('Error getting swapQuote with both fee pools:', error);
-					return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
-				}
+			} catch (error) {
+				console.error('Error getting swapQuote with both fee pools:', error);
+				return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
 			}
+		}
 		return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
 	} catch (error) {
 		console.error('Error getting deposit preview:', error);

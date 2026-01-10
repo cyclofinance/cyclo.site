@@ -1,11 +1,4 @@
-import {
-	cusdxAddress,
-	quoterAddress,
-	usdcAddress,
-	wFLRAddress,
-	tokens,
-	selectedNetwork
-} from '$lib/stores';
+import { quoterAddress, usdcAddress, wFLRAddress, tokens, selectedNetwork } from '$lib/stores';
 import { createConfig, http, simulateContract } from '@wagmi/core';
 import { get } from 'svelte/store';
 import { quoterAbi } from '../../generated';

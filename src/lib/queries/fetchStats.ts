@@ -45,7 +45,7 @@ export async function fetchStats(): Promise<GlobalStats> {
 
 	// Aggregate totals from cycloVaults
 	const totalEligible = aggregateTotalEligibleFromVaults(data.cycloVaults);
-	
+
 	// Calculate totalEligibleSum by normalizing all values to 18 decimals before summing
 	// This is necessary because tokens have different decimal precisions (e.g., cyFXRP.ftso has 6 decimals)
 	const totalEligibleSum = currentTokens.reduce((sum, token) => {
@@ -54,18 +54,18 @@ export async function fetchStats(): Promise<GlobalStats> {
 			// Normalize to 18 decimals: if token has fewer decimals, multiply by 10^(18 - token.decimals)
 			if (token.decimals < 18) {
 				const decimalDiff = 18 - token.decimals;
-				return sum + tokenTotal * (10n ** BigInt(decimalDiff));
+				return sum + tokenTotal * 10n ** BigInt(decimalDiff);
 			} else if (token.decimals === 18) {
 				return sum + tokenTotal;
 			} else {
 				// If token has more than 18 decimals, divide (shouldn't happen but handle it)
 				const decimalDiff = token.decimals - 18;
-				return sum + tokenTotal / (10n ** BigInt(decimalDiff));
+				return sum + tokenTotal / 10n ** BigInt(decimalDiff);
 			}
 		}
 		return sum;
 	}, 0n);
-	
+
 	const eligibleHolders = (data.accounts ?? []).length;
 
 	// Create eligibleTotals structure for calculateRewardsPools
@@ -79,20 +79,17 @@ export async function fetchStats(): Promise<GlobalStats> {
 			currentTokens.map((token) => {
 				const tokenTotal = totalEligible[token.symbol] || 0n;
 				let normalizedTotal = tokenTotal;
-				
+
 				// Normalize to 18 decimals for consistent comparison
 				if (token.decimals < 18 && tokenTotal > 0n) {
 					const decimalDiff = 18 - token.decimals;
-					normalizedTotal = tokenTotal * (10n ** BigInt(decimalDiff));
+					normalizedTotal = tokenTotal * 10n ** BigInt(decimalDiff);
 				} else if (token.decimals > 18 && tokenTotal > 0n) {
 					const decimalDiff = token.decimals - 18;
-					normalizedTotal = tokenTotal / (10n ** BigInt(decimalDiff));
+					normalizedTotal = tokenTotal / 10n ** BigInt(decimalDiff);
 				}
-				
-				return [
-					`totalEligible${token.symbol}`,
-					normalizedTotal.toString()
-				];
+
+				return [`totalEligible${token.symbol}`, normalizedTotal.toString()];
 			})
 		)
 	};
@@ -108,10 +105,9 @@ export async function fetchStats(): Promise<GlobalStats> {
 				const price = await priceQuoteFunctions[token.symbol]();
 				const totalEligibleForToken = totalEligible[token.symbol] || 0n;
 				const poolReward = rewardsPools[token.symbol] || 0n;
-				
+
 				// Only calculate APY if we have valid inputs
 				if (price > 0n && totalEligibleForToken > 0n && poolReward > 0n) {
-					
 					const res = calculateApy(poolReward, totalEligibleForToken, price);
 					apy[token.symbol] = res;
 				} else {
