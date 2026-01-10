@@ -86,24 +86,44 @@ const getDepositPreviewSwapValue = async (
 				blockNumber: blockNumber
 			});
 
-		if (selectedToken.name === 'cysFLR') {
-			const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
-				address: get(quoterAddress),
-				args: [
-					{
-						tokenIn: selectedToken.address,
-						tokenOut: valueToken,
-						amountIn: depositPreviewValue,
-						fee: 3000,
-						sqrtPriceLimitX96: BigInt(0)
-					}
-				]
-			});
-			return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
-		}
+			try {
+				const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
+					address: get(quoterAddress),
+					args: [
+						{
+							tokenIn: selectedToken.address,
+							tokenOut: valueToken,
+							amountIn: depositPreviewValue,
+							fee: 3000,
+							sqrtPriceLimitX96: BigInt(0)
+						}
+					]
+				});
+				return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
+			} catch {
+				// Try with fee 10000 if fee 3000 fails
+				try {
+					const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
+						address: get(quoterAddress),
+						args: [
+							{
+								tokenIn: selectedToken.address,
+								tokenOut: valueToken,
+								amountIn: depositPreviewValue,
+								fee: 10000,
+								sqrtPriceLimitX96: BigInt(0)
+							}
+						]
+					});
+					return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
+				} catch (error) {
+					console.error('Error getting swapQuote with both fee pools:', error);
+					return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
+				}
+			}
 		return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
 	} catch (error) {
-		console.error('Error getting swapQuote:', error);
+		console.error('Error getting deposit preview:', error);
 		return { cyTokenOutput: 0n, cusdxOutput: 0n };
 	}
 };
@@ -122,7 +142,7 @@ const getCyTokenUsdPrice = async (
 				{
 					tokenIn: cusdxAddress,
 					tokenOut: selectedToken.address,
-					amount: BigInt(1e18),
+					amount: BigInt(10 ** selectedToken.decimals),
 					fee: 3000,
 					sqrtPriceLimitX96: BigInt(0)
 				}
@@ -140,7 +160,7 @@ const getCyTokenUsdPrice = async (
 					{
 						tokenIn: cusdxAddress,
 						tokenOut: selectedToken.address,
-						amount: BigInt(1e18),
+						amount: BigInt(10 ** selectedToken.decimals),
 						fee: 10000,
 						sqrtPriceLimitX96: BigInt(0)
 					}
@@ -344,7 +364,7 @@ const balancesStore = () => {
 				getCyTokenUsdPrice(
 					config,
 					network.quoterAddress,
-					network.cusdxAddress,
+					network.usdcAddress,
 					token,
 					token.chainId
 				).catch((error) => {
