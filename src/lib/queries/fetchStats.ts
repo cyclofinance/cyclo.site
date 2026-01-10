@@ -2,6 +2,7 @@ import { type StatsQuery } from '../../generated-graphql';
 import Stats from '$lib/queries/stats.graphql?raw';
 import { getcysFLRwFLRPrice } from './cysFLRwFLRQuote';
 import { getcyWETHwFLRPrice } from './cyWETHwFLRQuote';
+import { getcyFXRPftsoWFLRPrice } from './cyFXRP.ftsowFLRQuote';
 import { ONE } from '$lib/constants';
 import { calculateRewardsPools } from './calculateRewardsPools';
 import { aggregateTotalEligibleFromVaults } from './vaultUtils';
@@ -12,8 +13,8 @@ import { tokens, selectedNetwork } from '$lib/stores';
 // Map of token symbols to their price quote functions
 const priceQuoteFunctions: Record<string, () => Promise<bigint>> = {
 	cysFLR: getcysFLRwFLRPrice,
-	cyWETH: getcyWETHwFLRPrice
-	// TODO: Add price quote function for cyFXRP.ftso when available
+	cyWETH: getcyWETHwFLRPrice,
+	'cyFXRP.ftso': getcyFXRPftsoWFLRPrice
 };
 
 export const calculateApy = (rewardPool: bigint, totalEligible: bigint, price: bigint) => {
@@ -44,18 +45,55 @@ export async function fetchStats(): Promise<GlobalStats> {
 
 	// Aggregate totals from cycloVaults
 	const totalEligible = aggregateTotalEligibleFromVaults(data.cycloVaults);
-	const totalEligibleSum = Object.values(totalEligible).reduce((sum, val) => sum + val, 0n);
+	
+	// Calculate totalEligibleSum by normalizing all values to 18 decimals before summing
+	// This is necessary because tokens have different decimal precisions (e.g., cyFXRP.ftso has 6 decimals)
+	const totalEligibleSum = currentTokens.reduce((sum, token) => {
+		const tokenTotal = totalEligible[token.symbol] || 0n;
+		if (tokenTotal > 0n) {
+			// Normalize to 18 decimals: if token has fewer decimals, multiply by 10^(18 - token.decimals)
+			if (token.decimals < 18) {
+				const decimalDiff = 18 - token.decimals;
+				return sum + tokenTotal * (10n ** BigInt(decimalDiff));
+			} else if (token.decimals === 18) {
+				return sum + tokenTotal;
+			} else {
+				// If token has more than 18 decimals, divide (shouldn't happen but handle it)
+				const decimalDiff = token.decimals - 18;
+				return sum + tokenTotal / (10n ** BigInt(decimalDiff));
+			}
+		}
+		return sum;
+	}, 0n);
+	
 	const eligibleHolders = (data.accounts ?? []).length;
 
 	// Create eligibleTotals structure for calculateRewardsPools
+	// Normalize all individual token totals to 18 decimals for consistent comparison
+	// This ensures the inverse fraction calculation works correctly across tokens with different decimals
 	const eligibleTotalsForPools = {
 		...data.eligibleTotals,
 		totalEligibleSum: totalEligibleSum.toString(),
+		totalEligibleSumSnapshot: totalEligibleSum.toString(), // Use our normalized sum
 		...Object.fromEntries(
-			currentTokens.map((token) => [
-				`totalEligible${token.symbol}`,
-				totalEligible[token.symbol]?.toString() || '0'
-			])
+			currentTokens.map((token) => {
+				const tokenTotal = totalEligible[token.symbol] || 0n;
+				let normalizedTotal = tokenTotal;
+				
+				// Normalize to 18 decimals for consistent comparison
+				if (token.decimals < 18 && tokenTotal > 0n) {
+					const decimalDiff = 18 - token.decimals;
+					normalizedTotal = tokenTotal * (10n ** BigInt(decimalDiff));
+				} else if (token.decimals > 18 && tokenTotal > 0n) {
+					const decimalDiff = token.decimals - 18;
+					normalizedTotal = tokenTotal / (10n ** BigInt(decimalDiff));
+				}
+				
+				return [
+					`totalEligible${token.symbol}`,
+					normalizedTotal.toString()
+				];
+			})
 		)
 	};
 
@@ -70,7 +108,20 @@ export async function fetchStats(): Promise<GlobalStats> {
 				const price = await priceQuoteFunctions[token.symbol]();
 				const totalEligibleForToken = totalEligible[token.symbol] || 0n;
 				const poolReward = rewardsPools[token.symbol] || 0n;
-				apy[token.symbol] = calculateApy(poolReward, totalEligibleForToken, price);
+				
+				// Only calculate APY if we have valid inputs
+				if (price > 0n && totalEligibleForToken > 0n && poolReward > 0n) {
+					
+					const res = calculateApy(poolReward, totalEligibleForToken, price);
+					apy[token.symbol] = res;
+				} else {
+					console.warn(`[APY] Skipping ${token.symbol} - invalid inputs:`, {
+						price: price.toString(),
+						totalEligible: totalEligibleForToken.toString(),
+						poolReward: poolReward.toString()
+					});
+					apy[token.symbol] = 0n;
+				}
 			} catch (error) {
 				console.error(`Failed to get price for ${token.symbol}:`, error);
 				apy[token.symbol] = 0n;
