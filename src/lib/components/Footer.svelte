@@ -106,11 +106,12 @@
 								<span>{token.symbol} Market Cap</span>
 								<span>
 									$ {Number(
-										formatEther(
+										formatUnits(
 											calculateMarketCap(
 												$balancesStore.stats[token.name]?.price || 0n,
 												$balancesStore.stats[token.name]?.supply || 0n
-											)
+											),
+											token.decimals
 										)
 									)}
 								</span>

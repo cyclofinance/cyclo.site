@@ -19,7 +19,11 @@ export const calculateRewardsPools = (
 		const totalEligibleKey = `totalEligible${token.symbol}`;
 		const totalEligible = BigInt(eligibleTotals[totalEligibleKey] || '0');
 
-		if (totalEligible > 0n) {
+		// All values are now normalized to 18 decimals in fetchStats.ts
+		// Only include tokens with meaningful eligible amounts (> 0.01 tokens = 10^16 in normalized units)
+		const minThreshold = 10n ** 16n; // 0.01 tokens in 18 decimals
+
+		if (totalEligible >= minThreshold && totalEligibleSum > 0n) {
 			const inverseFraction = (totalEligibleSum * ONE) / totalEligible;
 			inverseFractions[token.symbol] = inverseFraction;
 			sum += inverseFraction;

@@ -5,7 +5,7 @@
 	import balancesStore from '$lib/balancesStore';
 	import Input from '$lib/components/Input.svelte';
 	import {
-		cusdxAddress,
+		usdcAddress,
 		selectedCyToken,
 		allTokens,
 		setActiveNetworkByChainId,
@@ -98,7 +98,7 @@
 		balancesStore.refreshDepositPreviewSwapValue(
 			$wagmiConfig,
 			$selectedCyToken,
-			$cusdxAddress,
+			$usdcAddress,
 			assets
 		);
 	}
