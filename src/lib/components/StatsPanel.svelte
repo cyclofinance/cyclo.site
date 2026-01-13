@@ -6,6 +6,7 @@
 	import type { GlobalStats } from '$lib/types';
 	import { TOTAL_REWARD } from '$lib/constants';
 	import { selectedNetwork, tokens } from '$lib/stores';
+	import { formatUnits } from 'viem';
 
 	let loading = true;
 	let error: string | null = null;
@@ -80,7 +81,7 @@
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					{#each $tokens as token}
 						<div>
-							{token.symbol}: {Number(formatEther(stats.totalEligible[token.symbol] || 0n)).toFixed(
+							{token.symbol}: {Number(formatUnits(stats.totalEligible[token.symbol] || 0n, token.decimals)).toFixed(
 								2
 							)}
 						</div>

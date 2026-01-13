@@ -26,7 +26,7 @@
 					class="break-words font-mono text-white"
 					data-testid={`net-${token.symbol.toLowerCase()}-value`}
 				>
-					{formatEther(stats.eligibleBalances[token.symbol] || 0n)}
+					{formatUnits(stats.eligibleBalances[token.symbol] || 0n, token.decimals)}
 				</div>
 			</div>
 			<div class="space-y-1">

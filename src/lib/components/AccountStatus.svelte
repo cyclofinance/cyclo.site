@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fetchAccountStatus } from '$lib/queries/fetchAccountStatus';
-	import { getAddress } from 'ethers';
 	import Card from './Card.svelte';
 	import { tokens, selectedNetwork } from '$lib/stores';
-	import { isAddressEqual } from 'viem';
+	import { formatUnits, isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
 	import { formatEther } from 'viem';
 	import AccountStatsComponent from './AccountStats.svelte';
@@ -89,7 +88,7 @@
 							<div class="space-y-1">
 								<div class="text-sm">
 									{#if 'fromIsApprovedSource' in transfer}
-										{#if getAddress(transfer.from.id) === getAddress(account)}
+										{#if transfer.from.id.toLowerCase() === account.toLowerCase()}
 											<span class="text-error"
 												>Sent to {transfer.to.id.slice(0, 6)}...{transfer.to.id.slice(-4)}</span
 											>
@@ -116,10 +115,11 @@
 										?.symbol || 'Unknown'}</span
 								>
 								<span
-									>{formatEther(
+									>{formatUnits(
 										'fromIsApprovedSource' in transfer
 											? transfer.value
-											: transfer.depositedBalanceChange
+											: transfer.depositedBalanceChange,
+										currentTokens.find((t) => isAddressEqual(transfer.tokenAddress, t.address))?.decimals || 18
 									)}</span
 								>
 							</div>

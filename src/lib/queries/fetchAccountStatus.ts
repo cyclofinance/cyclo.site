@@ -19,7 +19,18 @@ export async function fetchAccountStatus(account: string): Promise<AccountStats>
 			variables: { account }
 		})
 	});
-	const data: AccountStatusQuery = (await response.json()).data;
+	const { data, errors } = (await response.json()) as {
+		data?: AccountStatusQuery;
+		errors?: { message: string }[];
+	};
+
+	if (errors?.length) {
+		throw new Error(`GraphQL errors: ${errors.map((e) => e.message).join(', ')}`);
+	}
+
+	if (!data) {
+		throw new Error('No data returned from query');
+	}
 
 	const accountData = data.account;
 	if (!accountData) throw 'No account';
