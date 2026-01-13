@@ -81,9 +81,9 @@
 				<div class="space-y-1 font-mono text-sm text-gray-400">
 					{#each $tokens as token}
 						<div>
-							{token.symbol}: {Number(formatUnits(stats.totalEligible[token.symbol] || 0n, token.decimals)).toFixed(
-								2
-							)}
+							{token.symbol}: {Number(
+								formatUnits(stats.totalEligible[token.symbol] || 0n, token.decimals)
+							).toFixed(2)}
 						</div>
 					{/each}
 				</div>

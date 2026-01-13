@@ -5,7 +5,6 @@
 	import { tokens, selectedNetwork } from '$lib/stores';
 	import { formatUnits, isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
-	import { formatEther } from 'viem';
 	import AccountStatsComponent from './AccountStats.svelte';
 
 	export let account: string;
@@ -119,7 +118,8 @@
 										'fromIsApprovedSource' in transfer
 											? transfer.value
 											: transfer.depositedBalanceChange,
-										currentTokens.find((t) => isAddressEqual(transfer.tokenAddress, t.address))?.decimals || 18
+										currentTokens.find((t) => isAddressEqual(transfer.tokenAddress, t.address))
+											?.decimals || 18
 									)}</span
 								>
 							</div>
