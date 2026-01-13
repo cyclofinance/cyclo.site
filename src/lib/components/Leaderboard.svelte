@@ -69,7 +69,10 @@
 							</div>
 							{#each $tokens as token}
 								<div class="font-medium text-white">
-									{(+formatEther(entry.eligibleBalances[token.symbol] || 0n)).toFixed(4)}
+									{(+formatUnits(
+										entry.eligibleBalances[token.symbol] || 0n,
+										token.decimals
+									)).toFixed(4)}
 								</div>
 								<div class="flex flex-col gap-y-2 font-medium text-white">
 									<span

@@ -39,16 +39,48 @@ export const calculateShares = (
 	// Aggregate total eligible amounts from cycloVaults
 	const totals = aggregateTotalEligibleFromVaults(cycloVaults);
 
+	// Calculate totalEligibleSum by normalizing all values to 18 decimals before summing
+	// This is necessary because tokens have different decimal precisions (e.g., cyFXRP.ftso has 6 decimals)
+	const totalEligibleSum = currentTokens.reduce((sum, token) => {
+		const tokenTotal = totals[token.symbol] || 0n;
+		if (tokenTotal > 0n) {
+			// Normalize to 18 decimals: if token has fewer decimals, multiply by 10^(18 - token.decimals)
+			if (token.decimals < 18) {
+				const decimalDiff = 18 - token.decimals;
+				return sum + tokenTotal * 10n ** BigInt(decimalDiff);
+			} else if (token.decimals === 18) {
+				return sum + tokenTotal;
+			} else {
+				// If token has more than 18 decimals, divide (shouldn't happen but handle it)
+				const decimalDiff = token.decimals - 18;
+				return sum + tokenTotal / 10n ** BigInt(decimalDiff);
+			}
+		}
+		return sum;
+	}, 0n);
+
 	// Create eligibleTotals structure for calculateRewardsPools
-	const totalEligibleSum = Object.values(totals).reduce((sum, val) => sum + val, 0n);
+	// Normalize all individual token totals to 18 decimals for consistent comparison
 	const eligibleTotalsForPools = {
 		...eligibleTotals,
 		totalEligibleSum: totalEligibleSum.toString(),
+		totalEligibleSumSnapshot: totalEligibleSum.toString(), // Use our normalized sum
 		...Object.fromEntries(
-			currentTokens.map((token) => [
-				`totalEligible${token.symbol}`,
-				totals[token.symbol]?.toString() || '0'
-			])
+			currentTokens.map((token) => {
+				const tokenTotal = totals[token.symbol] || 0n;
+				let normalizedTotal = tokenTotal;
+
+				// Normalize to 18 decimals for consistent comparison
+				if (token.decimals < 18 && tokenTotal > 0n) {
+					const decimalDiff = 18 - token.decimals;
+					normalizedTotal = tokenTotal * 10n ** BigInt(decimalDiff);
+				} else if (token.decimals > 18 && tokenTotal > 0n) {
+					const decimalDiff = token.decimals - 18;
+					normalizedTotal = tokenTotal / 10n ** BigInt(decimalDiff);
+				}
+
+				return [`totalEligible${token.symbol}`, normalizedTotal.toString()];
+			})
 		)
 	};
 
