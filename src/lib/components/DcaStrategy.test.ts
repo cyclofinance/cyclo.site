@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/svelte';
-import Page from './+page.svelte';
+import DcaStrategy from './DcaStrategy.svelte';
 import transactionStore from '$lib/transactionStore';
 import { useDataFetcher } from '$lib/dataFetcher';
 import { Router } from 'sushi/router';
@@ -106,7 +106,7 @@ vi.mock('$lib/stores', async () => {
 	};
 });
 
-describe('DCA Page', () => {
+describe('DcaStrategy Component', () => {
 	const mockDataFetcher = {
 		getLatestPrice: vi.fn(),
 		start: vi.fn(),
@@ -138,7 +138,7 @@ describe('DCA Page', () => {
 	});
 
 	it('should render the DCA form', () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Check that key elements are rendered
 		expect(screen.getByRole('button', { name: 'Deploy' })).toBeInTheDocument();
@@ -146,7 +146,7 @@ describe('DCA Page', () => {
 	});
 
 	it('should update the form when Buy/Sell selection changes', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Find the select element for Buy/Sell
 		const selectElements = screen.getAllByRole('combobox');
@@ -166,7 +166,7 @@ describe('DCA Page', () => {
 	});
 
 	it('should call handleDeployDca when Deploy is clicked', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		await fillRequiredFields();
 
@@ -179,7 +179,7 @@ describe('DCA Page', () => {
 	});
 
 	it('should update selectedAmountToken when Buy/Sell selection changes', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		await fillRequiredFields();
 
@@ -208,7 +208,7 @@ describe('DCA Page', () => {
 
 	it('should pass form values to handleDeployDca', async () => {
 		// Render the component
-		render(Page);
+		render(DcaStrategy);
 
 		// Fill required fields
 		await fillRequiredFields();
@@ -234,9 +234,9 @@ describe('DCA Page', () => {
 		expect(callArgs.selectedPeriodUnit).toBe('Days'); // Default value
 	});
 
-	// New tests for advanced options
+	// Tests for advanced options
 	it('should toggle advanced options when clicked', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Advanced options should be hidden initially
 		expect(screen.queryByText('Custom deposit amount')).not.toBeInTheDocument();
@@ -259,7 +259,7 @@ describe('DCA Page', () => {
 
 	// Test for custom deposit amount
 	it('should show custom deposit amount input when toggled', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Show advanced options
 		const advancedOptionsButton = screen.getByText('Show advanced options');
@@ -278,7 +278,7 @@ describe('DCA Page', () => {
 
 	// Test for vault ID inputs
 	it('should handle vault ID inputs correctly', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Show advanced options
 		const advancedOptionsButton = screen.getByText('Show advanced options');
@@ -325,7 +325,7 @@ describe('DCA Page', () => {
 
 	// Test for invalid vault ID validation
 	it('should show error for invalid vault IDs', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Show advanced options
 		const advancedOptionsButton = screen.getByText('Show advanced options');
@@ -353,7 +353,7 @@ describe('DCA Page', () => {
 
 	// Test for period unit selection
 	it('should update period unit when changed', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Find the period unit select
 		const periodUnitSelect = screen.getByTestId('period-unit-select');
@@ -381,7 +381,7 @@ describe('DCA Page', () => {
 
 	// Test for form validation
 	it('should disable Deploy button when required fields are missing', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Deploy button should be disabled initially
 		const deployButton = screen.getByTestId('deploy-button');
@@ -411,7 +411,7 @@ describe('DCA Page', () => {
 
 	// Test for custom deposit amount validation
 	it('should validate custom deposit amount', async () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// Show advanced options
 		const advancedOptionsButton = screen.getByText('Show advanced options');
@@ -444,7 +444,7 @@ describe('DCA Page', () => {
 
 	// Test for TradePrice component
 	it('should render TradePrice component with correct tokens', () => {
-		render(Page);
+		render(DcaStrategy);
 
 		// TradePrice component should be rendered
 		expect(screen.getByTestId('trade-price')).toBeInTheDocument();

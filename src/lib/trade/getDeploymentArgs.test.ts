@@ -241,7 +241,7 @@ describe('getDcaDeploymentArgs', () => {
 		);
 	});
 
-	it('should return the deployment args and output token', async () => {
+	it('should return the deployment args', async () => {
 		const result = await getDcaDeploymentArgs(mockOptions, mockDataFetcher);
 
 		expect(result).toEqual({
@@ -249,8 +249,7 @@ describe('getDcaDeploymentArgs', () => {
 				to: '0x1234567890123456789012345678901234567890',
 				data: '0xabcdef',
 				value: 0n
-			},
-			outputToken: mockOptions.selectedAmountToken
+			}
 		});
 	});
 });
