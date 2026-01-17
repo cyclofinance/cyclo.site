@@ -9,12 +9,15 @@ The core smart contracts that:
 - Mint cy* tokens (ERC-20) based on USD value of deposits
 - Issue receipt tokens (ERC-1155) to track individual deposits
 - Manage the redemption process
-- Interact with FTSO for pricing
+- Interact with Oracles for pricing
 
 ### Receipt Tokens (ERC-1155)
 These tokens act as proof of the locked collateral and its USD value at the deposit time. The token ID corresponds to the USD price at lock time, ensuring uniqueness and traceability.
 
 ### External Protocol Integration
+
+#### Pyth Oracle
+Pyth is a high-performance oracle network that delivers real-time price data to smart contracts from first-party sources such as exchanges and market makers. Prices are updated on-chain via a pull-based model, allowing protocols to access fresh, low-latency data only when needed, along with confidence intervals for each feed.
 
 #### Flare Time Series Oracle (FTSO)
 Provides reliable USD price feeds for supported collateral types, ensuring accurate valuation of deposits.

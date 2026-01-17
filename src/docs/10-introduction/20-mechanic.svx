@@ -4,8 +4,8 @@ published: true
 ---
 
 <script>
-    import locking from '$lib/images/locking.svg'
-    import unlocking from '$lib/images/unlocking.svg'
+    import locking from '$lib/images/locking-weth.png'
+    import unlocking from '$lib/images/unlocking-weth.png'
 </script>
 
 ### Locking Collateral
@@ -26,7 +26,7 @@ Where:
 - $\text{cy*}_{\text{minted}}$ is the number of cy* tokens to be minted
 - $\text{Receipts}_{\text{issued}}$ is the number of ERC-1155 receipt tokens issued
 - $\text{Collateral}_{\text{locked}}$ is the amount of tokens locked into the smart contract
-- $\text{USD}_{\text{price}}$ is the current USD price from the FTSO
+- $\text{USD}_{\text{price}}$ is the current USD price from the Oracle
 
 For example, if a user locks 100 WETH and the current WETH-USD price is $2000, they would receive:
 
@@ -36,7 +36,7 @@ $$
 
 #### Special Case: sFLR
 
-For sFLR collateral, an additional exchange rate is needed since the FTSO only provides FLR-USD prices. The calculation becomes:
+For sFLR collateral, an additional exchange rate is needed since the FTSO Oracle only provides FLR-USD prices. The calculation becomes:
 
 $$
 \text{cysFLR}_{\text{minted}} = \text{sFLR}_{\text{locked}} \times \text{FLR-USD}_{\text{price}} \times \text{sFLR-FLR}_{\text{exchange rate}}
@@ -101,6 +101,6 @@ $$
 Where:
 - $\text{Total Collateral Locked}$ is the sum of all tokens locked in the smart contract
 - $\text{cy*}_{\text{issued i}}$ is the amount of cy* tokens issued at the $i^{th}$ lock-up
-- $\text{USD}_{\text{lock-up i}}$ is the USD price at the time of the $i^{th}$ lock-up, as determined by the Flare Time Series Oracle (FTSO)
+- $\text{USD}_{\text{lock-up i}}$ is the USD price at the time of the $i^{th}$ lock-up, as determined by the Oracle
 
 This ensures that if all cy* tokens and their corresponding receipts were burned, the amount of collateral locked would fully cover the redemption, maintaining full collateralization.

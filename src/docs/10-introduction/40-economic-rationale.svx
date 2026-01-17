@@ -4,7 +4,7 @@ published: true
 ---
 
 <script>
-    import priceMovement from '$lib/images/price-movement.svg';
+    import priceMovement from '$lib/images/cyclical-movements.png';
 </script>
 
 The Cyclo ecosystem is designed to create a self-regulating economic model by leveraging competing incentives, resulting in cyclical price movements.

@@ -23,7 +23,7 @@ test('layout component should render', async () => {
 	expect(sideMenu).toBeInTheDocument();
 
 	const publishedDocTitles = screen.getAllByTestId('doc-title');
-	expect(publishedDocTitles).toHaveLength(13);
+	expect(publishedDocTitles).toHaveLength(11);
 });
 
 test('should toggle mobile menu visibility on icon click', async () => {

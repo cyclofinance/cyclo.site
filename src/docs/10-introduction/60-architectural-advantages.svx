@@ -12,13 +12,13 @@ Notably Cyclo avoids or mitigates the following problems found in various stable
 - **Under Collateralization**: There is a strict overcollateralization of all collateral and circulating cy* tokens
 - **Tax complexity**: Minting cy* tokens is technically akin to wrapping tokens (like WETH), not trading
 - **Gas costs**: Minting/burning cy* tokens is cheaper than an AMM trade
-- **USD regulations**: cy* tokens reference FTSO oracle prices not the US dollar, there is no "issuer"
+- **USD regulations**: cy* tokens reference oracle prices not the US dollar, there is no "issuer"
 - **Supply constraints**: cy* tokens have an unbounded elastic supply
 - **Not time based**: Unlike options, cy* tokens never expire and can be held as normal tokens indefinitely
 - **Non-custodial**: Like wrapping WETH, all cy* tokens are simply a deposit/withdraw to the smart contract
 - **Simplicity**: The entire contract is about 100 lines of code beyond Open Zeppelin standard contracts
 - **Leverage**: The protocol allows users who increase cy* token supply to leverage their collateral
-- **Collateral risk**: Only high-quality, liquid assets (sFLR and WETH) are allowed as collateral
+- **Collateral risk**: Only high-quality, liquid assets are allowed as collateral
 - **Front-running/MEV**: No trading or other intrablock hysteresis involved in locking/unlocking
 - **Opportunity cost**: A cy* token mint is fully reversible at any time, unlike selling stables at a local bottom
 - **No counterparty**: The smart contracts facilitate internal accounting for each user's own assets for themselves

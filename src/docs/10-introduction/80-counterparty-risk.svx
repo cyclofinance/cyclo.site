@@ -20,15 +20,15 @@ The protocol intentionally eliminates common DeFi risks by having:
 - No governance or admin controls
 - No upgradeable contracts
 - No liquidation mechanisms
-- No dependency on external price feeds (uses Flare's native FTSO)
+- No dependency on external price feeds
 - No third-party token dependencies
 
 ## Actual Risks
 
 ### Smart Contract Risk
 - The immutable smart contracts must operate as intended
-- The FTSO integration must function correctly
-- Any additional integrations (like the sFLR staking contract) must remain valid
+- The Orcle integration must function correctly
+- Any additional integrations (like staking contracts) must remain valid
 
 Cyclo is audited by <a href="https://protofire.io" target="_blank">Protofire</a> and the audit can be found at <a href="https://github.com/cyclofinance/cyclo.sol/tree/main/audit" target="_blank">https://github.com/cyclofinance/cyclo.sol/tree/main/audit</a>
 
