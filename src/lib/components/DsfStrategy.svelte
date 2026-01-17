@@ -168,7 +168,7 @@
 
 <div class="grid w-full grid-cols-1 items-start gap-6">
 	<div>
-		<h1 class="text-2xl text-white">Deploy a DSF strategy</h1>
+		<h1 class="text-2xl text-white">Deploy a Dynamic Spread Fast (DSF) strategy</h1>
 		<p class="mt-2 text-sm text-gray-200">
 			A market-making order that offers two-sided auction-based spreads that narrow over time, with
 			a defensive feature that quickly exits positions by counter-trading when market trends emerge.
