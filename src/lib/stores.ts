@@ -98,7 +98,7 @@ const arbitrumConfig: NetworkConfig = {
 			receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319' as Hex,
 			chainId: arbitrum.id,
 			networkName: 'Arbitrum One',
-			active: false
+			active: true
 		},
 		{
 			name: 'cyWBTC.pyth',

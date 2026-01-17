@@ -150,7 +150,7 @@
 					href={base + '/docs/why-flare'}
 					class="cursor-pointer text-xs font-light hover:underline"
 					target="_blank"
-					data-testid="price-ratio-link">How does Cyclo use the FTSO?</a
+					data-testid="price-ratio-link">How does Cyclo use Oracles?</a
 				>
 			</div>
 			<div in:fade class="flex items-center gap-2">
