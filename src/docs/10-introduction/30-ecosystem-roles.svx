@@ -38,7 +38,7 @@ The Leverager may use their capital for:
 ### Key Benefits
 
 - No liquidation risk
-- Continues earning benefits on locked collateral (e.g., staking rewards for sFLR)
+- Continues earning benefits on locked collateral (e.g., staking rewards or yeild)
 - Flexible timeframe for position management
 - Known maximum cost to unwind position ($1 per cy* token)
 

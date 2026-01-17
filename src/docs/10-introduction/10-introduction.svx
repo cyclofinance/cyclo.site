@@ -9,7 +9,7 @@ published: true
 
 Cyclo rethinks leverage from first principles.
 
-Instead of following the traditional DeFi pattern of lending pools, interest rates, and liquidations, Cyclo creates a simple primitive: the ability to lock collateral (like sFLR or WETH) and mint cy* tokens (like cysFLR or cyWETH) that can trade between $0 and $1.
+Instead of following the traditional DeFi pattern of lending pools, interest rates, and liquidations, Cyclo creates a simple primitive: the ability to lock collateral (like WETH) and mint cy* tokens (like cyWETH) that can trade between $0 and $1.
 
 This design leads to a natural market for leverage. When demand for leverage is high, users lock their collateral and sell cy\* tokens, increasing supply and lowering its price. When traders want to unwind positions, they buy back cy* tokens to unlock their collateral, creating demand that drives the price up.
 
@@ -18,10 +18,10 @@ This cycle repeats naturally without any governance decisions, interest rates, o
 <img src={mechanic} class="mx-auto" width="600px" />
 
 The protocol consists of just three actions:
-1. **Lock Collateral to Mint**: Participants lock their tokens (sFLR or WETH) and are issued cy* tokens based on the USD price at the time of transaction, along with an equal number of ERC-1155 receipt tokens with an ID representing the lock-up price.
-3. **Trade cy* Tokens**: Users can trade their cy* tokens within the Flare ecosystem.
+1. **Lock Collateral to Mint**: Participants lock their tokens (WETH) and are issued cy* tokens based on the USD price at the time of transaction, along with an equal number of ERC-1155 receipt tokens with an ID representing the lock-up price.
+3. **Trade cy* Tokens**: Users can trade their cy* tokens within the ecosystem.
 4. **Burn to Unlock**: To unlock their original collateral, users burn their receipt tokens and an equal amount of the corresponding cy* tokens.
 
 This system provides two main utilities:
-1. **Leverage**: A novel mechanism for what is effectively non-liquidating leverage while maintaining the benefits of the underlying collateral (like staking rewards for sFLR).
+1. **Leverage**: A novel mechanism for what is effectively non-liquidating leverage while maintaining the benefits of the underlying collateral (like staking rewards).
 2. **New cy* Tokens:** Price-bound tokens that can be speculated on or held as alternatives to stablecoins.

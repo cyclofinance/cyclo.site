@@ -26,4 +26,4 @@ By avoiding the explicit goal of "stability" or "a peg," and removing all govern
 
 The ERC-1155 tokens minted and burned for every cy* token minted and burned guarantee over-collateralization of the system as a whole, without liquidating any individual token holder. If everyone abandoned their collateral, the cy* tokens would also become valueless. Conversely, a "reverse bank run" would increase cy* token values, incentivizing mints.
 
-This requires long-term thinking and conviction in the underlying assets themselves, accepting short-term price volatility. However, users must believe in the value of their collateral to trust significant assets to a smart contract on the Flare network.
+This requires long-term thinking and conviction in the underlying assets themselves, accepting short-term price volatility. However, users must believe in the value of their collateral to trust significant assets to a smart contract.

@@ -3,7 +3,7 @@ title: Contract Addresses
 published: true
 ---
 
-All contracts are deployed on the Flare network.
+All current contracts are deployed on the Arbitrum and Flare networks.
 
 cysFLR (ERC20) - <a href="https://flarescan.com/token/0x19831cfB53A0dbeAD9866C43557C1D48DfF76567" target="_blank">0x19831cfB53A0dbeAD9866C43557C1D48DfF76567</a>
 cysFLR Receipts (ERC1155) - <a href="https://flarescan.com/token/0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09" target="_blank">0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09</a>
