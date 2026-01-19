@@ -136,8 +136,7 @@ describe('transactionStore.handleDeployDca', () => {
 		transactionStore.reset();
 
 		vi.mocked(getDcaDeploymentArgs).mockResolvedValue({
-			deploymentArgs: mockDeploymentArgs,
-			outputToken: { symbol: 'TEST', name: 'Test Token', decimals: 18, address: '0xdef456' }
+			deploymentArgs: mockDeploymentArgs
 		});
 
 		vi.mocked(sendTransaction).mockResolvedValue('0xtxhash');
@@ -200,8 +199,7 @@ describe('transactionStore.handleDeployDca', () => {
 			deploymentArgs: {
 				...mockDeploymentArgs,
 				approvals: []
-			},
-			outputToken: { symbol: 'TEST', name: 'Test Token', decimals: 18, address: '0xdef456' }
+			}
 		});
 
 		const deployPromise = transactionStore.handleDeployDca(
