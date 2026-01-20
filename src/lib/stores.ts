@@ -4,7 +4,6 @@ import { type Chain } from '@wagmi/core/chains';
 import type { Hex } from 'viem';
 import type { Receipt, CyToken } from './types';
 import { flare, arbitrum } from '@wagmi/core/chains';
-import { ethers } from 'ethers';
 
 export interface NetworkConfig {
 	key: string;
@@ -78,8 +77,8 @@ const arbitrumConfig: NetworkConfig = {
 	key: 'arbitrum',
 	chain: arbitrum,
 	wFLRAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
-	quoterAddress: ethers.ZeroAddress as Hex,
-	cusdxAddress: ethers.ZeroAddress as Hex,
+	quoterAddress: '0x0Fc73040b26E9bC8514fA028D998E73A254Fa76E' as Hex,
+	cusdxAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as Hex,
 	usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as Hex,
 	explorerApiUrl: 'https://api.etherscan.io/v2/api',
 	explorerUrl: 'https://arbiscan.io',

@@ -1,4 +1,4 @@
-import { type Config } from '@wagmi/core';
+import { type Config, simulateContract } from '@wagmi/core';
 import {
 	readErc20BalanceOf,
 	readErc20TotalSupply,
@@ -9,8 +9,11 @@ import {
 import { get, writable } from 'svelte/store';
 import type { Hex } from 'viem';
 import { ZeroAddress } from 'ethers';
+import { zeroAddress } from 'viem';
+import { arbitrum } from '@wagmi/core/chains';
 import type { CyToken } from './types';
 import { supportedNetworks, tokens, quoterAddress, type NetworkConfig } from './stores';
+import { ALGEBRA_QUOTER_ABI } from './constants';
 import blockNumberStore from './blockNumberStore';
 
 interface StatsState {
@@ -83,9 +86,31 @@ const getDepositPreviewSwapValue = async (
 				address: selectedToken.address,
 				args: [depositAmount, 0n],
 				account: ZeroAddress as `0x${string}`,
-				blockNumber: blockNumber
+				blockNumber: blockNumber,
+				chainId: selectedToken.chainId
 			});
 
+		// Use Algebra quoter for Arbitrum, standard quoter for Flare
+		if (selectedToken.chainId === arbitrum.id) {
+			try {
+				const sim = await simulateContract(config, {
+					address: get(quoterAddress),
+					abi: ALGEBRA_QUOTER_ABI,
+					functionName: 'quoteExactInputSingle',
+					args: [selectedToken.address, valueToken, depositPreviewValue, 0n],
+					account: zeroAddress,
+					chainId: selectedToken.chainId
+				});
+
+				// Algebra quoter returns [amountOut, fee]
+				return { cyTokenOutput: depositPreviewValue, cusdxOutput: sim.result[0] ?? 0n };
+			} catch (error) {
+				console.error('Error getting swapQuote with Algebra quoter:', error);
+				return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
+			}
+		}
+
+		// Flare network - use existing implementation
 		try {
 			const { result: swapQuote } = await simulateQuoterQuoteExactInputSingle(config, {
 				address: get(quoterAddress),
@@ -97,7 +122,8 @@ const getDepositPreviewSwapValue = async (
 						fee: 3000,
 						sqrtPriceLimitX96: BigInt(0)
 					}
-				]
+				],
+				chainId: selectedToken.chainId
 			});
 			return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
 		} catch {
@@ -113,7 +139,8 @@ const getDepositPreviewSwapValue = async (
 							fee: 10000,
 							sqrtPriceLimitX96: BigInt(0)
 						}
-					]
+					],
+					chainId: selectedToken.chainId
 				});
 				return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
 			} catch (error) {
@@ -121,7 +148,6 @@ const getDepositPreviewSwapValue = async (
 				return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
 			}
 		}
-		return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
 	} catch (error) {
 		console.error('Error getting deposit preview:', error);
 		return { cyTokenOutput: 0n, cusdxOutput: 0n };
@@ -135,6 +161,28 @@ const getCyTokenUsdPrice = async (
 	selectedToken: CyToken,
 	chainId?: number
 ) => {
+	// Use Algebra quoter for Arbitrum, standard quoter for Flare
+	if (chainId === arbitrum.id) {
+		try {
+			const amountOut = BigInt(10 ** selectedToken.decimals); // 1 tokenOut
+			const sim = await simulateContract(config, {
+				address: quoterAddress,
+				abi: ALGEBRA_QUOTER_ABI,
+				functionName: 'quoteExactOutputSingle',
+				args: [cusdxAddress, selectedToken.address, amountOut, 0n],
+				account: zeroAddress,
+				chainId
+			});
+
+			// Algebra quoter returns [amountIn, fee]
+			return sim.result[0] ?? 0n;
+		} catch (error) {
+			console.error('Error getting cyTokenUsdPrice with Algebra quoter:', error);
+			return 0n;
+		}
+	}
+
+	// Flare network - use existing implementation
 	try {
 		const data = await simulateQuoterQuoteExactOutputSingle(config, {
 			address: quoterAddress,

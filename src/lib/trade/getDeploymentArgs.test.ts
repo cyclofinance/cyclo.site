@@ -117,7 +117,9 @@ describe('getDcaDeploymentArgs', () => {
 		vi.mocked(tokensForNetwork).mockReturnValue([mockReferenceToken]);
 
 		vi.mocked(getPeriodInSeconds).mockReturnValue(86400);
-		vi.mocked(getMaxTradeAmount).mockReturnValue(BigInt(100000000000000000)); // 0.1 TEST
+		// Set maxAmount to be greater than outputTokenInUSDC (1.5) to pass budget check
+		// Using 2 TEST (2 * 10^18) which is greater than 1.5 TEST
+		vi.mocked(getMaxTradeAmount).mockReturnValue(BigInt(2000000000000000000)); // 2 TEST
 		vi.mocked(getBaseline).mockReturnValue('0.6666666666666666');
 	});
 
@@ -173,7 +175,7 @@ describe('getDcaDeploymentArgs', () => {
 		});
 
 		expect(mockGui.saveFieldValue).toHaveBeenCalledWith('max-trade-amount', {
-			value: '0.1',
+			value: '2',
 			isPreset: false
 		});
 
@@ -209,6 +211,8 @@ describe('getDcaDeploymentArgs', () => {
 		vi.clearAllMocks();
 		vi.mocked(getPrice).mockResolvedValue('2.5');
 		vi.mocked(tokensForNetwork).mockReturnValue([mockReferenceToken]);
+		// Ensure maxAmount is greater than outputTokenInUSDC (2.5)
+		vi.mocked(getMaxTradeAmount).mockReturnValue(BigInt(3000000000000000000)); // 3 TEST
 
 		await getDcaDeploymentArgs(mockOptions, mockDataFetcher);
 
