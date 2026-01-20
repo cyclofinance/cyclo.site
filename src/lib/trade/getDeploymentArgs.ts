@@ -2,7 +2,7 @@ import type { CyToken } from '$lib/types';
 import type { Token } from '$lib/types';
 import dcaStrategy from '$lib/trade/auction-dca-old.rain?raw';
 import dsfStrategy from '$lib/trade/auction-dsf-old.rain?raw';
-import { formatUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 import { DotrainOrderGui } from '@rainlanguage/orderbook/js_api';
 import { getPrice } from './prices';
 import { get } from 'svelte/store';
@@ -70,24 +70,35 @@ export const getDcaDeploymentArgs = async (
 		isPreset: false
 	});
 
-	gui.saveFieldValue('max-trade-amount', {
-		value: formatUnits(
-			getMaxTradeAmount(selectedAmount, selectedPeriod, selectedPeriodUnit),
-			selectedAmountToken.decimals
-		),
-		isPreset: false
-	});
+	const maxAmount = formatUnits(
+		getMaxTradeAmount(selectedAmount, selectedPeriod, selectedPeriodUnit),
+		selectedAmountToken.decimals
+	)
 
 	const outputTokenInUSDC =
 		outputToken.address === referenceToken.address
 			? '1'
 			: await getPrice(referenceToken, outputToken, dataFetcher);
 
+	// Check if maxAmount (in BigInt) is less than outputTokenInUSDC (in BigInt)
+	const maxAmountBigInt = parseUnits(maxAmount, selectedAmountToken.decimals);
+	const outputTokenInUSDCBigInt = parseUnits(outputTokenInUSDC, outputToken.decimals);
+	
+	if (maxAmountBigInt < outputTokenInUSDCBigInt) {
+		throw new Error('Budget too low. Please increase your budget to at least $10.');
+	}
+
+	gui.saveFieldValue('max-trade-amount', {
+		value: maxAmount,
+		isPreset: false
+	});
+
 	// The minimum trade amount should be $1 worth of the output token
 	gui.saveFieldValue('min-trade-amount', {
 		value: outputTokenInUSDC,
 		isPreset: false
 	});
+
 
 	gui.saveFieldValue('baseline', {
 		value: getBaseline(selectedBuyOrSell, selectedBaseline),
@@ -113,6 +124,8 @@ export const getDcaDeploymentArgs = async (
 	if (!$signerAddress) throw new Error('Signer address not found');
 
 	const deploymentArgs = await gui.getDeploymentTransactionArgs($signerAddress);
+
+	console.log('deploymentArgs', deploymentArgs);
 
 	return { deploymentArgs };
 };
