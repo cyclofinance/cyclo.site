@@ -3,7 +3,7 @@
 	import balancesStore from '$lib/balancesStore';
 	import { formatNumberWithAbbreviations } from '$lib/methods';
 	import { Spinner } from 'flowbite-svelte';
-	import { supportedNetworks } from '$lib/stores';
+	import { supportedNetworks, allTokens } from '$lib/stores';
 
 	function calculateMarketCap(price: bigint, supply: bigint): bigint {
 		return (price * supply) / BigInt(1e6);
@@ -15,12 +15,17 @@
 		tokens: network.tokens
 	}));
 
-	$: globalTvl = tokensByNetwork.reduce((sum, network) => {
-		const networkSum = network.tokens.reduce((tokenSum, token) => {
-			const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
-			return tokenSum + usdTvl;
-		}, 0n);
-		return sum + networkSum;
+	// Calculate globalTvl using allTokens to ensure all active tokens are included
+	// Normalize all usdTvl values to 18 decimals before summing since they're stored with token.decimals
+	$: globalTvl = $allTokens.reduce((sum, token) => {
+		const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
+		// Convert usdTvl from token.decimals to 18 decimals for consistent summing
+		const normalizedUsdTvl = token.decimals === 18 
+			? usdTvl 
+			: token.decimals < 18
+				? usdTvl * BigInt(10 ** (18 - token.decimals))
+				: usdTvl / BigInt(10 ** (token.decimals - 18));
+		return sum + normalizedUsdTvl;
 	}, 0n);
 
 	$: networkTvls = tokensByNetwork.reduce(
@@ -28,11 +33,18 @@
 			...acc,
 			[network.key]: network.tokens.reduce((tokenSum, token) => {
 				const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
-				return tokenSum + usdTvl;
+				// Normalize usdTvl from token.decimals to 18 decimals for consistent summing
+				const normalizedUsdTvl = token.decimals === 18 
+					? usdTvl 
+					: token.decimals < 18
+						? usdTvl * BigInt(10 ** (18 - token.decimals))
+						: usdTvl / BigInt(10 ** (token.decimals - 18));
+				return tokenSum + normalizedUsdTvl;
 			}, 0n)
 		}),
 		{} as Record<string, bigint>
 	);
+
 </script>
 
 <footer
