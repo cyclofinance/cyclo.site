@@ -58,7 +58,7 @@ vi.mock('svelte/store', async () => {
 // Mock stores - we need to provide selectedNetwork and supportedNetworks
 // but we can't use importActual because it will try to execute code that depends on mocked modules
 vi.mock('$lib/stores', async () => {
-	const { flare, arbitrum } = await import('@wagmi/core/chains');
+	const { flare } = await import('@wagmi/core/chains');
 	const createMockStore = <T>(value: T) => {
 		const unsubscribe = vi.fn();
 		return {
@@ -69,7 +69,7 @@ vi.mock('$lib/stores', async () => {
 			get: () => value
 		};
 	};
-	
+
 	// Create a minimal mock CyToken for testing
 	const mockToken = {
 		name: 'cysFLR',
@@ -167,10 +167,13 @@ describe('prices/index', () => {
 		// Setup mocks
 		vi.mocked(getPublicClient).mockReturnValue(mockClient as unknown as PublicClient);
 		// Mock get() to work with stores - svelte/store's get() uses subscribe()
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		vi.mocked(get).mockImplementation((store: any) => {
 			// If it's a store with subscribe, call subscribe to get the value
 			if (store && typeof store.subscribe === 'function') {
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				let value: any;
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				const unsubscribe = store.subscribe((val: any) => {
 					value = val;
 				});
@@ -188,7 +191,9 @@ describe('prices/index', () => {
 		});
 		vi.mocked(DataFetcher).mockImplementation(() => mockDataFetcher as unknown as DataFetcher);
 		vi.mocked(SushiToken).mockImplementation(
-			({ chainId, address, decimals }) => ({ chainId, address, decimals }) as unknown as SushiToken
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			({ chainId, address, decimals }: any) =>
+				({ chainId, address, decimals }) as unknown as SushiToken
 		);
 		vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as unknown as MultiRoute);
 		vi.mocked(formatUnits).mockReturnValue('1.5');

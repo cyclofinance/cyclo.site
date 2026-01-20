@@ -73,7 +73,7 @@ export const getDcaDeploymentArgs = async (
 	const maxAmount = formatUnits(
 		getMaxTradeAmount(selectedAmount, selectedPeriod, selectedPeriodUnit),
 		selectedAmountToken.decimals
-	)
+	);
 
 	const outputTokenInUSDC =
 		outputToken.address === referenceToken.address
@@ -83,7 +83,7 @@ export const getDcaDeploymentArgs = async (
 	// Check if maxAmount (in BigInt) is less than outputTokenInUSDC (in BigInt)
 	const maxAmountBigInt = parseUnits(maxAmount, selectedAmountToken.decimals);
 	const outputTokenInUSDCBigInt = parseUnits(outputTokenInUSDC, outputToken.decimals);
-	
+
 	if (maxAmountBigInt < outputTokenInUSDCBigInt) {
 		throw new Error('Budget too low. Please increase your budget to at least $10.');
 	}
@@ -98,7 +98,6 @@ export const getDcaDeploymentArgs = async (
 		value: outputTokenInUSDC,
 		isPreset: false
 	});
-
 
 	gui.saveFieldValue('baseline', {
 		value: getBaseline(selectedBuyOrSell, selectedBaseline),
