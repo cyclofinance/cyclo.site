@@ -1,7 +1,14 @@
 import type { Token } from './types';
 import type { Hex } from 'viem';
+import { parseAbi } from 'viem';
 
 export const ONE = 10n ** 18n;
+
+// Algebra Quoter ABI for Arbitrum
+export const ALGEBRA_QUOTER_ABI = parseAbi([
+	'function quoteExactOutputSingle(address tokenIn,address tokenOut,uint256 amountOut,uint160 limitSqrtPrice) returns (uint256 amountIn,uint16 fee)',
+	'function quoteExactInputSingle(address tokenIn,address tokenOut,uint256 amountIn,uint160 limitSqrtPrice) returns (uint256 amountOut,uint16 fee)'
+]);
 
 export type NetworkTokenConfig = {
 	key: string;
