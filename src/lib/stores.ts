@@ -4,7 +4,6 @@ import { type Chain } from '@wagmi/core/chains';
 import type { Hex } from 'viem';
 import type { Receipt, CyToken } from './types';
 import { flare, arbitrum } from '@wagmi/core/chains';
-import { ethers } from 'ethers';
 
 export interface NetworkConfig {
 	key: string;

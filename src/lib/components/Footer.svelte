@@ -20,11 +20,12 @@
 	$: globalTvl = $allTokens.reduce((sum, token) => {
 		const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
 		// Convert usdTvl from token.decimals to 18 decimals for consistent summing
-		const normalizedUsdTvl = token.decimals === 18 
-			? usdTvl 
-			: token.decimals < 18
-				? usdTvl * BigInt(10 ** (18 - token.decimals))
-				: usdTvl / BigInt(10 ** (token.decimals - 18));
+		const normalizedUsdTvl =
+			token.decimals === 18
+				? usdTvl
+				: token.decimals < 18
+					? usdTvl * BigInt(10 ** (18 - token.decimals))
+					: usdTvl / BigInt(10 ** (token.decimals - 18));
 		return sum + normalizedUsdTvl;
 	}, 0n);
 
@@ -34,17 +35,17 @@
 			[network.key]: network.tokens.reduce((tokenSum, token) => {
 				const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
 				// Normalize usdTvl from token.decimals to 18 decimals for consistent summing
-				const normalizedUsdTvl = token.decimals === 18 
-					? usdTvl 
-					: token.decimals < 18
-						? usdTvl * BigInt(10 ** (18 - token.decimals))
-						: usdTvl / BigInt(10 ** (token.decimals - 18));
+				const normalizedUsdTvl =
+					token.decimals === 18
+						? usdTvl
+						: token.decimals < 18
+							? usdTvl * BigInt(10 ** (18 - token.decimals))
+							: usdTvl / BigInt(10 ** (token.decimals - 18));
 				return tokenSum + normalizedUsdTvl;
 			}, 0n)
 		}),
 		{} as Record<string, bigint>
 	);
-
 </script>
 
 <footer

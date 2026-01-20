@@ -3,13 +3,18 @@ import { flare, arbitrum } from '@wagmi/core/chains';
 import { getPublicClient, type Config } from '@wagmi/core';
 import { DataFetcher, Router } from 'sushi/router';
 import { Token } from 'sushi/currency';
-import type { Token as _Token } from '$lib/types';
+import type { Token as _Token, CyToken } from '$lib/types';
 import type { MultiRoute } from 'sushi/tines';
 import type { Chain } from '@wagmi/core/chains';
 import { supportedNetworks, selectedNetwork, type NetworkConfig } from '$lib/stores';
 import { ALGEBRA_QUOTER_ABI } from '$lib/constants';
 import { get } from 'svelte/store';
 import { wagmiConfig } from 'svelte-wagmi';
+
+// Type guard to check if a token is a CyToken
+function isCyToken(token: _Token): token is CyToken {
+	return 'chainId' in token && typeof (token as CyToken).chainId === 'number';
+}
 
 // Cache for DataFetchers per chainId
 const dataFetcherCache = new Map<number, DataFetcher>();
@@ -45,6 +50,7 @@ export const getAndStartDataFetcher = (chainId: number = flare.id, config?: Conf
 		throw new Error(`Failed to get public client for chainId: ${chainId}`);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const dataFetcher = new DataFetcher(chainId as any, client);
 	dataFetcher.startDataFetching();
 	dataFetcher.stopDataFetching();
@@ -71,8 +77,10 @@ export const getRoute = async (
 
 	await dataFetcher.fetchPoolsForToken(inputToken, outputToken);
 	const pcMap = dataFetcher.getCurrentPoolCodeMap(inputToken, outputToken);
+
 	const route = Router.findBestRoute(
 		pcMap,
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		chainId as any,
 		inputToken,
 		amountIn,
@@ -95,8 +103,8 @@ export const getPrice = async (
 	try {
 		// Determine chainId from tokens if they're CyTokens (have chainId), otherwise use selectedNetwork or DataFetcher's chainId
 		// Check both tokens since either could be a CyToken
-		const outputTokenChainId = (outputToken as any).chainId;
-		const inputTokenChainId = (inputToken as any).chainId;
+		const outputTokenChainId = isCyToken(outputToken) ? outputToken.chainId : undefined;
+		const inputTokenChainId = isCyToken(inputToken) ? inputToken.chainId : undefined;
 		const tokenChainId = outputTokenChainId ?? inputTokenChainId;
 		const selectedNetworkChainId = get(selectedNetwork)?.chain.id;
 		const dataFetcherChainId = dataFetcherChainIdMap.get(dataFetcher);
@@ -111,7 +119,7 @@ export const getPrice = async (
 			}
 
 			const amountIn = BigInt(10 ** inputToken.decimals); // 1 input token
-			
+
 			// Use wagmi config to get public client (uses wallet's RPC)
 			const wagmiConfigValue = get(wagmiConfig);
 			if (!wagmiConfigValue) {
@@ -122,7 +130,7 @@ export const getPrice = async (
 			if (!client) {
 				throw new Error('Failed to get public client for Arbitrum');
 			}
-			
+
 			try {
 				const sim = await client.simulateContract({
 					address: network.quoterAddress,
