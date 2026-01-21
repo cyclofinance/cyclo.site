@@ -115,16 +115,12 @@
 		!amountToken ||
 		!rotateToken ||
 		!maxTradeAmount ||
-		!minTradeAmount ||
-		!initialPrice ||
 		(chooseOverrideDepositAmount && overrideDepositAmount == undefined) ||
 		amountTokenInputVaultIdError ||
 		rotateTokenInputVaultIdError ||
 		amountTokenOutputVaultIdError ||
 		rotateTokenOutputVaultIdError ||
 		maxTradeAmountError ||
-		minTradeAmountError ||
-		initialPriceError ||
 		(chooseOverrideDepositAmount && overrideDepositAmountError);
 
 	// advanced options
@@ -147,9 +143,7 @@
 				rotateToken,
 				isAmountTokenFastExit: amountTokenFastExit,
 				isRotateTokenFastExit: rotateTokenFastExit,
-				initialPrice,
 				maxTradeAmount,
-				minTradeAmount,
 				nextTradeMultiplier,
 				costBasisMultiplier,
 				timePerEpoch,
@@ -226,16 +220,6 @@
 					>The initial price of the {amountToken.symbol} in the {rotateToken.symbol} market.
 				</InfoTooltip>
 			</div>
-
-			<Input
-				type="number"
-				unit={amountToken.symbol}
-				bind:amount={initialPrice}
-				dataTestId="initial-price-input"
-				validate={validateBaseline}
-				bind:isError={initialPriceError}
-			/>
-			<TradePrice inputToken={amountToken} outputToken={rotateToken} dataTestId="trade-price" />
 		{/if}
 	</div>
 
@@ -254,25 +238,6 @@
 				dataTestId="amount-input"
 				validate={validateSelectedAmount}
 				bind:isError={maxTradeAmountError}
-			/>
-		{/if}
-	</div>
-
-	<!-- Minimum Amount -->
-	<div class="flex flex-col gap-2" data-testid="amount-container">
-		<span class="text-sm text-gray-200"
-			>Minimum Trade Amount
-			<InfoTooltip
-				>The minimum amount of {amountToken?.symbol} that will be offered in a single auction.
-			</InfoTooltip></span
-		>
-		{#if amountToken}
-			<TradeAmountInput
-				{amountToken}
-				bind:amount={minTradeAmount}
-				dataTestId="amount-input"
-				validate={validateSelectedAmount}
-				bind:isError={minTradeAmountError}
 			/>
 		{/if}
 	</div>

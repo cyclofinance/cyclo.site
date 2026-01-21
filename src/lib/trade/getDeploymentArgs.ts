@@ -134,9 +134,7 @@ export type DsfDeploymentArgs = {
 	rotateToken: Token;
 	isAmountTokenFastExit: boolean;
 	isRotateTokenFastExit: boolean;
-	initialPrice: string;
 	maxTradeAmount: bigint;
-	minTradeAmount: bigint;
 	nextTradeMultiplier: string;
 	costBasisMultiplier: string;
 	timePerEpoch: string;
@@ -151,17 +149,14 @@ export type DsfDeploymentArgs = {
 
 export const getDsfDeploymentArgs = async (
 	options: DsfDeploymentArgs,
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	_dataFetcher: DataFetcher
+	dataFetcher: DataFetcher
 ) => {
 	const {
 		amountToken,
 		rotateToken,
 		isAmountTokenFastExit,
 		isRotateTokenFastExit,
-		initialPrice,
 		maxTradeAmount,
-		minTradeAmount,
 		nextTradeMultiplier,
 		costBasisMultiplier,
 		timePerEpoch,
@@ -193,8 +188,11 @@ export const getDsfDeploymentArgs = async (
 		value: isRotateTokenFastExit ? '1' : '0',
 		isPreset: false
 	});
+
+	const initialPriceFetched = await getPrice(rotateToken, amountToken, dataFetcher);
+
 	gui.saveFieldValue('initial-io', {
-		value: initialPrice,
+		value: initialPriceFetched.toString(),
 		isPreset: false
 	});
 
@@ -203,8 +201,33 @@ export const getDsfDeploymentArgs = async (
 		isPreset: false
 	});
 
+	const outputTokenInUSDC =
+		amountToken.address === referenceToken.address
+			? '1'
+			: await getPrice(amountToken, rotateToken, dataFetcher);
+
+	// Convert prices to BigInt and check if they are zero
+	const initialPriceFetchedBigInt = parseUnits(initialPriceFetched, amountToken.decimals);
+	const outputTokenInUSDCBigInt =
+		amountToken.address === referenceToken.address
+			? parseUnits(outputTokenInUSDC, amountToken.decimals)
+			: parseUnits(outputTokenInUSDC, rotateToken.decimals);
+
+	if (initialPriceFetchedBigInt === 0n) {
+		throw new Error('Unable to fetch initial price. Price is zero.');
+	}
+
+	if (outputTokenInUSDCBigInt === 0n) {
+		throw new Error('Unable to fetch price for output token. Price is zero.');
+	}
+
+	// Check if maxTradeAmount (in BigInt) is less than outputTokenInUSDC (in BigInt)
+	if (maxTradeAmount < outputTokenInUSDCBigInt) {
+		throw new Error('Budget too low. Please increase your budget to at least $10.');
+	}
+
 	gui.saveFieldValue('min-amount', {
-		value: formatUnits(minTradeAmount, amountToken.decimals),
+		value: outputTokenInUSDC,
 		isPreset: false
 	});
 
