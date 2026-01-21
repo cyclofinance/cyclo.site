@@ -99,9 +99,7 @@ describe('transactionStore.handleDeployDsf', () => {
 		},
 		isAmountTokenFastExit: false,
 		isRotateTokenFastExit: true,
-		initialPrice: '1.5',
 		maxTradeAmount: BigInt(1000000000), // 1000 USDC (6 decimals)
-		minTradeAmount: BigInt(100000), // 0.1 USDC (6 decimals)
 		nextTradeMultiplier: '1.01',
 		costBasisMultiplier: '1',
 		timePerEpoch: '3600',

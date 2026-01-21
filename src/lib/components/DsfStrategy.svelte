@@ -13,7 +13,6 @@
 	import type { CyToken, Token } from '$lib/types';
 	import TradeAmountInput from '$lib/components/TradeAmountInput.svelte';
 	import Button from '$lib/components/Button.svelte';
-	import TradePrice from '$lib/components/TradePrice.svelte';
 	import type { DataFetcher } from 'sushi';
 	import { useDataFetcher } from '$lib/dataFetcher';
 	import transactionStore from '$lib/transactionStore';
@@ -22,7 +21,6 @@
 	import type { Hex } from 'viem';
 	import {
 		validateSelectedAmount,
-		validateBaseline,
 		validateOverrideDepositAmount
 	} from '$lib/trade/validateDeploymentArgs';
 	import InfoTooltip from '$lib/components/InfoTooltip.svelte';
@@ -91,8 +89,6 @@
 	let amountTokenOutputVaultId: Hex | undefined;
 	let rotateTokenOutputVaultId: Hex | undefined;
 	let maxTradeAmount: bigint;
-	let minTradeAmount: bigint;
-	let initialPrice: string;
 	let nextTradeMultiplier: string = '1.01';
 	let costBasisMultiplier: string = '1';
 	let timePerEpoch: string = '3600';
@@ -105,8 +101,6 @@
 	let overrideDepositAmountError: boolean = false;
 	let rotateDepositAmountError: boolean = false;
 	let maxTradeAmountError: boolean = false;
-	let minTradeAmountError: boolean = false;
-	let initialPriceError: boolean = false;
 	let nextTradeMultiplierError: boolean = false;
 	let costBasisMultiplierError: boolean = false;
 	let timePerEpochError: boolean = false;

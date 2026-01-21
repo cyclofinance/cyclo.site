@@ -127,12 +127,10 @@ describe('DsfStrategy Component', () => {
 	};
 
 	const fillRequiredFields = async () => {
-		await fireEvent.input(screen.getByTestId('initial-price-input'), { target: { value: '1.5' } });
-		// Find all amount inputs (max and min)
+		// Find the max amount input
 		const amountInputs = screen.getAllByTestId('amount-input');
-		if (amountInputs.length >= 2) {
+		if (amountInputs.length > 0) {
 			await fireEvent.input(amountInputs[0], { target: { value: '1000' } }); // max
-			await fireEvent.input(amountInputs[1], { target: { value: '100' } }); // min
 		}
 	};
 
@@ -155,7 +153,6 @@ describe('DsfStrategy Component', () => {
 		const baselineContainer = screen.getByTestId('baseline-container');
 		expect(baselineContainer.textContent).toContain('Initial Price at');
 		expect(screen.getByText('Maximum Trade Amount')).toBeInTheDocument();
-		expect(screen.getByText('Minimum Trade Amount')).toBeInTheDocument();
 	});
 
 	it('should render fast exit toggles', () => {
@@ -203,9 +200,7 @@ describe('DsfStrategy Component', () => {
 		// Check that handleDeployDsf was called with the correct values
 		const callArgs = vi.mocked(transactionStore.handleDeployDsf).mock.calls[0][0];
 
-		expect(callArgs.initialPrice).toBe('1.5');
 		expect(callArgs.maxTradeAmount).toBeDefined();
-		expect(callArgs.minTradeAmount).toBeDefined();
 		expect(callArgs.nextTradeMultiplier).toBe('1.01'); // default value
 		expect(callArgs.costBasisMultiplier).toBe('1'); // default value
 		expect(callArgs.timePerEpoch).toBe('3600'); // default value
@@ -332,28 +327,13 @@ describe('DsfStrategy Component', () => {
 		const deployButton = screen.getByTestId('deploy-button');
 		expect(deployButton).toBeDisabled();
 
-		// Fill in only initial price
-		const baselineInput = screen.getByTestId('initial-price-input');
-		await fireEvent.input(baselineInput, { target: { value: '1.5' } });
-
-		// Button should still be disabled (missing max and min amounts)
-		expect(deployButton).toBeDisabled();
-
 		// Fill in max amount
 		const amountInputs = screen.getAllByTestId('amount-input');
 		if (amountInputs.length > 0) {
 			await fireEvent.input(amountInputs[0], { target: { value: '1000' } });
 		}
 
-		// Button should still be disabled (missing min amount)
-		expect(deployButton).toBeDisabled();
-
-		// Fill in min amount
-		if (amountInputs.length > 1) {
-			await fireEvent.input(amountInputs[1], { target: { value: '100' } });
-		}
-
-		// Button should now be enabled
+		// Button should now be enabled (only max amount is required)
 		expect(deployButton).not.toBeDisabled();
 	});
 
@@ -389,13 +369,6 @@ describe('DsfStrategy Component', () => {
 
 		// Button should now be enabled
 		expect(deployButton).not.toBeDisabled();
-	});
-
-	it('should render TradePrice component with correct tokens', () => {
-		render(DsfStrategy);
-
-		// TradePrice component should be rendered
-		expect(screen.getByTestId('trade-price')).toBeInTheDocument();
 	});
 
 	it('should pass fast exit flags to handleDeployDsf', async () => {
