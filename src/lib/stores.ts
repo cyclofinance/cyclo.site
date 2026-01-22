@@ -109,7 +109,7 @@ const arbitrumConfig: NetworkConfig = {
 			receiptAddress: '0x922A293D4d0af30D67A51e5510a487916a2bb494' as Hex,
 			chainId: arbitrum.id,
 			networkName: 'Arbitrum One',
-			active: false
+			active: true
 		},
 		{
 			name: 'cycbBTC.pyth',
@@ -193,7 +193,7 @@ const arbitrumConfig: NetworkConfig = {
 			receiptAddress: '0x3fEe841c184dCF93f15CD28144b6E5514fFfC18e' as Hex,
 			chainId: arbitrum.id,
 			networkName: 'Arbitrum One',
-			active: false
+			active: true
 		},
 		{
 			name: 'cywstETH.pyth',
