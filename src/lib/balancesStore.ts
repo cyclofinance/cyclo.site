@@ -13,7 +13,7 @@ import { zeroAddress } from 'viem';
 import { arbitrum } from '@wagmi/core/chains';
 import type { CyToken } from './types';
 import { supportedNetworks, tokens, quoterAddress, type NetworkConfig } from './stores';
-import { ALGEBRA_QUOTER_ABI } from './constants';
+import { ALGEBRA_QUOTER_ABI, STALE_PERIOD } from './constants';
 import blockNumberStore from './blockNumberStore';
 import { I_PYTH_ABI, PYTH_ORACLE_ABI, CYCLO_VAULT_ABI } from './pyth';
 
@@ -277,7 +277,7 @@ const getLockPriceFooterStats = async (
 				abi: I_PYTH_ABI,
 				address: pythContractAddress as Hex,
 				functionName: 'getPriceNoOlderThan',
-				args: [iPythFeedId, 7776000n],
+				args: [iPythFeedId, STALE_PERIOD],
 				chainId: effectiveChainId
 			})) as { price: bigint; conf: bigint; expo: bigint; publishTime: bigint };
 
