@@ -1,4 +1,4 @@
-import { type Config, simulateContract } from '@wagmi/core';
+import { type Config, simulateContract, readContract } from '@wagmi/core';
 import {
 	readErc20BalanceOf,
 	readErc20TotalSupply,
@@ -15,6 +15,7 @@ import type { CyToken } from './types';
 import { supportedNetworks, tokens, quoterAddress, type NetworkConfig } from './stores';
 import { ALGEBRA_QUOTER_ABI } from './constants';
 import blockNumberStore from './blockNumberStore';
+import { I_PYTH_ABI, PYTH_ORACLE_ABI, CYCLO_VAULT_ABI } from './pyth';
 
 interface StatsState {
 	status: string;
@@ -234,6 +235,94 @@ const getLockPrice = async (config: Config, selectedToken: CyToken, chainId?: nu
 	return result;
 };
 
+const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, chainId?: number) => {
+	const effectiveChainId = chainId ?? selectedToken.chainId;
+	
+	// For Arbitrum, use Pyth getPriceNoOlderThan directly
+	if (effectiveChainId === arbitrum.id) {
+		try {
+			// Fetch priceOracleAddress from vault
+			const priceOracleAddress = (await readContract(config, {
+				abi: CYCLO_VAULT_ABI,
+				address: selectedToken.address as Hex,
+				functionName: 'priceOracle',
+				args: [],
+				chainId: effectiveChainId
+			})) as Hex;
+			
+			// Fetch pythContractAddress from priceOracle
+			const pythContractAddress = (await readContract(config, {
+				abi: PYTH_ORACLE_ABI,
+				address: priceOracleAddress as Hex,
+				functionName: 'I_PYTH_CONTRACT',
+				args: [],
+				chainId: effectiveChainId
+			})) as Hex;
+			
+			// Fetch feedId from priceOracle
+			const iPythFeedId = (await readContract(config, {
+				abi: PYTH_ORACLE_ABI,
+				address: priceOracleAddress as Hex,
+				functionName: 'I_PRICE_FEED_ID',
+				args: [],
+				chainId: effectiveChainId
+			})) as Hex;
+			
+			// Call getPriceNoOlderThan with 60 seconds max age
+			const priceData = await readContract(config, {
+				abi: I_PYTH_ABI,
+				address: pythContractAddress as Hex,
+				functionName: 'getPriceNoOlderThan',
+				args: [iPythFeedId, 7776000n],
+				chainId: effectiveChainId
+			}) as { price: bigint; conf: bigint; expo: bigint; publishTime: bigint };
+			
+			// Convert Pyth price to 18 decimal format
+			// Following PythUtils.parsePriceFeedToNormalizedPrice logic:
+			// deltaExponent = targetDecimals (18) + expo
+			// If deltaExponent > 0: price * 10^deltaExponent
+			// If deltaExponent < 0: price / 10^abs(deltaExponent)
+			const pythPrice = priceData.price;
+			const pythExpo = Number(priceData.expo);
+			const targetDecimals = 18;
+			const deltaExponent = targetDecimals + pythExpo;
+			
+			// Ensure price is positive (lock price should be positive)
+			const unsignedPrice = pythPrice < 0n ? -pythPrice : pythPrice;
+			
+			let normalizedPrice: bigint;
+			if (deltaExponent > 0) {
+				normalizedPrice = unsignedPrice * BigInt(10 ** deltaExponent);
+			} else if (deltaExponent < 0) {
+				normalizedPrice = unsignedPrice / BigInt(10 ** Math.abs(deltaExponent));
+			} else {
+				normalizedPrice = unsignedPrice;
+			}
+			
+			return normalizedPrice;
+		} catch (error) {
+			console.error('Error getting lock price from Pyth for Arbitrum:', error);
+			// Fallback to normal method on error
+			const { result } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
+				address: selectedToken.address,
+				args: [BigInt(1e18), 0n],
+				account: ZeroAddress as `0x${string}`,
+				chainId: effectiveChainId
+			});
+			return result;
+		}
+	}
+	
+	// For non-Arbitrum chains, use normal method
+	const { result } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
+		address: selectedToken.address,
+		args: [BigInt(1e18), 0n],
+		account: ZeroAddress as `0x${string}`,
+		chainId: effectiveChainId
+	});
+	return result;
+};
+
 const getcysFLRSupply = async (config: Config, selectedToken: CyToken, chainId?: number) => {
 	const data = await readErc20TotalSupply(config, {
 		address: selectedToken.address,
@@ -419,7 +508,7 @@ const balancesStore = () => {
 					console.log(`Failed to fetch price for ${token.name}:`, error);
 					return BigInt(0);
 				}),
-				getLockPrice(config, token, token.chainId).catch((error) => {
+				getLockPriceFooterStats(config, token, token.chainId).catch((error) => {
 					console.log(`Failed to fetch lock price for ${token.name}:`, error);
 					return BigInt(0);
 				}),
