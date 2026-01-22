@@ -235,9 +235,13 @@ const getLockPrice = async (config: Config, selectedToken: CyToken, chainId?: nu
 	return result;
 };
 
-const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, chainId?: number) => {
+const getLockPriceFooterStats = async (
+	config: Config,
+	selectedToken: CyToken,
+	chainId?: number
+) => {
 	const effectiveChainId = chainId ?? selectedToken.chainId;
-	
+
 	// For Arbitrum, use Pyth getPriceNoOlderThan directly
 	if (effectiveChainId === arbitrum.id) {
 		try {
@@ -249,7 +253,7 @@ const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, c
 				args: [],
 				chainId: effectiveChainId
 			})) as Hex;
-			
+
 			// Fetch pythContractAddress from priceOracle
 			const pythContractAddress = (await readContract(config, {
 				abi: PYTH_ORACLE_ABI,
@@ -258,7 +262,7 @@ const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, c
 				args: [],
 				chainId: effectiveChainId
 			})) as Hex;
-			
+
 			// Fetch feedId from priceOracle
 			const iPythFeedId = (await readContract(config, {
 				abi: PYTH_ORACLE_ABI,
@@ -267,16 +271,16 @@ const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, c
 				args: [],
 				chainId: effectiveChainId
 			})) as Hex;
-			
+
 			// Call getPriceNoOlderThan with 60 seconds max age
-			const priceData = await readContract(config, {
+			const priceData = (await readContract(config, {
 				abi: I_PYTH_ABI,
 				address: pythContractAddress as Hex,
 				functionName: 'getPriceNoOlderThan',
 				args: [iPythFeedId, 7776000n],
 				chainId: effectiveChainId
-			}) as { price: bigint; conf: bigint; expo: bigint; publishTime: bigint };
-			
+			})) as { price: bigint; conf: bigint; expo: bigint; publishTime: bigint };
+
 			// Convert Pyth price to 18 decimal format
 			// Following PythUtils.parsePriceFeedToNormalizedPrice logic:
 			// deltaExponent = targetDecimals (18) + expo
@@ -286,10 +290,10 @@ const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, c
 			const pythExpo = Number(priceData.expo);
 			const targetDecimals = 18;
 			const deltaExponent = targetDecimals + pythExpo;
-			
+
 			// Ensure price is positive (lock price should be positive)
 			const unsignedPrice = pythPrice < 0n ? -pythPrice : pythPrice;
-			
+
 			let normalizedPrice: bigint;
 			if (deltaExponent > 0) {
 				normalizedPrice = unsignedPrice * BigInt(10 ** deltaExponent);
@@ -298,7 +302,7 @@ const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, c
 			} else {
 				normalizedPrice = unsignedPrice;
 			}
-			
+
 			return normalizedPrice;
 		} catch (error) {
 			console.error('Error getting lock price from Pyth for Arbitrum:', error);
@@ -312,7 +316,7 @@ const getLockPriceFooterStats = async (config: Config, selectedToken: CyToken, c
 			return result;
 		}
 	}
-	
+
 	// For non-Arbitrum chains, use normal method
 	const { result } = await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
 		address: selectedToken.address,
