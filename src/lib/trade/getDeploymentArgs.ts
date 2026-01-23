@@ -1,7 +1,8 @@
 import type { CyToken } from '$lib/types';
 import type { Token } from '$lib/types';
 import dcaStrategy from '$lib/trade/auction-dca-old.rain?raw';
-import { formatUnits } from 'viem';
+import dsfStrategy from '$lib/trade/auction-dsf-old.rain?raw';
+import { formatUnits, parseUnits } from 'viem';
 import { DotrainOrderGui } from '@rainlanguage/orderbook/js_api';
 import { getPrice } from './prices';
 import { get } from 'svelte/store';
@@ -69,18 +70,28 @@ export const getDcaDeploymentArgs = async (
 		isPreset: false
 	});
 
-	gui.saveFieldValue('max-trade-amount', {
-		value: formatUnits(
-			getMaxTradeAmount(selectedAmount, selectedPeriod, selectedPeriodUnit),
-			selectedAmountToken.decimals
-		),
-		isPreset: false
-	});
+	const maxAmount = formatUnits(
+		getMaxTradeAmount(selectedAmount, selectedPeriod, selectedPeriodUnit),
+		selectedAmountToken.decimals
+	);
 
 	const outputTokenInUSDC =
 		outputToken.address === referenceToken.address
 			? '1'
 			: await getPrice(referenceToken, outputToken, dataFetcher);
+
+	// Check if maxAmount (in BigInt) is less than outputTokenInUSDC (in BigInt)
+	const maxAmountBigInt = parseUnits(maxAmount, selectedAmountToken.decimals);
+	const outputTokenInUSDCBigInt = parseUnits(outputTokenInUSDC, outputToken.decimals);
+
+	if (maxAmountBigInt < outputTokenInUSDCBigInt) {
+		throw new Error('Budget too low. Please increase your budget to at least $10.');
+	}
+
+	gui.saveFieldValue('max-trade-amount', {
+		value: maxAmount,
+		isPreset: false
+	});
 
 	// The minimum trade amount should be $1 worth of the output token
 	gui.saveFieldValue('min-trade-amount', {
@@ -113,5 +124,127 @@ export const getDcaDeploymentArgs = async (
 
 	const deploymentArgs = await gui.getDeploymentTransactionArgs($signerAddress);
 
-	return { deploymentArgs, outputToken };
+	console.log('deploymentArgs', deploymentArgs);
+
+	return { deploymentArgs };
+};
+
+export type DsfDeploymentArgs = {
+	amountToken: Token;
+	rotateToken: Token;
+	isAmountTokenFastExit: boolean;
+	isRotateTokenFastExit: boolean;
+	initialPrice: string;
+	maxTradeAmount: bigint;
+	minTradeAmount: bigint;
+	nextTradeMultiplier: string;
+	costBasisMultiplier: string;
+	timePerEpoch: string;
+	amountTokenInputVaultId: Hex | undefined;
+	rotateTokenInputVaultId: Hex | undefined;
+	amountTokenOutputVaultId: Hex | undefined;
+	rotateTokenOutputVaultId: Hex | undefined;
+	amountTokenDepositAmount: bigint;
+	rotateTokenDepositAmount: bigint;
+	selectedNetworkKey: string;
+};
+
+export const getDsfDeploymentArgs = async (
+	options: DsfDeploymentArgs,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	_dataFetcher: DataFetcher
+) => {
+	const {
+		amountToken,
+		rotateToken,
+		isAmountTokenFastExit,
+		isRotateTokenFastExit,
+		initialPrice,
+		maxTradeAmount,
+		minTradeAmount,
+		nextTradeMultiplier,
+		costBasisMultiplier,
+		timePerEpoch,
+		amountTokenInputVaultId,
+		rotateTokenInputVaultId,
+		amountTokenOutputVaultId,
+		rotateTokenOutputVaultId,
+		amountTokenDepositAmount,
+		rotateTokenDepositAmount,
+		selectedNetworkKey
+	} = options;
+
+	const gui = await DotrainOrderGui.chooseDeployment(dsfStrategy, selectedNetworkKey);
+
+	const networkTokens = tokensForNetwork(selectedNetworkKey);
+	const referenceToken = networkTokens[0];
+	if (!referenceToken) {
+		throw new Error(`No reference tokens configured for network "${selectedNetworkKey}"`);
+	}
+
+	await gui.saveSelectToken('token1', amountToken.address);
+	await gui.saveSelectToken('token2', rotateToken.address);
+
+	gui.saveFieldValue('amount-is-fast-exit', {
+		value: isAmountTokenFastExit ? '1' : '0',
+		isPreset: false
+	});
+	gui.saveFieldValue('not-amount-is-fast-exit', {
+		value: isRotateTokenFastExit ? '1' : '0',
+		isPreset: false
+	});
+	gui.saveFieldValue('initial-io', {
+		value: initialPrice,
+		isPreset: false
+	});
+
+	gui.saveFieldValue('max-amount', {
+		value: formatUnits(maxTradeAmount, amountToken.decimals),
+		isPreset: false
+	});
+
+	gui.saveFieldValue('min-amount', {
+		value: formatUnits(minTradeAmount, amountToken.decimals),
+		isPreset: false
+	});
+
+	gui.saveFieldValue('next-trade-multiplier', {
+		value: nextTradeMultiplier,
+		isPreset: false
+	});
+
+	gui.saveFieldValue('cost-basis-multiplier', {
+		value: costBasisMultiplier,
+		isPreset: false
+	});
+
+	gui.saveFieldValue('time-per-epoch', {
+		value: timePerEpoch,
+		isPreset: false
+	});
+
+	if (amountTokenInputVaultId) {
+		gui.setVaultId(true, 0, amountTokenInputVaultId);
+	}
+
+	if (rotateTokenInputVaultId) {
+		gui.setVaultId(false, 0, rotateTokenInputVaultId);
+	}
+
+	if (amountTokenOutputVaultId) {
+		gui.setVaultId(true, 1, amountTokenOutputVaultId);
+	}
+
+	if (rotateTokenOutputVaultId) {
+		gui.setVaultId(false, 1, rotateTokenOutputVaultId);
+	}
+
+	gui.saveDeposit('token1', formatUnits(amountTokenDepositAmount, amountToken.decimals));
+	gui.saveDeposit('token2', formatUnits(rotateTokenDepositAmount, rotateToken.decimals));
+	const $signerAddress = get(signerAddress);
+
+	if (!$signerAddress) throw new Error('Signer address not found');
+	const deploymentArgs = await gui.getDeploymentTransactionArgs($signerAddress);
+
+	return { deploymentArgs };
 };

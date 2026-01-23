@@ -4,7 +4,6 @@ import { type Chain } from '@wagmi/core/chains';
 import type { Hex } from 'viem';
 import type { Receipt, CyToken } from './types';
 import { flare, arbitrum } from '@wagmi/core/chains';
-import { ethers } from 'ethers';
 
 export interface NetworkConfig {
 	key: string;
@@ -78,8 +77,8 @@ const arbitrumConfig: NetworkConfig = {
 	key: 'arbitrum',
 	chain: arbitrum,
 	wFLRAddress: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
-	quoterAddress: ethers.ZeroAddress as Hex,
-	cusdxAddress: ethers.ZeroAddress as Hex,
+	quoterAddress: '0x0Fc73040b26E9bC8514fA028D998E73A254Fa76E' as Hex,
+	cusdxAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as Hex,
 	usdcAddress: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as Hex,
 	explorerApiUrl: 'https://api.etherscan.io/v2/api',
 	explorerUrl: 'https://arbiscan.io',
@@ -98,7 +97,7 @@ const arbitrumConfig: NetworkConfig = {
 			receiptAddress: '0x0E67a81B967c189Cf50353B0fE6fef572dC55319' as Hex,
 			chainId: arbitrum.id,
 			networkName: 'Arbitrum One',
-			active: false
+			active: true
 		},
 		{
 			name: 'cyWBTC.pyth',
@@ -110,7 +109,7 @@ const arbitrumConfig: NetworkConfig = {
 			receiptAddress: '0x922A293D4d0af30D67A51e5510a487916a2bb494' as Hex,
 			chainId: arbitrum.id,
 			networkName: 'Arbitrum One',
-			active: false
+			active: true
 		},
 		{
 			name: 'cycbBTC.pyth',
@@ -194,7 +193,7 @@ const arbitrumConfig: NetworkConfig = {
 			receiptAddress: '0x3fEe841c184dCF93f15CD28144b6E5514fFfC18e' as Hex,
 			chainId: arbitrum.id,
 			networkName: 'Arbitrum One',
-			active: false
+			active: true
 		},
 		{
 			name: 'cywstETH.pyth',
