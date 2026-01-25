@@ -69,18 +69,6 @@ const NETWORK_TOKEN_CONFIGS: NetworkTokenConfig[] = [
 				symbol: 'USDC',
 				address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831' as Hex,
 				decimals: 6
-			},
-			{
-				name: 'Tether USD',
-				symbol: 'USDT',
-				address: '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9' as Hex,
-				decimals: 6
-			},
-			{
-				name: 'Wrapped Ether',
-				symbol: 'WETH',
-				address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1' as Hex,
-				decimals: 18
 			}
 		]
 	}
