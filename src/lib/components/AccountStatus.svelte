@@ -6,6 +6,7 @@
 	import { formatUnits, isAddressEqual } from 'viem';
 	import type { AccountStats } from '$lib/types';
 	import AccountStatsComponent from './AccountStats.svelte';
+	import { LiquidityChangeType } from '../../generated-graphql';
 
 	export let account: string;
 
@@ -17,7 +18,7 @@
 			| NonNullable<AccountStats['transfers']['in'][0]>
 			| NonNullable<AccountStats['liquidityChanges'][0]>
 	): boolean {
-		return 'liquidityChangeType' in transfer && String(transfer.liquidityChangeType) === 'DEPOSIT';
+		return 'liquidityChangeType' in transfer && String(transfer.liquidityChangeType) === LiquidityChangeType.DEPOSIT;
 	}
 
 	let loading = true;
