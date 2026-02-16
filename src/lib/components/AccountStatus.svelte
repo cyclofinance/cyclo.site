@@ -18,7 +18,10 @@
 			| NonNullable<AccountStats['transfers']['in'][0]>
 			| NonNullable<AccountStats['liquidityChanges'][0]>
 	): boolean {
-		return 'liquidityChangeType' in transfer && String(transfer.liquidityChangeType) === LiquidityChangeType.DEPOSIT;
+		return (
+			'liquidityChangeType' in transfer &&
+			String(transfer.liquidityChangeType) === LiquidityChangeType.DEPOSIT
+		);
 	}
 
 	let loading = true;
