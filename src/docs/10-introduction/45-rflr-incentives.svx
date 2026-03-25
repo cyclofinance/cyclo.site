@@ -7,7 +7,7 @@ published: true
 
 ## Overview
 
-The Cyclo rewards program distributes 1M rFLR monthly to cy* token holders who acquire tokens through approved purchase methods. The first rewards period begins January 2, 2025 at 00:00 UTC and ends February 1, 2025 at 00:00 UTC.
+The Cyclo rewards program distributes rFLR monthly to cy* token liquidity providers. The rFLR amount is determined by Flare each epoch. From 2026 onwards, only LP-deposited cy* tokens earn rewards. Prior epochs (2025) rewarded buy-and-hold.
 
 This program is designed to incentivize genuine market activity and strengthen the protocol's core mechanics through thoughtful reward distribution.
 
@@ -15,9 +15,7 @@ The program will be reviewed each month for integrity and utility, against inten
 
 ## How Rewards Work
 
-The reward distribution is based on two random snapshots taken each month, with rewards allocated pro-rata based on eligible cy* token holdings. The monthly reward pool of 1M rFLR is distributed according to these snapshots, with timing intentionally not announced to encourage consistent holding behavior.
-
-Note that while snapshots are taken during the specified period, your eligible balance is calculated based on all transfers since each cy* token's deployment - there is no "start date" for transfer tracking. This means if you already hold eligible cy* tokens (acquired through approved sources), these holdings count towards the first rewards period.
+The reward distribution is based on 30 random snapshots taken each month, with rewards allocated pro-rata based on eligible LP positions. The monthly reward pool is distributed according to the average of these snapshots, with timing intentionally not announced to encourage consistent liquidity provision.
 
 ### Eligible Sources
 
@@ -29,31 +27,27 @@ cy* tokens must be acquired through approved sources:
 
 ### Balance Calculation and Tracking
 
-Your eligible balance is calculated as:
+Your eligible balance is based on your LP positions in approved pools. The process:
 
-```
-Net eligible balance = Total transfers in from approved sources - Total transfers out
-```
+1. Buy cy* tokens from an approved source (DEX router/orderbook)
+2. Deposit them into a liquidity pool (V2 or V3)
+3. At each snapshot, your LP position's deposited cy* value counts toward rewards
+4. For V3 positions, only in-range positions count — out-of-range positions are excluded at each snapshot
 
-Key points about balance calculation:
+**Any transfer of cy* tokens out of your wallet is treated as a sale and negates previous approved purchases.** This includes transfers to other wallets, not just DEX sales. Using a dedicated wallet for cy* token rewards is strongly recommended.
 
-- Tracking starts from each cy* token's deployment, not from the beginning of the period
-- All transfers out are counted against your balance
-- Transfers out are counted even if they occur before transfers in
-- Most wallets may show negative net balances, which is expected
-- Using a dedicated wallet for cy* token rewards is recommended
-
-This is intended to be the simplest possible calculation that will remove all noise from minting, interwallet transfers, etc. It also means that if you have a lot of unrelated transfers out of your wallet you won't be eligible for rewards, hence the dedicated wallet recommendation. You can use the wallet for other non-Cyclo related things of course, and that won't impact the calculations, we're only tracking cy* token transfers.
+Minting cy* tokens and holding them in your wallet does not earn rewards — only LP-deposited balances are eligible.
 
 ## Maximizing Your Rewards
 
-The program rewards consistent holding throughout each month. Since snapshot times are random and unannounced, your strategy should focus on:
+The program rewards consistent liquidity provision throughout each month. Since snapshot times are random and unannounced, your strategy should focus on:
 
-- Maintaining steady positions to capture both monthly snapshots
-- Minimizing unnecessary transfers that could miss snapshots
-- Using a dedicated wallet to avoid accidental balance reductions
+- Maintaining LP positions across all 30 monthly snapshots
+- For V3 positions, keeping your price range in-range — out-of-range positions earn nothing at that snapshot
+- Using a dedicated wallet to avoid accidental balance reductions from non-LP transfers
+- Minimizing transfers out of your wallet, as these negate previous approved purchases
 
-There are no arbitrary restrictions \- no maximum holding period, no minimum requirement, and no cap on rewards per wallet. The system's APY naturally adjusts based on participation levels (dilutes as more eligible cy* tokens is purchased).
+There are no arbitrary restrictions \- no maximum holding period, no minimum requirement, and no cap on rewards per wallet. The system's APY naturally adjusts based on participation levels (dilutes as more eligible LP positions are created).
 
 ## Why This Model Works
 
@@ -69,31 +63,26 @@ The core mechanism requires the cycle of:
 - Selling them to actually achieve leverage
 - Eventually buying back to deleverage and reclaim their collateral
 
-### Why Not LP Rewards?
+### Why LP Rewards? (2026 change)
 
-Liquidity provision already benefits from:
+Starting in 2026, the rewards program shifted from buy-and-hold to LP-only. This change was made because:
 
-- High natural trading volume relative to pool size
-- Inherent impermanent loss resistance in cy* tokens/stable pairs
-- Strong organic incentives through pool fees
+- The market had matured sufficiently that organic holding incentives were established
+- LP rewards directly strengthen the liquidity infrastructure that the protocol depends on
+- V3 concentrated liquidity positions reward active, in-range provision over passive holding
+- Deeper liquidity benefits all participants by reducing slippage on the mint/buy/sell cycle
 
-Additionally, Raindex already provides trading automation for buying and selling cy* tokens that can move thousands of cy* tokens through the AMM pools without moving the market significantly.
+Rewards are not restricted to specific pools — any approved pool pair is eligible, avoiding "kingmaker" dynamics.
 
-At the time of writing 19% of all cy* tokens is already held by a single SparkDEX pool. There's currently no mechanical reason to further incentivise LPs relative to the current size and maturity of the market.
+### Benefits of LP Rewards
 
-We expect to see cy* tokens purchases leading to increased leveraging, then cy* tokens holding eventually leading to increased deleveraging and releveraging over time. This will indirectly bring more native DEX fees through the AMM pools anyway, without needing to directly send rFLR to LPs.
+By incentivizing liquidity provision, we create several positive effects:
 
-Further, by not rewarding LPs for specific pools we avoid being "kingmaker". We don't want to push everyone to pair against cUSDX (currently the largest pool) vs. other potentially equally valid pairs such as USDC.e if that's what they'd rather do.
-
-### Benefits of Buy and Hold Rewards
-
-By incentivizing buying and holding, we create several positive effects:
-
-1. Force deleveraging through new market participants (new cy* tokens mints)
-2. Improve price discovery mechanisms
-3. Generate natural pool volume
+1. Deeper liquidity for cy* token trading, reducing slippage
+2. Encourage active price range management via V3 concentrated positions
+3. Generate natural pool volume and fee revenue for LPs
 4. Strengthen protocol TVL organically
-5. Diversify both sides of the markets across more participants, and positions over time, making the protocol more resilient overall
+5. Support the core mint → sell → buy-back cycle by ensuring liquid markets
 
 ### Sybils
 
@@ -103,25 +92,17 @@ As rewards are pro-rata according to token balance instantaneous snapshots, crea
 
 ### Laundering mints
 
-A user could deposit collateral into the Cyclo contract, mint cy* tokens then sell them on DEX then immediately re-buy them from some other wallet.
+A user could deposit collateral into the Cyclo contract, mint cy* tokens, sell them on DEX, re-buy from another wallet, and LP them.
 
-This would make them eligible for rewards on those cy* tokens, so appears to defeat the intent of the rewards program.
-
-However, at current market prices, if we assume the rewards APY dilutes down to say ~10%, then every $1 spent buying cy* tokens directly and holding will earn ~10% APY while each $1 deposited to mint and launder cy* tokens for rewards will only earn a fraction of that APY on the deposit.
-
-The more that people attempt to launder mints for rewards, the greater the mint vs. buy discrepancy will become, further increasing the gap between rewards on direct purchases and those for minting.
-
-Minters can already sell their cy* tokens for access to any financial opportunity globally, including simply buying and parking stables on Aave for ~10% APY. At some point it should make the most financial sense to either directly buy cy* tokens for the most rewards, or to seek other opportunities with minted cy* tokens.
+With LP-only rewards, the laundering economics are even less favorable than under buy-and-hold. The launderer must not only buy back the tokens but also commit them to an LP position and maintain it in-range across 30 random snapshots. The capital efficiency of simply buying and LPing directly is strictly better.
 
 #### Bounties
 
 If you provide clear evidence that someone is mint laundering then we will:
 
 - Give you 10% of the current month's rewards that would have gone to the launderer
-- Redistribute the remaining 90% back to the reward pool for cy* token buyers
+- Redistribute the remaining 90% back to the reward pool
 - Permaban the reported accounts from the rewards program
-
-This adds overhead and risk to effective laundering, further skewing the economically optimal choice (as far as rFLR rewards go) towards simply buying and holding cy* tokens.
 
 Send reports to https://forms.gle/VU9DU5bS7xJNU23b7
 
@@ -133,38 +114,19 @@ If you publicly disclose details of your report, such as the addresses being rep
 
 ## Tracking Your Rewards
 
-The Cyclo website provides tools to help you monitor your potential rewards and understand your current position. Visit the Rewards page to track:
-
-- Your complete transfer history (both eligible and non-eligible)
-- Current net transfers in from approved sources
-- Running calculation of your share of the total eligible supply
-- Estimated monthly rewards based on current holdings
+The Cyclo website provides tools to help you monitor your potential rewards and understand your current position. Visit the Rewards page to track your LP positions and estimated rewards.
 
 ### Understanding the Numbers
 
-These tracking tools are provided to help you understand your current position, but it's important to note that they are indicative only. Your final rewards will be determined by:
+These tracking tools are indicative only. Your final rewards will be determined by:
 
-1. Your average eligible balance across both random monthly snapshots
-2. Your pro-rata share of the total eligible supply (the sum of all users' snapshot averages)
+1. Your average eligible LP balance across 30 random monthly snapshots
+2. Your pro-rata share of the total eligible supply
+3. For V3 positions, whether your position is in-range at each snapshot
 
-For example, if you hold 1000 cy* tokens of eligible balance today, but then sell half before one of the snapshots, your average holding would be 750 cy* tokens. Similarly, if the total eligible supply changes between snapshots, this will affect everyone's pro-rata share because the total rFLR distribution size is fixed.
+The website uses its own snapshot seed for real-time estimates. The final rewards calculation uses a different, unpredictable seed that is only revealed after the epoch ends. This means the website estimates may differ from the final distribution.
 
-### Monitoring Your Position
-
-The rewards tracker shows:
-
-- Each transfer in, clearly marked if from an approved source
-- Each transfer out and its impact on your eligible balance
-- Your current net eligible position
-- An indicative share of the reward pool based on current data
-
-Remember that these numbers will fluctuate as:
-
-- Other users trade in and out of eligible positions
-- Market activity affects the total eligible supply
-- Your own trading activity changes your average position
-
-Your final monthly rewards will be calculated using the average of your eligible balance at both snapshot times divided by the average total eligible supply at those same snapshots, multiplied by the monthly reward pool of 1M rFLR.
+Remember that these numbers will fluctuate as other users add or remove liquidity, and as V3 positions move in and out of range.
 
 All distributions are subject to third party review and approval by the Flare rewards committee. We (Cyclo team) propose and administer the incentives for Cyclo once approved, but do not ultimately control the rFLR rewards program.
 
@@ -172,10 +134,10 @@ All distributions are subject to third party review and approval by the Flare re
 
 The reward tracking system combines on-chain data with off-chain processing:
 
-- Two random monthly snapshots
-- Off-chain indexing of approved source purchases
-- Wallet transfer tracking
-- Automated eligible balance calculations
-- Distribution list generation
+- 30 random monthly snapshots at deterministic but unpredictable block numbers
+- On-chain subgraph indexing of approved source transfers and LP positions
+- V3 pool tick queries at each snapshot for in-range verification
+- Automated eligible balance calculations with inverse-fraction weighting across tokens
+- Distribution list generation as CSV for the rNat distribution tool
 
-This infrastructure ensures transparent and fair reward distribution while maintaining system efficiency.
+The rewards calculation is fully reproducible — the code and data are open source at [cyclo.rewards](https://github.com/cyclofinance/cyclo.rewards).
