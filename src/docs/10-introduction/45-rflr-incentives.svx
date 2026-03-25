@@ -7,7 +7,7 @@ published: true
 
 ## Overview
 
-The Cyclo rewards program distributes rFLR monthly to cy* token liquidity providers. From 2026 onwards, only LP-deposited cy* tokens earn rewards (500K rFLR/month). Prior epochs (2025) rewarded buy-and-hold at 1M rFLR/month.
+The Cyclo rewards program distributes rFLR monthly to cy* token liquidity providers. The rFLR amount is determined by Flare each epoch. From 2026 onwards, only LP-deposited cy* tokens earn rewards. Prior epochs (2025) rewarded buy-and-hold.
 
 This program is designed to incentivize genuine market activity and strengthen the protocol's core mechanics through thoughtful reward distribution.
 
