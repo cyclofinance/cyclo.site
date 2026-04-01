@@ -4,6 +4,7 @@ import { type Chain } from '@wagmi/core/chains';
 import type { Hex } from 'viem';
 import type { Receipt, CyToken } from './types';
 import { flare, arbitrum } from '@wagmi/core/chains';
+import { FLARE_REWARDS_SUBGRAPH_URL } from './subgraph-urls';
 
 export interface NetworkConfig {
 	key: string;
@@ -31,8 +32,7 @@ const flareConfig: NetworkConfig = {
 	explorerUrl: 'https://flarescan.com',
 	orderbookSubgraphUrl:
 		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
-	rewardsSubgraphUrl:
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2026-02-13-78a0/gn',
+	rewardsSubgraphUrl: FLARE_REWARDS_SUBGRAPH_URL,
 	tokens: [
 		{
 			name: 'cysFLR',
