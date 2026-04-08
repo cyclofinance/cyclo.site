@@ -2,7 +2,8 @@ import { render, screen, waitFor } from '@testing-library/svelte';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 import StatsPanel from './StatsPanel.svelte';
 import type { GlobalStats, CyToken } from '$lib/types';
-import { ONE } from '$lib/constants';
+import { ONE, TOTAL_REWARD } from '$lib/constants';
+import { formatEther } from 'viem';
 import type { Hex } from 'viem';
 
 vi.mock('$lib/queries/fetchStats', () => ({
@@ -97,7 +98,9 @@ describe('StatsPanel Component', () => {
 			expect(screen.getByText('cysFLR: 1000.00')).toBeInTheDocument(); // cysFLR total
 			expect(screen.getByText('cyWETH: 2000.00')).toBeInTheDocument(); // cyWETH total
 			expect(screen.getByText('Monthly rFLR Rewards')).toBeInTheDocument();
-			expect(screen.getByText('Total: 500,000')).toBeInTheDocument(); // total rewards
+			expect(
+				screen.getByText(`Total: ${Number(formatEther(TOTAL_REWARD)).toLocaleString()}`)
+			).toBeInTheDocument(); // total rewards
 			expect(screen.getByText(`cysFLR: 1,000`)).toBeInTheDocument(); // cysFLR rewards
 			expect(screen.getByText(`cyWETH: 2,000`)).toBeInTheDocument(); // cyWETH rewards
 		});
