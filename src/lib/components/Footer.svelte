@@ -3,7 +3,7 @@
 	import balancesStore from '$lib/balancesStore';
 	import { formatNumberWithAbbreviations } from '$lib/methods';
 	import { Spinner } from 'flowbite-svelte';
-	import { supportedNetworks, allTokens } from '$lib/stores';
+	import { supportedNetworks, allTokens, selectedCyToken } from '$lib/stores';
 
 	function calculateMarketCap(price: bigint, supply: bigint): bigint {
 		return (price * supply) / BigInt(1e6);
@@ -14,6 +14,16 @@
 		name: network.chain?.name ?? network.key,
 		tokens: network.tokens
 	}));
+
+	// Filter to only show the selected token's network/panel
+	$: filteredTokensByNetwork = $selectedCyToken
+		? tokensByNetwork
+				.map((network) => ({
+					...network,
+					tokens: network.tokens.filter((t) => t.name === $selectedCyToken.name)
+				}))
+				.filter((network) => network.tokens.length > 0)
+		: tokensByNetwork;
 
 	// Calculate globalTvl using allTokens to ensure all active tokens are included
 	// Normalize all usdTvl values to 18 decimals before summing since they're stored with token.decimals
@@ -66,7 +76,7 @@
 					<span>$ {Number(formatUnits(globalTvl, 18))}</span>
 				</div>
 			</div>
-			{#each tokensByNetwork as network (network.key)}
+			{#each filteredTokensByNetwork as network (network.key)}
 				<div class="flex flex-col gap-3 border-b border-white/20 pb-3 last:border-0">
 					<div class="flex items-center justify-between text-sm font-semibold uppercase">
 						<span>{network.name}</span>
