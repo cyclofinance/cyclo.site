@@ -2,7 +2,6 @@
 	import { page } from '$app/stores';
 	import { base } from '$app/paths';
 	import { BarsOutline } from 'flowbite-svelte-icons';
-	export let launched: boolean;
 
 	let mobileMenuOpen = false;
 	const toggleMenu = () => {
@@ -26,16 +25,14 @@
 	>
 		<button class="absolute right-4 top-4 text-3xl text-white" on:click={toggleMenu}>&times;</button
 		>
-		{#if launched}
-			<a
-				href={base + '/lock'}
-				data-testid="app-button-mobile"
-				class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-				on:click={toggleMenu}
-			>
-				App
-			</a>
-		{/if}
+		<a
+			href={base + '/lock'}
+			data-testid="app-button-mobile"
+			class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
+			on:click={toggleMenu}
+		>
+			App
+		</a>
 		<a
 			href={base + '/docs'}
 			data-testid="docs-button-mobile"
@@ -72,16 +69,14 @@
 {/if}
 
 <div class="hidden items-center justify-center gap-4 sm:flex">
-	{#if launched}
-		<a
-			href={base + '/lock'}
-			data-testid="app-button"
-			class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-			class:underline={$page.url.pathname === '/lock' || $page.url.pathname === '/unlock'}
-		>
-			App
-		</a>
-	{/if}
+	<a
+		href={base + '/lock'}
+		data-testid="app-button"
+		class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
+		class:underline={$page.url.pathname === '/lock' || $page.url.pathname === '/unlock'}
+	>
+		App
+	</a>
 	<a
 		href={base + '/docs'}
 		data-testid="docs-button"

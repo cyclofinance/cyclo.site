@@ -10,9 +10,7 @@ describe('NavButtons Component', () => {
 	});
 
 	it('should display Buttons', async () => {
-		render(NavButtons, {
-			props: { launched: true }
-		});
+		render(NavButtons);
 
 		// Desktop buttons
 		await waitFor(() => {
@@ -32,28 +30,14 @@ describe('NavButtons Component', () => {
 	});
 
 	it('should check app button is displayed and has correct href', async () => {
-		const { getByTestId } = render(NavButtons, {
-			props: { launched: true }
-		});
+		const { getByTestId } = render(NavButtons);
 
 		const button = getByTestId('app-button');
 		expect(button).toHaveAttribute('href', base + '/lock');
 	});
 
-	it('should check app button is not displayed', async () => {
-		render(NavButtons, {
-			props: { launched: false }
-		});
-
-		await waitFor(async () => {
-			expect(screen.queryByText('App')).not.toBeInTheDocument();
-		});
-	});
-
 	it('should check navigation links have correct hrefs', async () => {
-		const { getByTestId } = render(NavButtons, {
-			props: { launched: true }
-		});
+		const { getByTestId } = render(NavButtons);
 
 		const docsButton = getByTestId('docs-button');
 		expect(docsButton).toHaveAttribute('href', base + '/docs');
@@ -69,12 +53,12 @@ describe('NavButtons Component', () => {
 	});
 
 	it('should show hamburger icon on mobile', () => {
-		render(NavButtons, { props: { launched: true } });
+		render(NavButtons);
 		expect(screen.getByTestId('nav-hamburger')).toBeInTheDocument();
 	});
 
 	it('should open mobile menu when hamburger is clicked', async () => {
-		render(NavButtons, { props: { launched: true } });
+		render(NavButtons);
 		const hamburger = screen.getByTestId('nav-hamburger');
 		await userEvent.click(hamburger);
 		expect(screen.getByTestId('docs-button-mobile')).toBeInTheDocument();
@@ -82,7 +66,7 @@ describe('NavButtons Component', () => {
 	});
 
 	it('should close mobile menu when a link is clicked', async () => {
-		render(NavButtons, { props: { launched: true } });
+		render(NavButtons);
 		const hamburger = screen.getByTestId('nav-hamburger');
 		await userEvent.click(hamburger);
 
@@ -95,7 +79,7 @@ describe('NavButtons Component', () => {
 	});
 
 	it('should display chart button in mobile menu', async () => {
-		render(NavButtons, { props: { launched: true } });
+		render(NavButtons);
 
 		// Open mobile menu
 		const hamburger = screen.getByTestId('nav-hamburger');
@@ -108,12 +92,12 @@ describe('NavButtons Component', () => {
 	});
 
 	it('should display chart button in desktop navigation', () => {
-		render(NavButtons, { props: { launched: true } });
+		render(NavButtons);
 		expect(screen.getByTestId('chart-button')).toBeInTheDocument();
 	});
 
 	it('should close mobile menu when chart link is clicked', async () => {
-		render(NavButtons, { props: { launched: true } });
+		render(NavButtons);
 		const hamburger = screen.getByTestId('nav-hamburger');
 		await userEvent.click(hamburger);
 

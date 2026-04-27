@@ -5,8 +5,6 @@
 	import { base } from '$app/paths';
 	import SocialLinks from './SocialLinks.svelte';
 	import NavButtons from './NavButtons.svelte';
-
-	export let launched: boolean;
 </script>
 
 <div class="flex h-16 w-screen items-center justify-between bg-[#1C02B8] px-4">
@@ -17,7 +15,7 @@
 		<a href={base + '/'} class="block sm:hidden">
 			<img src={spiralLogo} alt="Cyclo spiral logo" class="h-8 cursor-pointer" />
 		</a>
-		<NavButtons {launched} />
+		<NavButtons />
 	</div>
 	<div class="flex items-center justify-center gap-4">
 		<SocialLinks />
