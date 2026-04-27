@@ -5,7 +5,6 @@
 	import Header from '$lib/components/Header.svelte';
 	import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
 	import { browser } from '$app/environment';
-	import { PUBLIC_LAUNCHED } from '$env/static/public';
 	import { setActiveNetworkByChainId, supportedNetworks } from '$lib/stores';
 	import { selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
@@ -69,7 +68,7 @@
 {#if $wagmiConfig}
 	<DataFetcherProvider>
 		<div class="flex min-h-screen flex-col">
-			<Header launched={PUBLIC_LAUNCHED === 'true'} />
+			<Header />
 			<main class="flex-grow bg-[#1C02B8]">
 				<slot />
 			</main>
