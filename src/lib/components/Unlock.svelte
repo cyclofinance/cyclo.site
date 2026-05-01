@@ -142,9 +142,12 @@
 		<div
 			class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row sm:text-xl md:text-xl"
 		>
-			<span>BALANCES</span>
+			<div class="flex flex-col">
+				<span>WALLET BALANCE</span>
+				<span class="text-xs font-normal text-gray-400">cyToken balance in your wallet. Locked positions are listed below.</span>
+			</div>
 			<div class="flex flex-col gap-4 sm:items-end">
-				{#each $allTokens as token}
+				{#each $allTokens.filter((t) => t.name === $selectedCyToken?.name) as token}
 					<div class="flex flex-row gap-2" data-testid="{token.symbol.toLowerCase()}-balance">
 						{#key $balancesStore.balances[token.name]?.signerBalance}
 							<span in:fade={{ duration: 700 }}>

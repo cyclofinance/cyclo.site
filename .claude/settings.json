@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(printf \"host=github.com\\\\nprotocol=https\\\\n\")",
+      "Bash(git credential-osxkeychain erase)",
+      "Bash(git config --list)",
+      "WebFetch(domain:cyclo.site)"
+    ]
+  }
+}
