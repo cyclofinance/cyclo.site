@@ -3,7 +3,10 @@ import Lock from "./Lock.svelte";
 import transactionStore from "$lib/transactionStore";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, beforeEach, it, expect } from "vitest";
-import { mockSignerAddressStore } from "$lib/mocks/mockStores";
+import {
+  mockSignerAddressStore,
+  mockWrongNetworkStore,
+} from "$lib/mocks/mockStores";
 import { parseEther } from "ethers";
 
 const { mockBalancesStore } = await vi.hoisted(
@@ -46,6 +49,10 @@ describe("Lock Component", () => {
 
   beforeEach(() => {
     initiateLockTransactionSpy.mockClear();
+    mockSignerAddressStore.mockSetSubscribeValue(
+      "0x1234567890123456789012345678901234567890",
+    );
+    mockWrongNetworkStore.mockSetSubscribeValue(false);
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
       false,
@@ -308,6 +315,38 @@ describe("Lock Component", () => {
         "Current market value ~$ 3000000000000",
       );
     });
+  });
+
+  it("should disable the lock button when wallet is on the wrong network", async () => {
+    mockWrongNetworkStore.mockSetSubscribeValue(true);
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.0005");
+
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton).toBeDisabled();
+  });
+
+  it("should not dispatch lock transaction if wallet switches to wrong network between disclaimer open and acknowledge", async () => {
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.0005");
+
+    const lockButton = screen.getByTestId("lock-button");
+    await userEvent.click(lockButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    mockWrongNetworkStore.mockSetSubscribeValue(true);
+
+    const acceptButton = screen.getByTestId("disclaimer-acknowledge-button");
+    await userEvent.click(acceptButton);
+
+    expect(initiateLockTransactionSpy).not.toHaveBeenCalled();
   });
 
   it("should activate lock transaction when the disclaimer is accepted", async () => {

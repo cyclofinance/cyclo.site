@@ -10,6 +10,7 @@
     allTokens,
     setActiveNetworkByChainId,
     selectedNetwork,
+    wrongNetwork,
   } from "$lib/stores";
   import { base } from "$app/paths";
   import mintDia from "$lib/images/mint-dia.svg";
@@ -89,6 +90,11 @@
   };
 
   const runLockTransaction = () => {
+    // Defence-in-depth: the LOCK button is disabled on $wrongNetwork, but
+    // re-check synchronously in case the wallet chain changes between
+    // render and click (e.g. the disclaimer modal is acknowledged after
+    // a chain switch).
+    if ($wrongNetwork) return;
     transactionStore.handleLockTransaction({
       signerAddress: $signerAddress,
       config: $wagmiConfig,
@@ -391,7 +397,10 @@
 
     {#if $signerAddress}
       <Button
-        disabled={insufficientFunds || !assets || !amountToLock}
+        disabled={insufficientFunds ||
+          !assets ||
+          !amountToLock ||
+          $wrongNetwork}
         customClass="sm:text-xl text-lg w-full bg-white text-primary"
         dataTestId="lock-button"
         on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
