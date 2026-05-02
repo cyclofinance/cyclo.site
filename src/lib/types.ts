@@ -1,82 +1,87 @@
-import type { Config } from '@wagmi/core';
-import { type Hex } from 'viem';
-import type { AccountStatusQuery } from '../generated-graphql';
+import type { Config } from "@wagmi/core";
+import { type Hex } from "viem";
+import type { AccountStatusQuery } from "../generated-graphql";
 
 export type Receipt = {
-	chainId: string;
-	tokenAddress: Hex;
-	tokenId: string;
-	balance: bigint;
-	readableTokenId?: string;
-	readableTotalsFlr?: string;
-	readableFlrPerReceipt?: string;
-	totalsFlr?: bigint;
-	token?: string;
+  chainId: string;
+  tokenAddress: Hex;
+  tokenId: string;
+  balance: bigint;
+  readableTokenId?: string;
+  readableTotalsFlr?: string;
+  readableFlrPerReceipt?: string;
+  totalsFlr?: bigint;
+  token?: string;
 };
 
 export type BlockScoutData = {
-	token: {
-		address_hash: string;
-	};
-	value: string;
-	id: string;
+  token: {
+    address_hash: string;
+  };
+  value: string;
+  id: string;
 };
 
 export interface Token {
-	name: string;
-	symbol: string;
-	decimals: number;
-	address: Hex;
+  name: string;
+  symbol: string;
+  decimals: number;
+  address: Hex;
 }
 
 export interface CyToken extends Token {
-	name: string;
-	address: Hex;
-	underlyingAddress: Hex;
-	underlyingSymbol: string;
-	receiptAddress: Hex;
-	chainId: number;
-	networkName: string;
-	active: boolean;
+  name: string;
+  address: Hex;
+  underlyingAddress: Hex;
+  underlyingSymbol: string;
+  receiptAddress: Hex;
+  chainId: number;
+  networkName: string;
+  active: boolean;
 }
 
 export type InitiateLockTransactionArgs = {
-	signerAddress: string;
-	config: Config;
-	selectedToken: CyToken;
-	assets: bigint;
+  signerAddress: string;
+  config: Config;
+  selectedToken: CyToken;
+  assets: bigint;
 };
 
 export type RewardsPools = Record<string, bigint>;
 
 export type Share = {
-	percentageShare: bigint;
-	rewardsAmount: bigint;
+  percentageShare: bigint;
+  rewardsAmount: bigint;
 };
 
 export type Shares = {
-	[key: string]: Share;
+  [key: string]: Share;
 } & {
-	totalRewards: bigint;
+  totalRewards: bigint;
 };
 
 export type AccountStats = {
-	account: Hex;
-	eligibleBalances: Record<string, bigint>;
-	shares: Shares;
-	transfers: {
-		in: NonNullable<AccountStatusQuery['account']>['transfersIn'];
-		out: NonNullable<AccountStatusQuery['account']>['transfersOut'];
-	};
-	liquidityChanges: NonNullable<AccountStatusQuery['account']>['liquidityChanges'];
+  account: Hex;
+  eligibleBalances: Record<string, bigint>;
+  shares: Shares;
+  transfers: {
+    in: NonNullable<AccountStatusQuery["account"]>["transfersIn"];
+    out: NonNullable<AccountStatusQuery["account"]>["transfersOut"];
+  };
+  liquidityChanges: NonNullable<
+    AccountStatusQuery["account"]
+  >["liquidityChanges"];
 };
 
-export type LeaderboardEntry = Omit<AccountStats, 'transfers' | 'liquidityChanges'>;
+export type LeaderboardEntry = Omit<
+  AccountStats,
+  "transfers" | "liquidityChanges"
+>;
 
 export type GlobalStats = {
-	eligibleHolders: number;
-	totalEligible: Record<string, bigint>;
-	totalEligibleSum: bigint;
-	rewardsPools: RewardsPools;
-	apy: Record<string, bigint>;
+  eligibleHolders: number;
+  totalEligible: Record<string, bigint>;
+  totalEligibleSum: bigint;
+  rewardsPools: RewardsPools;
+  apy: Record<string, bigint>;
 };

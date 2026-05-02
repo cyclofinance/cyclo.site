@@ -1,5 +1,7 @@
-import { getCategories, getFiles, processDocs } from '$lib/docs/processDocs';
+import { getCategories, getFiles, processDocs } from "$lib/docs/processDocs";
 
 export const load = async () => {
-	return { categorisedArticles: await processDocs(getFiles(), getCategories()) };
+  return {
+    categorisedArticles: await processDocs(getFiles(), getCategories()),
+  };
 };

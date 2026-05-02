@@ -1,46 +1,52 @@
-import { get } from 'svelte/store';
-import { tokens } from '$lib/stores';
-import { isAddressEqual } from 'viem';
-import type { AccountStatusQuery, TopAccountsQuery, StatsQuery } from '../../generated-graphql';
+import { get } from "svelte/store";
+import { tokens } from "$lib/stores";
+import { isAddressEqual } from "viem";
+import type {
+  AccountStatusQuery,
+  TopAccountsQuery,
+  StatsQuery,
+} from "../../generated-graphql";
 
 /**
  * Extract token balances from vaultBalances array
  * Works with both AccountStatusQuery and TopAccountsQuery vault balances
  */
 export function extractBalancesFromVaults(
-	vaultBalances:
-		| NonNullable<AccountStatusQuery['account']>['vaultBalances']
-		| NonNullable<TopAccountsQuery['accountsByCyBalance']>[0]['vaultBalances']
+  vaultBalances:
+    | NonNullable<AccountStatusQuery["account"]>["vaultBalances"]
+    | NonNullable<TopAccountsQuery["accountsByCyBalance"]>[0]["vaultBalances"],
 ): Record<string, bigint> {
-	const currentTokens = get(tokens);
-	const balances: Record<string, bigint> = {};
+  const currentTokens = get(tokens);
+  const balances: Record<string, bigint> = {};
 
-	if (!vaultBalances) {
-		// Initialize with zeros for all tokens
-		for (const token of currentTokens) {
-			balances[token.symbol] = 0n;
-		}
-		return balances;
-	}
+  if (!vaultBalances) {
+    // Initialize with zeros for all tokens
+    for (const token of currentTokens) {
+      balances[token.symbol] = 0n;
+    }
+    return balances;
+  }
 
-	for (const vaultBalance of vaultBalances) {
-		const vaultAddress = vaultBalance.vault?.address;
-		if (!vaultAddress) continue;
+  for (const vaultBalance of vaultBalances) {
+    const vaultAddress = vaultBalance.vault?.address;
+    if (!vaultAddress) continue;
 
-		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
-		if (token) {
-			balances[token.symbol] = BigInt(vaultBalance.balanceAvgSnapshot || '0');
-		}
-	}
+    const token = currentTokens.find((t) =>
+      isAddressEqual(vaultAddress, t.address),
+    );
+    if (token) {
+      balances[token.symbol] = BigInt(vaultBalance.balanceAvgSnapshot || "0");
+    }
+  }
 
-	// Ensure all tokens have a balance entry (even if 0)
-	for (const token of currentTokens) {
-		if (!(token.symbol in balances)) {
-			balances[token.symbol] = 0n;
-		}
-	}
+  // Ensure all tokens have a balance entry (even if 0)
+  for (const token of currentTokens) {
+    if (!(token.symbol in balances)) {
+      balances[token.symbol] = 0n;
+    }
+  }
 
-	return balances;
+  return balances;
 }
 
 /**
@@ -48,41 +54,43 @@ export function extractBalancesFromVaults(
  * Works with both StatsQuery and AccountStatusQuery cycloVaults
  */
 export function aggregateTotalEligibleFromVaults(
-	cycloVaults?: StatsQuery['cycloVaults'] | AccountStatusQuery['cycloVaults']
+  cycloVaults?: StatsQuery["cycloVaults"] | AccountStatusQuery["cycloVaults"],
 ): Record<string, bigint> {
-	const currentTokens = get(tokens);
-	const totals: Record<string, bigint> = {};
+  const currentTokens = get(tokens);
+  const totals: Record<string, bigint> = {};
 
-	if (!cycloVaults) {
-		// Initialize with zeros for all tokens
-		for (const token of currentTokens) {
-			totals[token.symbol] = 0n;
-		}
-		return totals;
-	}
+  if (!cycloVaults) {
+    // Initialize with zeros for all tokens
+    for (const token of currentTokens) {
+      totals[token.symbol] = 0n;
+    }
+    return totals;
+  }
 
-	// Aggregate totals from cycloVaults by token symbol
-	for (const vault of cycloVaults) {
-		const vaultAddress = vault?.address;
-		const totalEligible = BigInt(vault?.totalEligibleSnapshot || '0');
+  // Aggregate totals from cycloVaults by token symbol
+  for (const vault of cycloVaults) {
+    const vaultAddress = vault?.address;
+    const totalEligible = BigInt(vault?.totalEligibleSnapshot || "0");
 
-		if (!vaultAddress || totalEligible === 0n) continue;
+    if (!vaultAddress || totalEligible === 0n) continue;
 
-		const token = currentTokens.find((t) => isAddressEqual(vaultAddress, t.address));
-		if (token) {
-			if (!(token.symbol in totals)) {
-				totals[token.symbol] = 0n;
-			}
-			totals[token.symbol] += totalEligible;
-		}
-	}
+    const token = currentTokens.find((t) =>
+      isAddressEqual(vaultAddress, t.address),
+    );
+    if (token) {
+      if (!(token.symbol in totals)) {
+        totals[token.symbol] = 0n;
+      }
+      totals[token.symbol] += totalEligible;
+    }
+  }
 
-	// Ensure all tokens have entries (even if 0)
-	for (const token of currentTokens) {
-		if (!(token.symbol in totals)) {
-			totals[token.symbol] = 0n;
-		}
-	}
+  // Ensure all tokens have entries (even if 0)
+  for (const token of currentTokens) {
+    if (!(token.symbol in totals)) {
+      totals[token.symbol] = 0n;
+    }
+  }
 
-	return totals;
+  return totals;
 }
