@@ -1,11 +1,11 @@
 <script lang="ts">
-	import InfoTooltip from './InfoTooltip.svelte';
+  import InfoTooltip from "./InfoTooltip.svelte";
 
-	export let tooltipContent = 'Test tooltip content';
+  export let tooltipContent = "Test tooltip content";
 </script>
 
 <div>
-	<InfoTooltip>
-		{tooltipContent}
-	</InfoTooltip>
+  <InfoTooltip>
+    {tooltipContent}
+  </InfoTooltip>
 </div>

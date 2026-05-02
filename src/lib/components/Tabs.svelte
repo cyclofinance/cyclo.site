@@ -1,7 +1,7 @@
 <script>
-	import { Tabs } from 'flowbite-svelte';
+  import { Tabs } from "flowbite-svelte";
 </script>
 
 <Tabs class="tabs">
-	<slot />
+  <slot />
 </Tabs>

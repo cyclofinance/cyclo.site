@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+  import { getContext } from "svelte";
 
-	const dataFetcher = getContext('dataFetcher');
+  const dataFetcher = getContext("dataFetcher");
 </script>
 
 {#if dataFetcher}
-	<div data-testid="data-fetcher-available">Data fetcher is in context</div>
+  <div data-testid="data-fetcher-available">Data fetcher is in context</div>
 {/if}
