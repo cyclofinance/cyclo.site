@@ -85,7 +85,10 @@ describe("Lock Component", () => {
       },
       {
         cusdxOutput: BigInt(0),
-        cyTokenOutput: BigInt(0),
+        // Non-zero so the LOCK button isn't disabled by the
+        // missing-cyTokenOutput gate; tests that exercise that gate
+        // override this in their own mockSetSubscribeValue call.
+        cyTokenOutput: BigInt(1234000000000000000000n),
       },
     );
   });
@@ -382,7 +385,10 @@ describe("Lock Component", () => {
           signerUnderlyingBalance: fullPrecisionBalance,
         },
       },
-      { cusdxOutput: 0n, cyTokenOutput: 0n },
+      // Non-zero cyTokenOutput so the LOCK button isn't disabled by the
+      // missing-cyTokenOutput gate; this test is about MAX precision, not
+      // the price-freshness gate.
+      { cusdxOutput: 0n, cyTokenOutput: 1234000000000000000000n },
     );
 
     render(Lock);
@@ -409,6 +415,133 @@ describe("Lock Component", () => {
     // Truncation: signed amount must equal the full balance, not a Number()-
     // round-tripped subset that leaves dust behind.
     expect(callArgs.assets).toBe(fullPrecisionBalance);
+  });
+
+  it("should disable the lock button when lockPrice is missing", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 1234000000000000000000n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.5");
+
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton).toBeDisabled();
+  });
+
+  it("should disable the lock button when swap-quote cyTokenOutput is zero", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 0n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.5");
+
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton).toBeDisabled();
+  });
+
+  it("should pass minSharesOut as 99% of swap-quote cyTokenOutput to handleLockTransaction", async () => {
+    const cyTokenOutput = 1234000000000000000000n;
+    const expectedMinSharesOut = (cyTokenOutput * 99n) / 100n;
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.0005");
+
+    const lockButton = screen.getByTestId("lock-button");
+    await userEvent.click(lockButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    const acceptButton = screen.getByTestId("disclaimer-acknowledge-button");
+    await userEvent.click(acceptButton);
+
+    expect(initiateLockTransactionSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ minSharesOut: expectedMinSharesOut }),
+    );
   });
 
   it("should activate lock transaction when the disclaimer is accepted", async () => {
