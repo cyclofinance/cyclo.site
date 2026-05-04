@@ -35,10 +35,7 @@
   }
 
   // Derive assets reactively from amountToLock so the value the user sees
-  // in the input and the value submitted to the deposit can never drift.
-  // Pre-A17-3 this was an imperative checkBalance() call from on:input that
-  // could leave assets stale on any path that mutated amountToLock without
-  // dispatching input.
+  // in the input and the value submitted to the deposit cannot drift.
   $: assets = (() => {
     if (!amountToLock) return 0n;
     try {

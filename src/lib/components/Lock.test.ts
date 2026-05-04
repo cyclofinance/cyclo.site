@@ -351,10 +351,10 @@ describe("Lock Component", () => {
   });
 
   it("should display the same amount it sends to handleLockTransaction when MAX is clicked", async () => {
-    // 18-decimal balance with all digits non-trivial. Pre-A17-3 setValueToMax
-    // ran the displayed amount through Number(formatUnits(...)).toString(),
-    // which truncates to ~15 sig figs while assets carried the full balance.
-    // The user saw a different number than they signed.
+    // 18-decimal balance with all digits non-trivial. A Number() round-trip
+    // on formatUnits would truncate to ~15 sig figs; the test guards
+    // against any path that introduces that drift between displayed amount
+    // and signed amount.
     const fullPrecisionBalance = 9876543210123456789n;
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
