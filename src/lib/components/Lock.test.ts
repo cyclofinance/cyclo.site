@@ -6,6 +6,8 @@ import { vi, describe, beforeEach, it, expect } from "vitest";
 import {
   mockSignerAddressStore,
   mockWrongNetworkStore,
+  mockSelectedCyToken,
+  DEFAULT_SELECTED_CYTOKEN,
 } from "$lib/mocks/mockStores";
 import { parseEther } from "ethers";
 import { parseUnits } from "viem";
@@ -54,6 +56,7 @@ describe("Lock Component", () => {
       "0x1234567890123456789012345678901234567890",
     );
     mockWrongNetworkStore.mockSetSubscribeValue(false);
+    mockSelectedCyToken.mockSetSubscribeValue(DEFAULT_SELECTED_CYTOKEN);
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
       false,

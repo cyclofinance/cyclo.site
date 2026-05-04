@@ -35,6 +35,7 @@ describe("ReceiptModal Component", () => {
     address: "0xcdef1234abcdef5678",
     underlyingAddress: "0xabcd1234",
     underlyingSymbol: "sFLR",
+    underlyingDecimals: 18,
     receiptAddress: "0xeeff5678",
     symbol: "cysFLR",
     decimals: 18,
