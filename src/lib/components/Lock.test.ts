@@ -8,6 +8,7 @@ import {
   mockWrongNetworkStore,
 } from "$lib/mocks/mockStores";
 import { parseEther } from "ethers";
+import { parseUnits } from "viem";
 
 const { mockBalancesStore } = await vi.hoisted(
   () => import("$lib/mocks/mockStores"),
@@ -347,6 +348,67 @@ describe("Lock Component", () => {
     await userEvent.click(acceptButton);
 
     expect(initiateLockTransactionSpy).not.toHaveBeenCalled();
+  });
+
+  it("should display the same amount it sends to handleLockTransaction when MAX is clicked", async () => {
+    // 18-decimal balance with all digits non-trivial. Pre-A17-3 setValueToMax
+    // ran the displayed amount through Number(formatUnits(...)).toString(),
+    // which truncates to ~15 sig figs while assets carried the full balance.
+    // The user saw a different number than they signed.
+    const fullPrecisionBalance = 9876543210123456789n;
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: fullPrecisionBalance,
+          signerUnderlyingBalance: fullPrecisionBalance,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 0n },
+    );
+
+    render(Lock);
+
+    const maxButton = screen.getByTestId("set-val-to-max");
+    await userEvent.click(maxButton);
+
+    const input = screen.getByTestId("lock-input") as HTMLInputElement;
+    const displayedAmount = input.value;
+
+    const lockButton = screen.getByTestId("lock-button");
+    await userEvent.click(lockButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    const acceptButton = screen.getByTestId("disclaimer-acknowledge-button");
+    await userEvent.click(acceptButton);
+
+    const callArgs = initiateLockTransactionSpy.mock.calls[0][0];
+    // Drift: displayed amount must equal signed amount.
+    expect(callArgs.assets).toBe(parseUnits(displayedAmount, 18));
+    // Truncation: signed amount must equal the full balance, not a Number()-
+    // round-tripped subset that leaves dust behind.
+    expect(callArgs.assets).toBe(fullPrecisionBalance);
   });
 
   it("should activate lock transaction when the disclaimer is accepted", async () => {

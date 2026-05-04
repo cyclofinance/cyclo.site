@@ -34,7 +34,19 @@
     READY = "LOCK",
   }
 
-  $: assets = BigInt(0);
+  // Derive assets reactively from amountToLock so the value the user sees
+  // in the input and the value submitted to the deposit can never drift.
+  // Pre-A17-3 this was an imperative checkBalance() call from on:input that
+  // could leave assets stale on any path that mutated amountToLock without
+  // dispatching input.
+  $: assets = (() => {
+    if (!amountToLock) return 0n;
+    try {
+      return parseUnits(amountToLock.toString(), $selectedCyToken.decimals);
+    } catch {
+      return 0n;
+    }
+  })();
   $: insufficientFunds =
     ($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance ||
       0n) < assets;
@@ -43,10 +55,6 @@
     : insufficientFunds
       ? `INSUFFICIENT ${$selectedCyToken.underlyingSymbol}`
       : ButtonStatus.READY;
-
-  $: if ($signerAddress) {
-    checkBalance();
-  }
 
   // Auto-switch network when token is selected (only if network is different)
   $: if (
@@ -70,16 +78,6 @@
       );
     }
   }
-
-  const checkBalance = () => {
-    if (amountToLock) {
-      assets = parseUnits(amountToLock.toString(), $selectedCyToken.decimals);
-
-      insufficientFunds =
-        ($balancesStore.balances[$selectedCyToken.name]
-          ?.signerUnderlyingBalance ?? 0n) < assets;
-    }
-  };
 
   const initiateLockWithDisclaimer = () => {
     if (!disclaimerAcknowledged) {
@@ -237,16 +235,12 @@
           dataTestId="lock-input"
           on:input={(event) => {
             amountToLock = event.detail.value;
-            checkBalance();
           }}
           on:setValueToMax={() => {
             const balance =
               $balancesStore.balances[$selectedCyToken.name]
                 ?.signerUnderlyingBalance || 0n;
-            assets = balance;
-            amountToLock = Number(
-              formatUnits(balance, $selectedCyToken.decimals),
-            ).toString();
+            amountToLock = formatUnits(balance, $selectedCyToken.decimals);
           }}
           bind:amount={amountToLock}
           maxValue={$balancesStore.balances[$selectedCyToken.name]
