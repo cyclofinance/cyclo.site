@@ -85,16 +85,25 @@
   };
 
   const runLockTransaction = () => {
-    // Defence-in-depth: the LOCK button is disabled on $wrongNetwork, but
-    // re-check synchronously in case the wallet chain changes between
-    // render and click (e.g. the disclaimer modal is acknowledged after
-    // a chain switch).
+    // Defence-in-depth: the LOCK button is disabled on these conditions,
+    // but re-check synchronously in case the underlying state changes
+    // between render and click (e.g. the disclaimer modal is acknowledged
+    // after a chain switch or after the price feed goes stale).
     if ($wrongNetwork) return;
+    const lockPrice = $balancesStore.stats[$selectedCyToken.name]?.lockPrice;
+    const cyTokenOutput = $balancesStore.swapQuotes.cyTokenOutput;
+    if (!lockPrice || !cyTokenOutput) return;
+    // 1% slippage on the contract-side minimum shares check. The contract
+    // re-reads its oracle at execution time and compares its computed share
+    // output against this floor; setting it to 0 (the previous value)
+    // accepted any positive share count, leaving sandwich attacks open.
+    const minSharesOut = (cyTokenOutput * 99n) / 100n;
     transactionStore.handleLockTransaction({
       signerAddress: $signerAddress,
       config: $wagmiConfig,
       selectedToken: $selectedCyToken,
       assets: assets,
+      minSharesOut,
     });
   };
 
@@ -391,7 +400,9 @@
         disabled={insufficientFunds ||
           !assets ||
           !amountToLock ||
-          $wrongNetwork}
+          $wrongNetwork ||
+          !$balancesStore.stats[$selectedCyToken.name]?.lockPrice ||
+          !$balancesStore.swapQuotes.cyTokenOutput}
         customClass="sm:text-xl text-lg w-full bg-white text-primary"
         dataTestId="lock-button"
         on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
