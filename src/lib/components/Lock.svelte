@@ -1,6 +1,6 @@
 <script lang="ts">
   import Card from "$lib/components/Card.svelte";
-  import transactionStore from "$lib/transactionStore";
+  import transactionStore, { TransactionStatus } from "$lib/transactionStore";
   import { RefreshOutline } from "flowbite-svelte-icons";
   import balancesStore from "$lib/balancesStore";
   import Input from "$lib/components/Input.svelte";
@@ -47,6 +47,12 @@
   $: insufficientFunds =
     ($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance ||
       0n) < assets;
+  $: txPending =
+    $transactionStore.status === TransactionStatus.CHECKING_ALLOWANCE ||
+    $transactionStore.status === TransactionStatus.PENDING_WALLET ||
+    $transactionStore.status === TransactionStatus.PENDING_APPROVAL ||
+    $transactionStore.status === TransactionStatus.PENDING_LOCK;
+
   $: buttonStatus = !amountToLock
     ? ButtonStatus.READY
     : insufficientFunds
@@ -56,7 +62,8 @@
   // Auto-switch network when token is selected (only if network is different)
   $: if (
     $selectedCyToken &&
-    $selectedNetwork.chain.id !== $selectedCyToken.chainId
+    $selectedNetwork.chain.id !== $selectedCyToken.chainId &&
+    !txPending
   ) {
     // Align app state to token network
     setActiveNetworkByChainId($selectedCyToken.chainId);
@@ -135,6 +142,7 @@
         options={$allTokens}
         bind:selected={$selectedCyToken}
         getOptionLabel={(option) => `${option.symbol} · ${option.networkName}`}
+        disabled={txPending}
       />
     </div>
 
@@ -391,7 +399,8 @@
         disabled={insufficientFunds ||
           !assets ||
           !amountToLock ||
-          $wrongNetwork}
+          $wrongNetwork ||
+          txPending}
         customClass="sm:text-xl text-lg w-full bg-white text-primary"
         dataTestId="lock-button"
         on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
