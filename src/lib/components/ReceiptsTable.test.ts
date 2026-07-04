@@ -3,7 +3,12 @@ import ReceiptsTable from "./ReceiptsTable.svelte";
 import { describe, it, expect } from "vitest";
 import { mockReceipt } from "$lib/mocks/mockReceipt";
 import type { CyToken, Receipt } from "$lib/types";
-import { formatEther } from "ethers";
+import { formatUnits } from "viem";
+
+function trimToDecimals(decimalString: string, places: number): string {
+  const [whole, frac = ""] = decimalString.split(".");
+  return `${whole}.${(frac + "0".repeat(places)).slice(0, places)}`;
+}
 
 const mockReceipts = [mockReceipt, mockReceipt];
 
@@ -31,15 +36,37 @@ describe("ReceiptsTable Component", () => {
 
     for (let i = 0; i < mockReceipts.length; i++) {
       expect(screen.getByTestId(`locked-price-${i}`)).toHaveTextContent(
-        Number(formatEther(mockReceipts[i].tokenId)).toFixed(5),
+        trimToDecimals(
+          formatUnits(BigInt(mockReceipts[i].tokenId), 18),
+          5,
+        ),
       );
       expect(screen.getByTestId(`number-held-${i}`)).toHaveTextContent(
-        Number(formatEther(mockReceipts[i].balance)).toFixed(5),
+        trimToDecimals(
+          formatUnits(mockReceipts[i].balance, 18),
+          5,
+        ),
       );
       expect(screen.getByTestId(`total-locked-${i}`)).toHaveTextContent(
-        Number(mockReceipts[i].readableTotalsFlr).toFixed(5),
+        trimToDecimals(mockReceipts[i].readableTotalsFlr, 5),
       );
     }
+  });
+
+  it("displays exact string-truncated 5th decimal, not Number()-rounded value", async () => {
+    const precisionReceipt = {
+      ...mockReceipt,
+      balance: 36928000000000000n,
+      tokenId: "23080000000000000",
+    };
+    render(ReceiptsTable, {
+      receipts: [precisionReceipt] as unknown as Receipt[],
+      token: selectedToken,
+    });
+
+    const numberHeld = screen.getByTestId("number-held-0");
+    expect(numberHeld).toHaveTextContent("0.03692");
+    expect(numberHeld).not.toHaveTextContent("0.03693");
   });
 
   it("opens a receipt modal when redeem button is clicked", async () => {
