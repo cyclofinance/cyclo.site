@@ -9,18 +9,23 @@ const initialState = {
 
 const blockNumberStore = () => {
   const { subscribe, set, update } = writable(initialState);
+  let inflightToken = 0;
   const reset = () => set(initialState);
 
   const refresh = async (config: Config) => {
+    const token = ++inflightToken;
     try {
       const block = await getBlock(config);
+      if (token !== inflightToken) return block.number;
       update((state) => ({
         ...state,
-        blockNumber: block.number,
+        blockNumber:
+          block.number > state.blockNumber ? block.number : state.blockNumber,
         status: "Ready",
       }));
       return block.number;
     } catch (error) {
+      if (token !== inflightToken) throw error;
       console.error("Error getting block number:", error);
       update((state) => ({
         ...state,
