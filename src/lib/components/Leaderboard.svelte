@@ -96,7 +96,7 @@
                 </div>
               {/each}
               <div data-testid="total-rewards" class="font-medium text-white">
-                {(+formatEther(entry.shares.totalRewards)).toFixed(4)}
+                {(+formatEther(entry.shares?.totalRewards ?? 0n)).toFixed(4)}
               </div>
             </a>
           {/each}
