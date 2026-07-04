@@ -33,10 +33,20 @@
   let debounceTimer: ReturnType<typeof setTimeout>;
 
   const readableBalance = Number(formatUnits(receipt.balance, token.decimals));
-  const tokenId = receipt.tokenId;
+
+  $: tokenIdBigInt = (() => {
+    try {
+      return BigInt(receipt.tokenId);
+    } catch {
+      return null;
+    }
+  })();
+  $: tokenIdValid = tokenIdBigInt !== null;
+
+  let previewError: string | null = null;
 
   const checkBalance = async () => {
-    if (isCalculating || !receipt.tokenId) {
+    if (isCalculating || !tokenIdValid) {
       if (!readableAmountToRedeem) {
         amountToRedeem = BigInt(0);
       }
@@ -51,16 +61,17 @@
 
     try {
       isCalculating = true;
+      previewError = null;
       const _sFlrToReceive = await readContract($wagmiConfig, {
         abi: erc20PriceOracleReceiptVaultAbi,
         functionName: "previewRedeem",
         address: $selectedCyToken.address,
-        args: [amountToRedeem, receipt.tokenId],
+        args: [amountToRedeem, tokenIdBigInt!],
       });
       sFlrToReceive = _sFlrToReceive as bigint;
-    } catch {
+    } catch (e) {
+      previewError = e instanceof Error ? e.message : String(e);
       sFlrToReceive = BigInt(0);
-      amountToRedeem = BigInt(0);
     } finally {
       isCalculating = false;
     }
@@ -132,7 +143,9 @@
   >
     <span>{receipt.token} PER LOCKED {token.underlyingSymbol}</span>
     <div class="flex flex-row gap-4">
-      <span data-testid="lock-up-price">{Number(formatEther(tokenId))}</span>
+      <span data-testid="lock-up-price"
+        >{tokenIdBigInt !== null ? Number(formatEther(tokenIdBigInt)) : "—"}</span
+      >
     </div>
   </div>
 
@@ -189,6 +202,14 @@
           ),
         )}
       </p>
+      {#if previewError}
+        <p
+          class="my-1 text-left text-xs text-red-400 sm:text-right"
+          data-testid="preview-error"
+        >
+          Preview unavailable: {previewError}
+        </p>
+      {/if}
     </div>
   </div>
   <!-- Burn diagram for desktop -->
@@ -245,7 +266,8 @@
     dataTestId="unlock-button"
     customClass="w-full bg-white text-primary"
     disabled={buttonStatus !== ButtonStatus.READY ||
-      amountToRedeem === BigInt(0)}
+      amountToRedeem === BigInt(0) ||
+      !tokenIdValid}
     on:click={() =>
       transactionStore.handleUnlockTransaction({
         signerAddress: $signerAddress,

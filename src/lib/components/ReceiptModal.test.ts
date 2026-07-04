@@ -342,6 +342,33 @@ describe("ReceiptModal Component", () => {
     });
   });
 
+  it("should disable unlock and show placeholder when tokenId is invalid", async () => {
+    const invalidReceipt = { ...mockReceipt, tokenId: "not-a-number" };
+    render(ReceiptModal, { receipt: invalidReceipt, token: selectedToken });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("lock-up-price")).toHaveTextContent("—");
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton).toBeDisabled();
+    });
+  });
+
+  it("should surface previewRedeem errors without zeroing amountToRedeem", async () => {
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.reject(new Error("contract reverted")),
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.5");
+
+    await waitFor(() => {
+      const previewError = screen.getByTestId("preview-error");
+      expect(previewError).toHaveTextContent("contract reverted");
+    });
+  });
+
   it("should set cysFlrBalance when max button is clicked and receipt balance is greater than cysFlrBalance", async () => {
     const mockCysFlrBalance = parseEther("0.0001"); // 1 cysFLR
 
