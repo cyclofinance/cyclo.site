@@ -8,7 +8,14 @@
   export let unit: string = "";
   export let maxButton: boolean = false;
 
-  export let validate: ValidateFunction = () => undefined;
+  const defaultValidate: ValidateFunction = (value) => {
+    if (value === ".") return "Invalid amount";
+    if (value !== undefined && value !== "" && Number.isNaN(Number(value)))
+      return "Invalid number";
+    return undefined;
+  };
+
+  export let validate: ValidateFunction = defaultValidate;
 
   export let isError: boolean = false;
   let error: string | undefined = undefined;
@@ -16,7 +23,9 @@
 
   export let dataTestId: string = "";
 
-  let displayValue = amount.toString();
+  let displayValue = handleDecimalSeparator({
+    target: { value: amount?.toString() ?? "" },
+  });
 
   const dispatch = createEventDispatcher();
 
@@ -30,19 +39,21 @@
       target: { value: target.value },
     });
     displayValue = formattedValue;
-
-    // Update the actual value
     amount = formattedValue;
     dispatch("input", { value: formattedValue });
-
     validateInput();
   }
 
-  // Keep display value in sync when amount changes externally
-  $: if (amount && amount.toString() !== displayValue) {
-    displayValue = amount.toString();
-  } else if (!amount) {
-    displayValue = "";
+  // Keep display value in sync when amount changes externally, routing through sanitizer
+  $: {
+    const sanitized = amount
+      ? handleDecimalSeparator({ target: { value: amount.toString() } })
+      : "";
+    if (sanitized !== displayValue) {
+      displayValue = sanitized;
+      if (sanitized !== amount) amount = sanitized;
+      validateInput();
+    }
   }
 
   const validateInput = () => {
