@@ -62,7 +62,7 @@
       class="break-words font-mono text-white"
       data-testid="total-rewards-value"
     >
-      {formatEther(stats.shares.totalRewards)}
+      {formatEther(stats.shares.totalRewards || 0n)}
     </div>
   </div>
 </div>
