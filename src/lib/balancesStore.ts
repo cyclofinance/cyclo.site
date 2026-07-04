@@ -28,7 +28,7 @@ interface StatsState {
   stats: {
     [key: string]: {
       supply: bigint;
-      price: bigint;
+      price: bigint | null;
       lockPrice: bigint;
       underlyingTvl: bigint;
       usdTvl: bigint;
@@ -57,7 +57,7 @@ const createInitialState = (tokens: CyToken[]): StatsState => {
   for (const token of tokens) {
     stats[token.name] = {
       supply: BigInt(0),
-      price: BigInt(0),
+      price: null,
       lockPrice: BigInt(0),
       underlyingTvl: BigInt(0),
       usdTvl: BigInt(0),
@@ -179,7 +179,7 @@ const getCyTokenUsdPrice = async (
   cusdxAddress: Hex,
   selectedToken: CyToken,
   chainId?: number,
-) => {
+): Promise<bigint | null> => {
   // Use Algebra quoter for Arbitrum, standard quoter for Flare
   if (chainId === arbitrum.id) {
     try {
@@ -194,13 +194,13 @@ const getCyTokenUsdPrice = async (
       });
 
       // Algebra quoter returns [amountIn, fee]
-      return sim.result[0] ?? 0n;
+      return sim.result[0] ?? null;
     } catch (error) {
       console.error(
         "Error getting cyTokenUsdPrice with Algebra quoter:",
         error,
       );
-      return 0n;
+      return null;
     }
   }
 
@@ -220,7 +220,7 @@ const getCyTokenUsdPrice = async (
       account: ZeroAddress as `0x${string}`,
       chainId,
     });
-    return data.result[0] || 0n;
+    return data.result[0] ?? null;
   } catch {
     try {
       // try 10000 as the fee
@@ -238,10 +238,10 @@ const getCyTokenUsdPrice = async (
         account: ZeroAddress as `0x${string}`,
         chainId,
       });
-      return data.result[0] || 0n;
+      return data.result[0] ?? null;
     } catch (error) {
       console.error("Error getting cyTokenUsdPrice:", error);
-      return 0n;
+      return null;
     }
   }
 };
@@ -554,7 +554,7 @@ const balancesStore = () => {
             token.chainId,
           ).catch((error) => {
             console.log(`Failed to fetch price for ${token.name}:`, error);
-            return BigInt(0);
+            return null;
           }),
           getLockPriceFooterStats(config, token, token.chainId).catch(
             (error) => {
