@@ -18,7 +18,11 @@ import {
   quoterAddress,
   type NetworkConfig,
 } from "./stores";
-import { ALGEBRA_QUOTER_ABI, STALE_PERIOD } from "./constants";
+import {
+  ALGEBRA_QUOTER_ABI,
+  STALE_PERIOD,
+  FRONTEND_PYTH_MAX_AGE_SECONDS,
+} from "./constants";
 import blockNumberStore from "./blockNumberStore";
 import { I_PYTH_ABI, PYTH_ORACLE_ABI, CYCLO_VAULT_ABI } from "./pyth";
 
@@ -300,12 +304,11 @@ const getLockPriceFooterStats = async (
         chainId: effectiveChainId,
       })) as Hex;
 
-      // Call getPriceNoOlderThan with 60 seconds max age
       const priceData = (await readContract(config, {
         abi: I_PYTH_ABI,
         address: pythContractAddress as Hex,
         functionName: "getPriceNoOlderThan",
-        args: [iPythFeedId, STALE_PERIOD],
+        args: [iPythFeedId, FRONTEND_PYTH_MAX_AGE_SECONDS],
         chainId: effectiveChainId,
       })) as { price: bigint; conf: bigint; expo: bigint; publishTime: bigint };
 
