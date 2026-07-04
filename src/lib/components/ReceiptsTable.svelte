@@ -70,9 +70,9 @@
       readableReupPerUnderlying: Number(
         formatUnits(addlPerUnderlying, 18),
       ).toFixed(5),
-      readableReupTotal: Number(
-        formatUnits(reupTotal, token.decimals),
-      ).toFixed(5),
+      readableReupTotal: Number(formatUnits(reupTotal, token.decimals)).toFixed(
+        5,
+      ),
       reupTotal,
     };
   });
