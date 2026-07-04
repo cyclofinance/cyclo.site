@@ -405,6 +405,7 @@ const balancesStore = () => {
   const initialState = createInitialState(initialTokens);
 
   const { subscribe, set, update } = writable<StatsState>(initialState);
+  let refreshBalancesCallId = 0;
 
   const reset = () => {
     set(createInitialState(getAllTokensAcrossNetworks()));
@@ -481,11 +482,12 @@ const balancesStore = () => {
   };
 
   const refreshBalances = async (config: Config, signerAddress: Hex) => {
+    const callId = ++refreshBalancesCallId;
     try {
       update((state) => ({ ...state, status: "Checking" }));
 
       const currentTokens: CyToken[] = get(tokens);
-      await Promise.all(
+      const tokenResults = await Promise.all(
         currentTokens.map(async (token: CyToken) => {
           const [underlyingBalance, balance] = await Promise.all([
             readErc20BalanceOf(config, {
@@ -497,22 +499,24 @@ const balancesStore = () => {
               args: [signerAddress],
             }),
           ]);
-
-          update((state) => ({
-            ...state,
-            balances: {
-              ...state.balances,
-              [token.name]: {
-                signerBalance: balance,
-                signerUnderlyingBalance: underlyingBalance,
-              },
-            },
-          }));
+          return { token, underlyingBalance, balance };
         }),
       );
 
-      update((state) => ({ ...state, status: "Ready" }));
+      if (callId !== refreshBalancesCallId) return;
+
+      update((state) => {
+        const balances = { ...state.balances };
+        for (const { token, underlyingBalance, balance } of tokenResults) {
+          balances[token.name] = {
+            signerBalance: balance,
+            signerUnderlyingBalance: underlyingBalance,
+          };
+        }
+        return { ...state, status: "Ready", balances };
+      });
     } catch (error) {
+      if (callId !== refreshBalancesCallId) return;
       console.error("Error refreshing balances:", error);
       update((state) => ({ ...state, status: "Error" }));
     }
