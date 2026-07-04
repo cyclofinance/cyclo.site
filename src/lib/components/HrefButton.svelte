@@ -1,9 +1,32 @@
 <script lang="ts">
   export let inset: boolean = false;
   export let href: string;
+
+  function sanitizeHref(raw: string): string {
+    const trimmed = raw.trim();
+    if (
+      trimmed.startsWith("/") ||
+      trimmed.startsWith("#") ||
+      trimmed.startsWith("?")
+    ) {
+      return trimmed;
+    }
+    if (/^(https?:|mailto:)/i.test(trimmed)) {
+      return trimmed;
+    }
+    return "#";
+  }
+
+  $: safeHref = sanitizeHref(href);
+  $: isBlank = $$restProps.target === "_blank";
+  $: rel = isBlank
+    ? `noopener noreferrer ${$$restProps.rel ?? ""}`.trim()
+    : $$restProps.rel;
 </script>
 
-<a {...$$restProps} {href} class:inset class:outset={!inset}><slot /></a>
+<a {...$$restProps} href={safeHref} {rel} class:inset class:outset={!inset}
+  ><slot /></a
+>
 
 <style lang="postcss">
   a {
