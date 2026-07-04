@@ -22,6 +22,7 @@
   import {
     validateSelectedAmount,
     validateOverrideDepositAmount,
+    validatePeriod,
   } from "$lib/trade/validateDeploymentArgs";
   import InfoTooltip from "$lib/components/InfoTooltip.svelte";
 
@@ -110,13 +111,18 @@
     !amountToken ||
     !rotateToken ||
     !maxTradeAmount ||
-    (chooseOverrideDepositAmount && overrideDepositAmount == undefined) ||
+    (chooseOverrideDepositAmount &&
+      (!overrideDepositAmount || !rotateDepositAmount)) ||
     amountTokenInputVaultIdError ||
     rotateTokenInputVaultIdError ||
     amountTokenOutputVaultIdError ||
     rotateTokenOutputVaultIdError ||
     maxTradeAmountError ||
-    (chooseOverrideDepositAmount && overrideDepositAmountError);
+    nextTradeMultiplierError ||
+    costBasisMultiplierError ||
+    timePerEpochError ||
+    (chooseOverrideDepositAmount &&
+      (overrideDepositAmountError || rotateDepositAmountError));
 
   // advanced options
   let showAdvancedOptions: boolean = false;
@@ -278,6 +284,7 @@
             type="number"
             bind:amount={nextTradeMultiplier}
             dataTestId="next-trade-multiplier-input"
+            validate={validatePeriod}
             bind:isError={nextTradeMultiplierError}
           />
         </div>
@@ -296,6 +303,7 @@
             type="number"
             bind:amount={costBasisMultiplier}
             dataTestId="cost-basis-multiplier-input"
+            validate={validatePeriod}
             bind:isError={costBasisMultiplierError}
           />
         </div>
@@ -314,6 +322,7 @@
             type="number"
             bind:amount={timePerEpoch}
             dataTestId="time-per-epoch-input"
+            validate={validatePeriod}
             bind:isError={timePerEpochError}
           />
         </div>
