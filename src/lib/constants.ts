@@ -95,3 +95,37 @@ export const FEB26_REWARD_POOL = 500_000n * ONE;
 export const MAR26_REWARD_POOL = 300_000n * ONE;
 
 export const TOTAL_REWARD = MAR26_REWARD_POOL;
+
+export type EpochConfig = {
+  label: string;
+  startUtc: string;
+  endUtc: string;
+  poolRflr: string;
+};
+
+export const REWARD_EPOCHS: EpochConfig[] = [
+  {
+    label: "December 2025",
+    startUtc: "December 1, 2025 00:00 UTC",
+    endUtc: "January 1, 2026 00:00 UTC",
+    poolRflr: "1,000,000",
+  },
+  {
+    label: "January 2026",
+    startUtc: "January 1, 2026 00:00 UTC",
+    endUtc: "February 1, 2026 00:00 UTC",
+    poolRflr: "500,000",
+  },
+  {
+    label: "February 2026",
+    startUtc: "February 1, 2026 00:00 UTC",
+    endUtc: "March 1, 2026 00:00 UTC",
+    poolRflr: "500,000",
+  },
+  {
+    label: "March 2026",
+    startUtc: "March 1, 2026 00:00 UTC",
+    endUtc: "April 1, 2026 00:00 UTC",
+    poolRflr: "300,000",
+  },
+];
