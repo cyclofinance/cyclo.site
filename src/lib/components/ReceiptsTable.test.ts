@@ -42,6 +42,43 @@ describe("ReceiptsTable Component", () => {
     }
   });
 
+  it("renders without throwing when tokenId is '0'", () => {
+    const zeroReceipt = { ...mockReceipt, tokenId: "0" } as unknown as Receipt;
+    render(ReceiptsTable, { receipts: [zeroReceipt], token: selectedToken });
+    expect(screen.getByTestId("locked-price-0")).toHaveTextContent("0.00000");
+    expect(screen.getByTestId("total-locked-0")).toHaveTextContent("0.00000");
+  });
+
+  it("renders without throwing when tokenId is a non-numeric string", () => {
+    const badReceipt = {
+      ...mockReceipt,
+      tokenId: "abc",
+    } as unknown as Receipt;
+    render(ReceiptsTable, { receipts: [badReceipt], token: selectedToken });
+    expect(screen.getByTestId("locked-price-0")).toHaveTextContent("0.00000");
+  });
+
+  it("renders without throwing when balance is a non-numeric string", () => {
+    const badReceipt = {
+      ...mockReceipt,
+      balance: "not-a-number",
+    } as unknown as Receipt;
+    render(ReceiptsTable, { receipts: [badReceipt], token: selectedToken });
+    expect(screen.getByTestId("total-locked-0")).toHaveTextContent("0.00000");
+  });
+
+  it("uses exact BigInt arithmetic for totalsFlr (no Number precision loss)", () => {
+    const precisionReceipt = {
+      ...mockReceipt,
+      balance: (2n * 10n ** 18n).toString(),
+      tokenId: (15n * 10n ** 17n).toString(),
+    } as unknown as Receipt;
+    render(ReceiptsTable, { receipts: [precisionReceipt], token: selectedToken });
+    // totalsFlr = (2e18 * 10^18) / 1.5e18 = 2e18 * (1/1.5) = 1333333333333333333n
+    // With Number(10**18) the constant itself would be imprecise; with 10n**18n it is exact.
+    expect(screen.getByTestId("total-locked-0")).not.toHaveTextContent("NaN");
+  });
+
   it("opens a receipt modal when redeem button is clicked", async () => {
     render(ReceiptsTable, {
       receipts: mockReceipts as unknown as Receipt[],
