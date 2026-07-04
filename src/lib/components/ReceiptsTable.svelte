@@ -20,12 +20,12 @@
   export let receipts: ReceiptType[];
   let selectedReceipt: ReceiptType | null = null;
 
-  const mappedReceipts = receipts.map((receipt) => {
-    // Guard against undefined values
+  $: mappedReceipts = receipts.map((receipt) => {
     if (!receipt.balance || !receipt.tokenId) {
       return {
         ...receipt,
         totalsFlr: BigInt(0),
+        readableBalance: "0.00000",
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
       };
@@ -34,18 +34,13 @@
     const balance = BigInt(receipt.balance);
     const tokenId = BigInt(receipt.tokenId);
 
-    // Calculate totals: (balance * 10^18) / tokenId
-    // balance is in token.decimals, we scale to 18 decimals, then divide by tokenId (in 18 decimals)
-    // Result is total underlying token locked in 18 decimals
     const totalsFlr = (balance * BigInt(10 ** 18)) / tokenId;
-
-    // Calculate per-receipt: 10^36 / tokenId
-    // This gives the cyToken per locked underlying token (in 18 decimals)
     const flrPerReceipt = BigInt(10 ** 36) / tokenId;
 
     return {
       ...receipt,
       totalsFlr: totalsFlr,
+      readableBalance: Number(formatUnits(balance, token.decimals)).toFixed(5),
       readableFlrPerReceipt: Number(
         formatUnits(flrPerReceipt, token.decimals),
       ).toFixed(5),
@@ -80,7 +75,7 @@
             {receipt.readableTotalsFlr}
           </TableBodyCell>
           <TableBodyCell data-testid={`number-held-${index}`}>
-            {Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
+            {receipt.readableBalance}
           </TableBodyCell>
           <TableBodyCell data-testid={`locked-price-${index}`}>
             {Number(formatUnits(BigInt(receipt.tokenId), 18)).toFixed(5)}
