@@ -108,7 +108,7 @@
         <div class="space-y-2">
           {#each [...stats.transfers.in, ...stats.transfers.out, ...stats.liquidityChanges]
             .filter(isRenderableTransfer)
-            .sort( (a, b) => {
+            .sort((a, b) => {
               const res = Number(b.blockTimestamp) - Number(a.blockTimestamp);
               if (res === 0) {
                 if ("fromIsApprovedSource" in a && !("fromIsApprovedSource" in b)) {
@@ -119,7 +119,7 @@
                 }
               }
               return res;
-            }, ) as transfer}
+            }) as transfer}
             <a
               href={`${explorerUrl}/tx/${transfer.transactionHash}`}
               target="_blank"
