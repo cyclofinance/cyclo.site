@@ -24,6 +24,14 @@ vi.mock("@wagmi/core", () => {
   };
 });
 
+vi.mock("svelte-wagmi", async () => {
+  const { writable } = await import("svelte/store");
+  return {
+    wagmiConfig: writable({}),
+    signerAddress: writable("0x1234567890123456789012345678901234567890"),
+  };
+});
+
 describe("ReceiptModal Component", () => {
   const initiateUnlockTransactionSpy = vi.spyOn(
     transactionStore,
