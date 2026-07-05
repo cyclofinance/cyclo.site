@@ -15,7 +15,7 @@ describe("DataFetcherProvider Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getAndStartDataFetcher).mockResolvedValue(mockDataFetcher);
+    vi.mocked(getAndStartDataFetcher).mockReturnValue(mockDataFetcher);
   });
 
   afterEach(() => {
@@ -31,10 +31,10 @@ describe("DataFetcherProvider Component", () => {
     });
   });
 
-  it("should not render slot content until data fetcher is available", () => {
+  it("should render slot content when data fetcher is immediately available", () => {
     render(DataFetcherTest);
 
-    expect(screen.queryByTestId("slot-content")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("slot-content")).toBeInTheDocument();
   });
 
   it("should render slot content when data fetcher is available", async () => {
