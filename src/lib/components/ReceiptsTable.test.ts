@@ -36,16 +36,10 @@ describe("ReceiptsTable Component", () => {
 
     for (let i = 0; i < mockReceipts.length; i++) {
       expect(screen.getByTestId(`locked-price-${i}`)).toHaveTextContent(
-        trimToDecimals(
-          formatUnits(BigInt(mockReceipts[i].tokenId), 18),
-          5,
-        ),
+        trimToDecimals(formatUnits(BigInt(mockReceipts[i].tokenId), 18), 5),
       );
       expect(screen.getByTestId(`number-held-${i}`)).toHaveTextContent(
-        trimToDecimals(
-          formatUnits(mockReceipts[i].balance, 18),
-          5,
-        ),
+        trimToDecimals(formatUnits(mockReceipts[i].balance, 18), 5),
       );
       expect(screen.getByTestId(`total-locked-${i}`)).toHaveTextContent(
         trimToDecimals(mockReceipts[i].readableTotalsFlr ?? "", 5),
