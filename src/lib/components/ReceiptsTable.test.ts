@@ -73,7 +73,10 @@ describe("ReceiptsTable Component", () => {
       balance: (2n * 10n ** 18n).toString(),
       tokenId: (15n * 10n ** 17n).toString(),
     } as unknown as Receipt;
-    render(ReceiptsTable, { receipts: [precisionReceipt], token: selectedToken });
+    render(ReceiptsTable, {
+      receipts: [precisionReceipt],
+      token: selectedToken,
+    });
     // totalsFlr = (2e18 * 10^18) / 1.5e18 = 2e18 * (1/1.5) = 1333333333333333333n
     // With Number(10**18) the constant itself would be imprecise; with 10n**18n it is exact.
     expect(screen.getByTestId("total-locked-0")).not.toHaveTextContent("NaN");
