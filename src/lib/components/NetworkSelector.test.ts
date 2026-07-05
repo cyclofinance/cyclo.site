@@ -215,10 +215,10 @@ describe("NetworkSelector", () => {
     ) as HTMLSelectElement;
     await fireEvent.change(selector, { target: { value: "test" } });
 
-    expect(calls[0]).toBe("set:test");
-    expect(calls).toContain("switchNetwork");
-    expect(calls.indexOf("set:test")).toBeLessThan(
-      calls.indexOf("switchNetwork"),
+    expect(calls[0]).toBe("switchNetwork");
+    expect(calls).toContain("set:test");
+    expect(calls.indexOf("switchNetwork")).toBeLessThan(
+      calls.indexOf("set:test"),
     );
   });
 });
