@@ -17,7 +17,7 @@
 
 {#if options.length > 0}
   <select
-    class="rounded border border-white bg-transparent px-2 py-1 disabled:opacity-50 disabled:cursor-not-allowed"
+    class="rounded border border-white bg-transparent px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50"
     bind:value={selected}
     data-testid={dataTestId}
     {disabled}
