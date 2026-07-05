@@ -20,7 +20,6 @@ import {
 } from "./stores";
 import {
   ALGEBRA_QUOTER_ABI,
-  STALE_PERIOD,
   FRONTEND_PYTH_MAX_AGE_SECONDS,
 } from "./constants";
 import blockNumberStore from "./blockNumberStore";
