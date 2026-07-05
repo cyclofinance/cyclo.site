@@ -3,7 +3,7 @@
   import { fetchAccountStatus } from "$lib/queries/fetchAccountStatus";
   import Card from "./Card.svelte";
   import { tokens, selectedNetwork } from "$lib/stores";
-  import { formatUnits, isAddressEqual } from "viem";
+  import { formatUnits, isAddress, isAddressEqual } from "viem";
   import type { AccountStats } from "$lib/types";
   import AccountStatsComponent from "./AccountStats.svelte";
   import { LiquidityChangeType } from "../../generated-graphql";
@@ -13,11 +13,48 @@
   $: explorerUrl = $selectedNetwork.explorerUrl;
   $: currentTokens = $tokens;
 
-  function isDeposit(
-    transfer:
-      | NonNullable<AccountStats["transfers"]["in"][0]>
-      | NonNullable<AccountStats["liquidityChanges"][0]>,
-  ): boolean {
+  type HistoryRow =
+    | NonNullable<AccountStats["transfers"]["in"][0]>
+    | NonNullable<AccountStats["liquidityChanges"][0]>;
+
+  // The subgraph response shape is not trusted: one malformed row must
+  // degrade to that row being omitted, not abort the whole history render,
+  // so only rows carrying every field the template dereferences are kept.
+  function isRenderableTransfer(
+    transfer: HistoryRow | null | undefined,
+  ): transfer is HistoryRow {
+    if (!transfer) {
+      return false;
+    }
+    if (typeof transfer.transactionHash !== "string") {
+      return false;
+    }
+    if (
+      transfer.blockTimestamp == null ||
+      !Number.isFinite(Number(transfer.blockTimestamp))
+    ) {
+      return false;
+    }
+    if (
+      typeof transfer.tokenAddress !== "string" ||
+      !isAddress(transfer.tokenAddress)
+    ) {
+      return false;
+    }
+    if ("fromIsApprovedSource" in transfer) {
+      return (
+        transfer.value != null &&
+        typeof transfer.from?.id === "string" &&
+        typeof transfer.to?.id === "string"
+      );
+    }
+    return (
+      transfer.liquidityChangeType != null &&
+      transfer.depositedBalanceChange != null
+    );
+  }
+
+  function isDeposit(transfer: HistoryRow): boolean {
     return (
       "liquidityChangeType" in transfer &&
       String(transfer.liquidityChangeType) === LiquidityChangeType.DEPOSIT
@@ -69,7 +106,9 @@
       <div class="space-y-6" data-testid="transfer-history">
         <h2 class="text-xl font-semibold text-white">Transfer History</h2>
         <div class="space-y-2">
-          {#each [...stats.transfers.in, ...stats.transfers.out, ...stats.liquidityChanges].sort( (a, b) => {
+          {#each [...stats.transfers.in, ...stats.transfers.out, ...stats.liquidityChanges]
+            .filter(isRenderableTransfer)
+            .sort( (a, b) => {
               const res = Number(b.blockTimestamp) - Number(a.blockTimestamp);
               if (res === 0) {
                 if ("fromIsApprovedSource" in a && !("fromIsApprovedSource" in b)) {
@@ -113,7 +152,9 @@
                     {/if}
                   {:else}
                     <span class="text-error"
-                      >Liquidity {transfer.liquidityChangeType.toLowerCase()}</span
+                      >Liquidity {String(
+                        transfer.liquidityChangeType,
+                      ).toLowerCase()}</span
                     >
                   {/if}
                 </div>

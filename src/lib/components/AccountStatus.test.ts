@@ -182,4 +182,151 @@ describe("AccountStatus Component", () => {
       expect(screen.getByText("Sent to 0x2345...8901")).toBeInTheDocument();
     });
   });
+
+  describe("malformed subgraph rows", () => {
+    const account = "0x1234567890123456789012345678901234567890";
+
+    const expectValidRowsRendered = async () => {
+      await waitFor(() => {
+        expect(screen.getByTestId("transfer-history")).toBeInTheDocument();
+        expect(
+          screen.getAllByText("Sent to 0x2345...8901").length,
+        ).toBeGreaterThanOrEqual(1);
+        expect(
+          screen.getAllByText("Received from 0x2345...8901").length,
+        ).toBeGreaterThanOrEqual(1);
+      });
+    };
+
+    it("drops a liquidity row with null liquidityChangeType instead of aborting the render", async () => {
+      const { fetchAccountStatus } = await import(
+        "$lib/queries/fetchAccountStatus"
+      );
+      vi.mocked(fetchAccountStatus).mockResolvedValue({
+        ...mockStats,
+        liquidityChanges: [
+          {
+            id: "3",
+            blockNumber: 3,
+            transactionHash: "hash3",
+            blockTimestamp: "3000",
+            tokenAddress: "0x19831cfB53A0dbeAD9866C43557C1D48DfF76567",
+            liquidityChangeType: null,
+            depositedBalanceChange: "1000",
+          } as unknown as AccountStats["liquidityChanges"][0],
+        ],
+      });
+
+      render(AccountStatus, { props: { account } });
+
+      await expectValidRowsRendered();
+      expect(screen.queryByText(/^Liquidity/)).not.toBeInTheDocument();
+    });
+
+    it("drops a transfer row whose tokenAddress is not a valid address instead of aborting the render", async () => {
+      const { fetchAccountStatus } = await import(
+        "$lib/queries/fetchAccountStatus"
+      );
+      vi.mocked(fetchAccountStatus).mockResolvedValue({
+        ...mockStats,
+        transfers: {
+          ...mockStats.transfers,
+          in: [
+            ...mockStats.transfers.in,
+            {
+              ...mockStats.transfers.in[0],
+              id: "4",
+              transactionHash: "hash4",
+              tokenAddress: "not-an-address",
+            } as unknown as AccountStats["transfers"]["in"][0],
+          ],
+        },
+      });
+
+      render(AccountStatus, { props: { account } });
+
+      await expectValidRowsRendered();
+      expect(screen.getAllByText("Sent to 0x2345...8901")).toHaveLength(1);
+    });
+
+    it("drops a transfer row with null value instead of aborting the render", async () => {
+      const { fetchAccountStatus } = await import(
+        "$lib/queries/fetchAccountStatus"
+      );
+      vi.mocked(fetchAccountStatus).mockResolvedValue({
+        ...mockStats,
+        transfers: {
+          ...mockStats.transfers,
+          out: [
+            ...mockStats.transfers.out,
+            {
+              ...mockStats.transfers.out[0],
+              id: "5",
+              transactionHash: "hash5",
+              value: null,
+            } as unknown as AccountStats["transfers"]["out"][0],
+          ],
+        },
+      });
+
+      render(AccountStatus, { props: { account } });
+
+      await expectValidRowsRendered();
+      expect(screen.getAllByText("Received from 0x2345...8901")).toHaveLength(
+        1,
+      );
+    });
+
+    it("renders a liquidity row with a non-string liquidityChangeType without crashing", async () => {
+      const { fetchAccountStatus } = await import(
+        "$lib/queries/fetchAccountStatus"
+      );
+      vi.mocked(fetchAccountStatus).mockResolvedValue({
+        ...mockStats,
+        liquidityChanges: [
+          {
+            id: "7",
+            blockNumber: 7,
+            transactionHash: "hash7",
+            blockTimestamp: "7000",
+            tokenAddress: "0x19831cfB53A0dbeAD9866C43557C1D48DfF76567",
+            liquidityChangeType: 5,
+            depositedBalanceChange: "1000",
+          } as unknown as AccountStats["liquidityChanges"][0],
+        ],
+      });
+
+      render(AccountStatus, { props: { account } });
+
+      await expectValidRowsRendered();
+      expect(screen.getByText("Liquidity 5")).toBeInTheDocument();
+    });
+
+    it("drops a transfer row with a missing blockTimestamp instead of rendering an Invalid Date row", async () => {
+      const { fetchAccountStatus } = await import(
+        "$lib/queries/fetchAccountStatus"
+      );
+      vi.mocked(fetchAccountStatus).mockResolvedValue({
+        ...mockStats,
+        transfers: {
+          ...mockStats.transfers,
+          in: [
+            ...mockStats.transfers.in,
+            {
+              ...mockStats.transfers.in[0],
+              id: "6",
+              transactionHash: "hash6",
+              blockTimestamp: undefined,
+            } as unknown as AccountStats["transfers"]["in"][0],
+          ],
+        },
+      });
+
+      render(AccountStatus, { props: { account } });
+
+      await expectValidRowsRendered();
+      expect(screen.getAllByText("Sent to 0x2345...8901")).toHaveLength(1);
+      expect(screen.queryByText(/Invalid Date/)).not.toBeInTheDocument();
+    });
+  });
 });
