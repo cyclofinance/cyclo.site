@@ -48,7 +48,7 @@ describe("ReceiptsTable Component", () => {
         ),
       );
       expect(screen.getByTestId(`total-locked-${i}`)).toHaveTextContent(
-        trimToDecimals(mockReceipts[i].readableTotalsFlr, 5),
+        trimToDecimals(mockReceipts[i].readableTotalsFlr ?? "", 5),
       );
     }
   });
