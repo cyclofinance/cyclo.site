@@ -35,6 +35,7 @@
   $: readableBalance = Number(formatUnits(receipt.balance, token.decimals));
   $: tokenId = receipt.tokenId;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   $: receipt,
     (() => {
       readableAmountToRedeem = "";
