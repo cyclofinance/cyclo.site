@@ -144,7 +144,9 @@
     <span>{receipt.token} PER LOCKED {token.underlyingSymbol}</span>
     <div class="flex flex-row gap-4">
       <span data-testid="lock-up-price"
-        >{tokenIdBigInt !== null ? Number(formatEther(tokenIdBigInt)) : "—"}</span
+        >{tokenIdBigInt !== null
+          ? Number(formatEther(tokenIdBigInt))
+          : "—"}</span
       >
     </div>
   </div>
