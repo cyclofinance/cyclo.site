@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AccountStats } from "$lib/types";
+  import type { AccountStats, Share } from "$lib/types";
   import { formatEther, formatUnits } from "viem";
   import { tokens } from "$lib/stores";
 
@@ -17,7 +17,7 @@
   );
   $: sharesLower = Object.fromEntries(
     Object.entries(stats.shares ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
-  );
+  ) as Record<string, Share>;
 </script>
 
 {#if !isEligible}
