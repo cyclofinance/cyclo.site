@@ -36,12 +36,12 @@
   $: tokenId = receipt.tokenId;
 
   // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  $: receipt,
+  $: (receipt,
     (() => {
       readableAmountToRedeem = "";
       amountToRedeem = BigInt(0);
       sFlrToReceive = BigInt(0);
-    })();
+    })());
 
   const checkBalance = async () => {
     if (isCalculating || !receipt.tokenId) {
@@ -77,7 +77,9 @@
   $: signerCyTokenBalance =
     $balancesStore.balances[token.name]?.signerBalance ?? 0n;
   $: maxRedeemable =
-    signerCyTokenBalance < erc1155balance ? signerCyTokenBalance : erc1155balance;
+    signerCyTokenBalance < erc1155balance
+      ? signerCyTokenBalance
+      : erc1155balance;
 
   $: if (shouldCallContract && amountToRedeem !== undefined && !isCalculating) {
     if (debounceTimer) {
