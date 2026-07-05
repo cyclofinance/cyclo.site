@@ -171,7 +171,11 @@
     if (validateSelectedAmount(selectedAmount?.toString())) return;
     if (validatePeriod(selectedPeriod)) return;
     if (validateBaseline(selectedBaseline)) return;
-    if (chooseOverrideDepositAmount && validateOverrideDepositAmount(overrideDepositAmount?.toString())) return;
+    if (
+      chooseOverrideDepositAmount &&
+      validateOverrideDepositAmount(overrideDepositAmount?.toString())
+    )
+      return;
 
     // Ensure the active network matches the selected cyToken's network
     setActiveNetwork(selectedNetworkForCyToken.key);
