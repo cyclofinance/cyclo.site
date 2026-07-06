@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
+import { tick } from "svelte";
 import Lock from "./Lock.svelte";
 import transactionStore from "$lib/transactionStore";
 import userEvent from "@testing-library/user-event";
@@ -8,7 +9,15 @@ import {
   mockWrongNetworkStore,
 } from "$lib/mocks/mockStores";
 import { parseEther } from "ethers";
-import { parseUnits } from "viem";
+import { parseUnits, type Hex } from "viem";
+import { selectedCyToken } from "$lib/stores";
+import { switchNetwork } from "@wagmi/core";
+import type { CyToken } from "$lib/types";
+
+vi.mock("@wagmi/core", async (importOriginal) => ({
+  ...((await importOriginal()) as object),
+  switchNetwork: vi.fn().mockResolvedValue(undefined),
+}));
 
 const { mockBalancesStore } = await vi.hoisted(
   () => import("$lib/mocks/mockStores"),
@@ -429,5 +438,107 @@ describe("Lock Component", () => {
     const acceptButton = screen.getByTestId("disclaimer-acknowledge-button");
     await userEvent.click(acceptButton);
     expect(initiateLockTransactionSpy).toHaveBeenCalled();
+  });
+});
+
+describe("Lock component wallet auto-switch guard", () => {
+  const baseToken: CyToken = {
+    name: "cysFLR",
+    address: "0x19831cfB53A0dbeAD9866C43557C1D48DfF76567" as Hex,
+    underlyingAddress: "0x12e605bc104e93B45e1aD99F9e555f659051c2BB" as Hex,
+    underlyingSymbol: "sFLR",
+    receiptAddress: "0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09" as Hex,
+    symbol: "cysFLR",
+    decimals: 18,
+    chainId: 14,
+    networkName: "Flare",
+    active: true,
+  };
+
+  // Chain ids with no supportedNetworks entry: setActiveNetworkByChainId
+  // no-ops for these, so the network-mismatch condition stays true.
+  const unsupportedToken = (chainId: number): CyToken => ({
+    ...baseToken,
+    chainId,
+  });
+
+  beforeEach(() => {
+    vi.mocked(switchNetwork).mockClear();
+    vi.mocked(switchNetwork).mockResolvedValue(
+      undefined as unknown as Awaited<ReturnType<typeof switchNetwork>>,
+    );
+    mockSignerAddressStore.mockSetSubscribeValue(
+      "0x1234567890123456789012345678901234567890",
+    );
+    mockWrongNetworkStore.mockSetSubscribeValue(false);
+    selectedCyToken.set(baseToken);
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(1),
+          price: BigInt(1234000000000000000n),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(9876000000000000000n),
+          signerUnderlyingBalance: BigInt(9876000000000000000n),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+  });
+
+  it("attempts the wallet switch only once while the unsupported chain mismatch persists", async () => {
+    render(Lock);
+
+    selectedCyToken.set(unsupportedToken(999));
+    await waitFor(() => {
+      expect(switchNetwork).toHaveBeenCalledTimes(1);
+    });
+
+    // Any store update that invalidates a dependency re-runs the reactive
+    // block while the mismatch persists. Without the last-attempt guard
+    // this re-fires the wallet popup for the same chain.
+    selectedCyToken.set(unsupportedToken(999));
+    await tick();
+    await tick();
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+  });
+
+  it("attempts a new wallet switch when the desired chain id changes", async () => {
+    render(Lock);
+
+    selectedCyToken.set(unsupportedToken(999));
+    await waitFor(() => {
+      expect(switchNetwork).toHaveBeenCalledTimes(1);
+    });
+
+    selectedCyToken.set(unsupportedToken(888));
+    await waitFor(() => {
+      expect(switchNetwork).toHaveBeenCalledTimes(2);
+    });
+    expect(vi.mocked(switchNetwork).mock.calls[1][1]).toEqual({
+      chainId: 888,
+    });
   });
 });
