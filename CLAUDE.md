@@ -125,3 +125,7 @@ and front matter with `title` and `published: true`.
 - The Solidity contracts were audited by Protofire; the report lives in the
   `cyclo.sol` repo (`audit/` directory), and the user-facing summary is
   `src/docs/10-introduction/92-audit.svx`.
+- `audit/known-false-positives.md` records findings that audit passes
+  repeatedly surface but that are not bugs; consult it before filing a new
+  audit issue, and add an entry when one is closed as invalid. Per-pass
+  findings logs live in `audit/` too.
