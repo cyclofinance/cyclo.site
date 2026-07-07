@@ -6,6 +6,7 @@ import { vi, describe, beforeEach, it, expect } from "vitest";
 import {
   mockSignerAddressStore,
   mockWrongNetworkStore,
+  web3ModalStore,
 } from "$lib/mocks/mockStores";
 import { parseEther } from "ethers";
 import { parseUnits } from "viem";
@@ -257,6 +258,25 @@ describe("Lock Component", () => {
     await waitFor(() => {
       expect(screen.getByTestId("connect-message")).toBeInTheDocument();
     });
+  });
+
+  it("exposes the connect-wallet trigger as a button that opens the wallet modal", async () => {
+    mockSignerAddressStore.mockSetSubscribeValue("");
+    const openSpy = vi.fn();
+    web3ModalStore.set({ open: openSpy });
+    render(Lock);
+
+    // A real button: keyboard-focusable and announced with the button role,
+    // unlike the previous div with a bare click handler.
+    const connectButton = await screen.findByRole("button", {
+      name: /connect a wallet to see/i,
+    });
+    expect(connectButton).toHaveAttribute("type", "button");
+    expect(connectButton).toBe(screen.getByTestId("connect-message"));
+
+    await userEvent.click(connectButton);
+    expect(openSpy).toHaveBeenCalledTimes(1);
+    web3ModalStore.set({ open: () => {} });
   });
 
   it("should show the sFLR balance if there is a signerAddress", async () => {
