@@ -62,6 +62,28 @@ describe("blockNumberStore", () => {
     expect(get(blockNumberStore).status).toBe("Ready");
   });
 
+  it("reset() invalidates an in-flight refresh", async () => {
+    let resolveSlow!: (v: { number: bigint }) => void;
+    const slowPromise = new Promise<{ number: bigint }>((res) => {
+      resolveSlow = res;
+    });
+    (getBlock as Mock).mockReturnValueOnce(slowPromise);
+
+    // Start a refresh that stays in flight
+    const slowCall = blockNumberStore.refresh(mockConfig);
+
+    // Reset while the request is still pending
+    blockNumberStore.reset();
+
+    // Resolve the stale request — it must not clobber the reset state
+    resolveSlow({ number: BigInt(1000) });
+    await slowCall;
+
+    const store = get(blockNumberStore);
+    expect(store.blockNumber).toBe(BigInt(0));
+    expect(store.status).toBe("Checking");
+  });
+
   it("non-monotonic block number does not clobber a higher block", async () => {
     (getBlock as Mock)
       .mockResolvedValueOnce({ number: BigInt(5000) })

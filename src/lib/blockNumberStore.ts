@@ -10,7 +10,12 @@ const initialState = {
 const blockNumberStore = () => {
   const { subscribe, set, update } = writable(initialState);
   let inflightToken = 0;
-  const reset = () => set(initialState);
+  const reset = () => {
+    // Invalidate any in-flight refresh so a late response cannot
+    // overwrite the freshly reset state.
+    inflightToken++;
+    set(initialState);
+  };
 
   const refresh = async (config: Config) => {
     const token = ++inflightToken;
