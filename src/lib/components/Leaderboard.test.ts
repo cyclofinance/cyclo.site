@@ -117,6 +117,35 @@ describe("Leaderboard Component", () => {
     });
   });
 
+  it("should render zero fallbacks instead of crashing on a malformed row", async () => {
+    const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
+    // Malformed subgraph row: `shares` is missing entirely and one
+    // eligibleBalances value is a string rather than a bigint.
+    const malformedLeaderboard = [
+      {
+        account: "0xabcdef1234567890abcdef1234567890abcdef12",
+        eligibleBalances: {
+          cysFLR: "123000000000000000000",
+          cyWETH: BigInt(200) * ONE,
+        },
+      },
+    ] as unknown as LeaderboardEntry[];
+    vi.mocked(fetchTopRewards).mockResolvedValue(malformedLeaderboard);
+
+    render(Leaderboard);
+
+    await waitFor(() => {
+      expect(screen.getByText("#1 0xabcd...ef12")).toBeInTheDocument();
+    });
+    // Valid bigint still renders.
+    expect(screen.getByText("200.0000")).toBeInTheDocument();
+    // Missing shares row falls back to zero everywhere.
+    expect(screen.getByTestId("total-rewards")).toHaveTextContent(/^0\.0000$/);
+    expect(screen.getAllByText("(0.0000%)")).toHaveLength(2);
+    // String eligibleBalance + two missing rewardsAmounts + total = 4 zeros.
+    expect(screen.getAllByText("0.0000")).toHaveLength(4);
+  });
+
   it("should navigate to account page when clicking on a row", async () => {
     const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
     vi.mocked(fetchTopRewards).mockResolvedValue(mockLeaderboard);
