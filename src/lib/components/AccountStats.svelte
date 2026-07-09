@@ -2,6 +2,7 @@
   import type { AccountStats } from "$lib/types";
   import { formatEther, formatUnits } from "viem";
   import { tokens } from "$lib/stores";
+  import { safeBigInt } from "$lib/utils/safeBigInt";
 
   export let stats: AccountStats;
 
@@ -27,7 +28,7 @@
           data-testid={`net-${token.symbol.toLowerCase()}-value`}
         >
           {formatUnits(
-            stats.eligibleBalances[token.symbol] || 0n,
+            safeBigInt(stats.eligibleBalances?.[token.symbol]),
             token.decimals,
           )}
         </div>
@@ -41,13 +42,15 @@
         </div>
         <div class="flex flex-col gap-y-2 break-words font-mono text-white">
           <span data-testid={`${token.symbol.toLowerCase()}-rewards-value`}>
-            {formatEther(stats.shares[token.symbol]?.rewardsAmount || 0n)}
+            {formatEther(
+              safeBigInt(stats.shares?.[token.symbol]?.rewardsAmount),
+            )}
           </span>
           <span
             data-testid={`${token.symbol.toLowerCase()}-rewards-percentage`}
           >
             ({formatUnits(
-              stats.shares[token.symbol]?.percentageShare || 0n,
+              safeBigInt(stats.shares?.[token.symbol]?.percentageShare),
               16,
             )}%)
           </span>
@@ -62,7 +65,7 @@
       class="break-words font-mono text-white"
       data-testid="total-rewards-value"
     >
-      {formatEther(stats.shares.totalRewards || 0n)}
+      {formatEther(safeBigInt(stats.shares?.totalRewards))}
     </div>
   </div>
 </div>
