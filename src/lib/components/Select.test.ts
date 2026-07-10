@@ -25,9 +25,7 @@ describe("Select", () => {
 
     // selected is rebound to the fresh identity so the DOM select still
     // highlights it.
-    const select = screen.getByTestId(
-      "select-under-test",
-    ) as HTMLSelectElement;
+    const select = screen.getByTestId("select-under-test") as HTMLSelectElement;
     expect(select.selectedIndex).toBe(1);
   });
 

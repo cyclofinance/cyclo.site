@@ -11,6 +11,7 @@
   // Options are matched by optionKey when provided, else by reference.
   // Without a key, replacing options with freshly constructed but logically
   // equal objects resets the selection to the first option.
+  // eslint-disable-next-line
   export let optionKey: ((option: T) => string | number) | undefined =
     undefined;
 
@@ -18,10 +19,13 @@
   // entry so bind:value tracks the current identities), or default to the
   // first option. Assignment is guarded on identity change to avoid
   // re-triggering this reactive block.
+  // optionKey is captured in a local const so TypeScript's narrowing
+  // persists inside the find callback.
   $: if (options.length > 0) {
+    const key = optionKey;
     const match =
-      selected && optionKey
-        ? options.find((option) => optionKey(option) === optionKey(selected))
+      selected && key
+        ? options.find((option) => key(option) === key(selected))
         : selected && options.includes(selected)
           ? selected
           : undefined;
