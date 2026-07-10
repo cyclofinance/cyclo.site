@@ -160,9 +160,7 @@ describe("AccountSummary Component", () => {
 
     await waitFor(() => {
       // Valid bigint still renders.
-      expect(screen.getByTestId("net-cyweth-value")).toHaveTextContent(
-        /^200$/,
-      );
+      expect(screen.getByTestId("net-cyweth-value")).toHaveTextContent(/^200$/);
       // String eligibleBalance falls back to zero.
       expect(screen.getByTestId("net-cysflr-value")).toHaveTextContent(/^0$/);
       // Missing shares falls back to zero everywhere.
