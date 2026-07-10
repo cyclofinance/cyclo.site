@@ -26,6 +26,46 @@ describe("Href Button Component", () => {
     expect(screen.getByRole("link")).toHaveAttribute("href", "/foo/bar");
   });
 
+  it("sanitizes protocol-relative //evil.com href to #", () => {
+    render(HrefButton, { props: { href: "//evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("sanitizes backslash protocol-relative /\\evil.com href to #", () => {
+    render(HrefButton, { props: { href: "/\\evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("sanitizes ///evil.com href to #", () => {
+    render(HrefButton, { props: { href: "///evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("sanitizes whitespace-prefixed protocol-relative href to #", () => {
+    render(HrefButton, { props: { href: " //evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("sanitizes tab-injected protocol-relative /\\t/evil.com href to #", () => {
+    render(HrefButton, { props: { href: "/\t/evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("sanitizes newline-injected protocol-relative href to #", () => {
+    render(HrefButton, { props: { href: "/\n\\evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("sanitizes backslash-prefixed \\\\evil.com href to #", () => {
+    render(HrefButton, { props: { href: "\\\\evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("preserves single-slash /docs href unchanged", () => {
+    render(HrefButton, { props: { href: "/docs" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/docs");
+  });
+
   it("adds noopener noreferrer rel when target=_blank", () => {
     render(HrefButton, {
       props: { href: "https://example.com", target: "_blank" },

@@ -3,9 +3,13 @@
   export let href: string;
 
   function sanitizeHref(raw: string): string {
-    const trimmed = raw.trim();
+    // Browsers delete ASCII tab/newline/CR anywhere in a URL before parsing,
+    // so strip them first to evaluate the href as the browser will.
+    const trimmed = raw.replace(/[\t\n\r]/g, "").trim();
+    // A same-origin path is a single leading "/": a second "/" or "\" makes
+    // it protocol-relative ("//host", "/\host"), which resolves off-origin.
     if (
-      trimmed.startsWith("/") ||
+      /^\/(?![/\\])/.test(trimmed) ||
       trimmed.startsWith("#") ||
       trimmed.startsWith("?")
     ) {
