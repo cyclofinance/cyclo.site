@@ -16,4 +16,11 @@ describe("RewardsPlaceholder Component", () => {
       expect(screen.getByTestId("connect-message")).toBeInTheDocument();
     });
   });
+
+  it("should carry rel=noopener noreferrer on the target=_blank docs link", () => {
+    render(RewardsPlaceholder);
+    const link = screen.getByText("How are rewards calculated?").closest("a");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
 });

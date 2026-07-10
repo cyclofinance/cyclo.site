@@ -132,4 +132,23 @@ describe("Leaderboard Component", () => {
       "/rewards/0x1234567890123456789012345678901234567890",
     );
   });
+
+  it("should percent-encode the account in the row href when it contains URL metacharacters", async () => {
+    const maliciousAccount = "0xabc/../../admin?redirect=evil#frag'\"<>";
+    const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
+    vi.mocked(fetchTopRewards).mockResolvedValue([
+      { ...mockLeaderboard[0], account: maliciousAccount },
+    ]);
+
+    const { container } = render(Leaderboard);
+
+    await waitFor(() => {
+      expect(container.querySelector("a")).not.toBeNull();
+    });
+
+    expect(container.querySelector("a")).toHaveAttribute(
+      "href",
+      `/rewards/${encodeURIComponent(maliciousAccount)}`,
+    );
+  });
 });
