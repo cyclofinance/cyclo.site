@@ -268,15 +268,14 @@
             )}
           </p>
         {:else}
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div
+          <button
+            type="button"
             on:click={() => $web3Modal.open()}
             class="my-2 cursor-pointer text-right text-xs font-light hover:underline"
             data-testid="connect-message"
           >
             Connect a wallet to see {$selectedCyToken.underlyingSymbol} balance
-          </div>
+          </button>
         {/if}
       </div>
     </div>
