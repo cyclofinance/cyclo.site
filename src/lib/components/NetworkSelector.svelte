@@ -16,21 +16,23 @@
     const selectedNetwork = availableNetworks.find(
       (network) => network.key === networkKey,
     );
+    if (!selectedNetwork) return;
 
-    setActiveNetwork(networkKey);
+    const config = $wagmiConfig;
+    if (!config) {
+      setActiveNetwork(networkKey);
+      return;
+    }
 
-    if (selectedNetwork) {
-      try {
-        const config = $wagmiConfig;
-        if (config) {
-          await switchNetwork(config, { chainId: selectedNetwork.chain.id });
-        }
-      } catch (error) {
-        console.warn(
-          `Failed to switch wallet network to ${selectedNetwork.key}:`,
-          error,
-        );
-      }
+    try {
+      await switchNetwork(config, { chainId: selectedNetwork.chain.id });
+      setActiveNetwork(networkKey);
+    } catch (error) {
+      target.value = $activeNetworkKey;
+      console.error(
+        `Failed to switch wallet network to ${selectedNetwork.key}:`,
+        error,
+      );
     }
   };
 </script>
