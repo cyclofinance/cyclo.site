@@ -98,6 +98,23 @@ describe("NavButtons Component", () => {
     expect(screen.getByTestId("chart-button")).toBeInTheDocument();
   });
 
+  // Desktop links carry no menu-toggle handler, so clicking them must
+  // leave the mobile menu overlay closed.
+  it.each([
+    "app-button",
+    "docs-button",
+    "rewards-button",
+    "trade-button",
+    "chart-button",
+  ])(
+    "should not open the mobile menu when the desktop %s link is clicked",
+    async (testId) => {
+      render(NavButtons);
+      await userEvent.click(screen.getByTestId(testId));
+      expect(screen.queryByTestId("app-button-mobile")).not.toBeInTheDocument();
+    },
+  );
+
   it("should close mobile menu when chart link is clicked", async () => {
     render(NavButtons);
     const hamburger = screen.getByTestId("nav-hamburger");
