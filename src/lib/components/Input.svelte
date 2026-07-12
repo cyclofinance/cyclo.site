@@ -9,9 +9,9 @@
   export let maxButton: boolean = false;
 
   const defaultValidate: ValidateFunction = (value) => {
-    if (value === ".") return "Invalid amount";
-    if (value !== undefined && value !== "" && Number.isNaN(Number(value)))
-      return "Invalid number";
+    if (value === undefined || value === "" || value === ".")
+      return "Invalid amount";
+    if (Number.isNaN(Number(value))) return "Invalid number";
     return undefined;
   };
 
