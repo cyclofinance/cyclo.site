@@ -1,7 +1,11 @@
 <script lang="ts">
   import Card from "./Card.svelte";
   import { base } from "$app/paths";
+  import { formatUnits } from "viem";
   import { REWARD_EPOCHS } from "$lib/constants";
+
+  const formatPoolRflr = (pool: bigint) =>
+    new Intl.NumberFormat("en-US").format(Number(formatUnits(pool, 18)));
 </script>
 
 <Card>
@@ -12,11 +16,15 @@
         Rewards are distributed each month to eligible cyToken holders. The
         reward pool for each epoch is shown below.
       </p>
-      <ul class="mt-2 list-disc space-y-1 pl-4 text-gray-300">
+      <ul
+        class="mt-2 list-disc space-y-1 pl-4 text-gray-300"
+        data-testid="reward-epochs"
+      >
         {#each REWARD_EPOCHS as epoch}
           <li>
             <span class="font-semibold text-white">{epoch.label}</span>:
-            {epoch.startUtc} – {epoch.endUtc} — {epoch.poolRflr} rFLR
+            {epoch.startUtc} – {epoch.endUtc} — {formatPoolRflr(epoch.poolRflr)}
+            rFLR
           </li>
         {/each}
       </ul>
