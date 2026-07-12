@@ -3,7 +3,7 @@ import { tick } from "svelte";
 import Lock from "./Lock.svelte";
 import transactionStore from "$lib/transactionStore";
 import userEvent from "@testing-library/user-event";
-import { vi, describe, beforeEach, it, expect } from "vitest";
+import { vi, describe, beforeEach, afterEach, it, expect } from "vitest";
 import {
   mockSignerAddressStore,
   mockWrongNetworkStore,
@@ -13,7 +13,8 @@ import {
 } from "$lib/mocks/mockStores";
 import { parseEther } from "ethers";
 import { parseUnits, type Hex } from "viem";
-import { selectedCyToken } from "$lib/stores";
+import { get } from "svelte/store";
+import { selectedCyToken, allTokens } from "$lib/stores";
 import { switchNetwork } from "@wagmi/core";
 import type { CyToken } from "$lib/types";
 
@@ -563,6 +564,155 @@ describe("Lock component wallet auto-switch guard", () => {
     });
     expect(vi.mocked(switchNetwork).mock.calls[1][1]).toEqual({
       chainId: 888,
+    });
+  });
+});
+
+describe("Lock component with divergent share/underlying decimals", () => {
+  // A 6-decimal underlying paired with an 18-decimal share. Every assertion
+  // in this block produces a different exact value depending on which of
+  // decimals/underlyingDecimals a Lock.svelte call site uses, so any swap
+  // between the two fields fails at least one test here.
+  const divergentToken: CyToken = {
+    ...DEFAULT_SELECTED_CYTOKEN,
+    decimals: 18,
+    underlyingDecimals: 6,
+  };
+
+  const lockTransactionSpy = vi.spyOn(
+    transactionStore,
+    "handleLockTransaction",
+  );
+
+  const setBalances = (
+    signerUnderlyingBalance: bigint,
+    cyTokenOutput: bigint = 0n,
+  ) => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1000000000000000000n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: { signerBalance: 0n, signerUnderlyingBalance },
+      },
+      { cusdxOutput: 0n, cyTokenOutput },
+    );
+  };
+
+  let originalAllTokens: CyToken[];
+
+  beforeEach(() => {
+    lockTransactionSpy.mockClear();
+    mockSignerAddressStore.mockSetSubscribeValue(
+      "0x1234567890123456789012345678901234567890",
+    );
+    mockWrongNetworkStore.mockSetSubscribeValue(false);
+    // Set through the $lib/stores handles: they resolve to the writables the
+    // rendered component subscribes to (the test-file mockSelectedCyToken
+    // import is a separate module instance and does not propagate). The
+    // token must also be in allTokens, or the token Select resets the bound
+    // selection to the first production token on render.
+    originalAllTokens = get(allTokens);
+    allTokens.set([divergentToken]);
+    selectedCyToken.set(divergentToken);
+  });
+
+  afterEach(() => {
+    allTokens.set(originalAllTokens);
+    selectedCyToken.set(DEFAULT_SELECTED_CYTOKEN);
+  });
+
+  it("parses typed input with the underlying's 6 decimals, not the share's 18", async () => {
+    // 2.0 underlying (6 decimals). A 6-decimal parse of "1.5" (1_500_000n)
+    // is affordable; an 18-decimal parse (1.5e18) would be a 10^12x
+    // over-deposit and read as insufficient funds.
+    setBalances(2_000_000n);
+    render(Lock);
+
+    await userEvent.type(screen.getByTestId("lock-input"), "1.5");
+    await userEvent.click(screen.getByTestId("lock-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByTestId("disclaimer-acknowledge-button"));
+
+    expect(lockTransactionSpy).toHaveBeenCalledTimes(1);
+    expect(lockTransactionSpy.mock.calls[0][0].assets).toBe(
+      parseUnits("1.5", 6),
+    );
+  });
+
+  it("formats the underlying balance readouts with the underlying's 6 decimals", async () => {
+    // 1.234567 underlying in 6 decimals; an 18-decimal format would render
+    // 0.000000000001234567.
+    setBalances(1_234_567n);
+    render(Lock);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("your-balance").textContent?.trim()).toBe(
+        "1.234567",
+      );
+    });
+    expect(
+      screen
+        .getByTestId("underlying-balance")
+        .textContent?.replace(/\s+/g, " ")
+        .trim(),
+    ).toBe("sFLR Balance: 1.234567");
+  });
+
+  it("round-trips the exact underlying balance through MAX fill and submit", async () => {
+    setBalances(1_234_567n);
+    render(Lock);
+
+    await userEvent.click(screen.getByTestId("set-val-to-max"));
+    const input = screen.getByTestId("lock-input") as HTMLInputElement;
+    // MAX must fill the input formatted with underlyingDecimals...
+    expect(input.value).toBe("1.234567");
+
+    await userEvent.click(screen.getByTestId("lock-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+    await userEvent.click(screen.getByTestId("disclaimer-acknowledge-button"));
+
+    // ...so that parsing it back submits the full balance with no dust
+    // left behind and no 10^12x scale error.
+    expect(lockTransactionSpy).toHaveBeenCalledTimes(1);
+    expect(lockTransactionSpy.mock.calls[0][0].assets).toBe(1_234_567n);
+  });
+
+  it("formats the calculated share output with the share's 18 decimals", async () => {
+    // The quoted share output is an 18-decimal share amount: 5e18 must
+    // render as 5, not as the 5e12 a 6-decimal format would produce.
+    setBalances(10_000_000n, 5_000_000_000_000_000_000n);
+    render(Lock);
+
+    await userEvent.type(screen.getByTestId("lock-input"), "5");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("calculated-cysflr").textContent?.trim()).toBe(
+        "5",
+      );
+      expect(
+        screen.getByTestId("calculated-cysflr-mobile").textContent?.trim(),
+      ).toBe("5");
     });
   });
 });
