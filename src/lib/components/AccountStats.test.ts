@@ -181,4 +181,30 @@ describe("AccountSummary Component", () => {
       );
     });
   });
+
+  it("should render a zero total when totalRewards is a non-bigint truthy value", async () => {
+    // Malformed subgraph shape: `shares` exists but `totalRewards` is a
+    // decimal string rather than a bigint. A truthy non-bigint must not be
+    // forwarded to formatEther as if it were a valid wei amount.
+    const malformedStats = {
+      ...mockStats,
+      shares: {
+        ...(mockStats.shares as unknown as Record<string, unknown>),
+        totalRewards: "20000000000000000000",
+      },
+    } as unknown as AccountStats;
+
+    render(AccountStatsComponent, { props: { stats: malformedStats } });
+
+    await waitFor(() => {
+      // Sibling bigint fields still render.
+      expect(screen.getByTestId("cysflr-rewards-value")).toHaveTextContent(
+        "10",
+      );
+      // The string totalRewards falls back to zero.
+      expect(screen.getByTestId("total-rewards-value")).toHaveTextContent(
+        /^0$/,
+      );
+    });
+  });
 });
