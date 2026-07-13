@@ -53,6 +53,12 @@
       ? `INSUFFICIENT ${$selectedCyToken.underlyingSymbol}`
       : ButtonStatus.READY;
 
+  // One wallet switch attempt per desired chain id: when the token's chain
+  // has no supportedNetworks entry, setActiveNetworkByChainId is a no-op and
+  // the mismatch condition below stays true, so without this guard every
+  // unrelated store update would re-fire the wallet switch popup.
+  let lastSwitchAttempted: number | null = null;
+
   // Auto-switch network when token is selected (only if network is different)
   $: if (
     $selectedCyToken &&
@@ -64,7 +70,12 @@
     // Attempt wallet network switch whenever config and signer are ready.
     // Include $wagmiConfig in this reactive block to retry once it becomes available after navigation.
     const config = $wagmiConfig;
-    if ($signerAddress && config) {
+    if (
+      $signerAddress &&
+      config &&
+      lastSwitchAttempted !== $selectedCyToken.chainId
+    ) {
+      lastSwitchAttempted = $selectedCyToken.chainId;
       switchNetwork(config, { chainId: $selectedCyToken.chainId }).catch(
         (error) => {
           console.warn(
@@ -257,15 +268,14 @@
             )}
           </p>
         {:else}
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div
+          <button
+            type="button"
             on:click={() => $web3Modal.open()}
             class="my-2 cursor-pointer text-right text-xs font-light hover:underline"
             data-testid="connect-message"
           >
             Connect a wallet to see {$selectedCyToken.underlyingSymbol} balance
-          </div>
+          </button>
         {/if}
       </div>
     </div>
