@@ -9,10 +9,12 @@
     return (price * supply) / BigInt(1e6);
   }
 
-  const tokensByNetwork = supportedNetworks.map((network) => ({
+  // Derive the per-network rows from the same reactive $allTokens source as
+  // globalTvl so the breakdown and the total cannot diverge.
+  $: tokensByNetwork = supportedNetworks.map((network) => ({
     key: network.key,
     name: network.chain?.name ?? network.key,
-    tokens: network.tokens,
+    tokens: $allTokens.filter((token) => token.chainId === network.chain.id),
   }));
 
   // Calculate globalTvl using allTokens to ensure all active tokens are included
