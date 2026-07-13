@@ -80,6 +80,45 @@ const createInitialState = (tokens: CyToken[]): StatsState => {
   };
 };
 
+// Quoter results are indicative spot values read from pool state, so a
+// manipulated or shallow pool can report arbitrarily wrong numbers. Every
+// successful quote is sanity-bounded against an authoritative reference and
+// suppressed to 0n (the existing "quote unavailable" signal) when it deviates
+// implausibly; an out-of-bounds quote is never clamped to a synthetic value.
+const MAX_QUOTER_DEVIATION_BPS = 5000n; // 50% - looser than user slippage, only catches gross outliers
+
+// cUSDX/USDC quote amounts are 6-decimal values throughout the app (the UI
+// renders swapQuotes.cusdxOutput with formatUnits(..., 6)).
+const VALUE_TOKEN_DECIMALS = 6;
+
+const scaleDecimals = (
+  amount: bigint,
+  fromDecimals: number,
+  toDecimals: number,
+): bigint =>
+  fromDecimals >= toDecimals
+    ? amount / 10n ** BigInt(fromDecimals - toDecimals)
+    : amount * 10n ** BigInt(toDecimals - fromDecimals);
+
+const boundQuoterOutput = (
+  quote: bigint,
+  reference: bigint,
+  label: string,
+): bigint => {
+  // 0n is already the "quote unavailable" signal, and without a nonzero
+  // reference (e.g. first load) there is nothing to bound against.
+  if (quote === 0n || reference === 0n) return quote;
+  const upperBound = (reference * (10000n + MAX_QUOTER_DEVIATION_BPS)) / 10000n;
+  const lowerBound = (reference * (10000n - MAX_QUOTER_DEVIATION_BPS)) / 10000n;
+  if (quote > upperBound || quote < lowerBound) {
+    console.warn(
+      `${label}: quoter output ${quote} deviates more than ${MAX_QUOTER_DEVIATION_BPS} bps from reference ${reference}; suppressing quote`,
+    );
+    return 0n;
+  }
+  return quote;
+};
+
 const getDepositPreviewSwapValue = async (
   config: Config,
   selectedToken: CyToken,
@@ -97,6 +136,15 @@ const getDepositPreviewSwapValue = async (
         chainId: selectedToken.chainId,
       });
 
+    // previewDeposit is on-chain authoritative: cyTokens are minted at USD
+    // parity, so the minted amount scaled to value-token decimals is the
+    // parity reference for the cyToken -> cUSDX quote.
+    const swapReference = scaleDecimals(
+      depositPreviewValue,
+      selectedToken.decimals,
+      VALUE_TOKEN_DECIMALS,
+    );
+
     // Use Algebra quoter for Arbitrum, standard quoter for Flare
     if (selectedToken.chainId === arbitrum.id) {
       try {
@@ -112,7 +160,11 @@ const getDepositPreviewSwapValue = async (
         // Algebra quoter returns [amountOut, fee]
         return {
           cyTokenOutput: depositPreviewValue,
-          cusdxOutput: sim.result[0] ?? 0n,
+          cusdxOutput: boundQuoterOutput(
+            sim.result[0] ?? 0n,
+            swapReference,
+            "getDepositPreviewSwapValue",
+          ),
         };
       } catch (error) {
         console.error("Error getting swapQuote with Algebra quoter:", error);
@@ -138,7 +190,14 @@ const getDepositPreviewSwapValue = async (
           chainId: selectedToken.chainId,
         },
       );
-      return { cyTokenOutput: depositPreviewValue, cusdxOutput: swapQuote[0] };
+      return {
+        cyTokenOutput: depositPreviewValue,
+        cusdxOutput: boundQuoterOutput(
+          swapQuote[0],
+          swapReference,
+          "getDepositPreviewSwapValue",
+        ),
+      };
     } catch {
       // Try with fee 10000 if fee 3000 fails
       try {
@@ -160,7 +219,11 @@ const getDepositPreviewSwapValue = async (
         );
         return {
           cyTokenOutput: depositPreviewValue,
-          cusdxOutput: swapQuote[0],
+          cusdxOutput: boundQuoterOutput(
+            swapQuote[0],
+            swapReference,
+            "getDepositPreviewSwapValue",
+          ),
         };
       } catch (error) {
         console.error("Error getting swapQuote with both fee pools:", error);
@@ -179,6 +242,9 @@ const getCyTokenUsdPrice = async (
   cusdxAddress: Hex,
   selectedToken: CyToken,
   chainId?: number,
+  // Last successful price for the same token; used as the sanity-bound
+  // reference for the quoter output. 0n (e.g. first load) skips the bound.
+  previousPrice: bigint = 0n,
 ) => {
   // Use Algebra quoter for Arbitrum, standard quoter for Flare
   if (chainId === arbitrum.id) {
@@ -194,7 +260,11 @@ const getCyTokenUsdPrice = async (
       });
 
       // Algebra quoter returns [amountIn, fee]
-      return sim.result[0] ?? 0n;
+      return boundQuoterOutput(
+        sim.result[0] ?? 0n,
+        previousPrice,
+        "getCyTokenUsdPrice",
+      );
     } catch (error) {
       console.error(
         "Error getting cyTokenUsdPrice with Algebra quoter:",
@@ -220,7 +290,11 @@ const getCyTokenUsdPrice = async (
       account: ZeroAddress as `0x${string}`,
       chainId,
     });
-    return data.result[0] || 0n;
+    return boundQuoterOutput(
+      data.result[0] || 0n,
+      previousPrice,
+      "getCyTokenUsdPrice",
+    );
   } catch {
     try {
       // try 10000 as the fee
@@ -238,7 +312,11 @@ const getCyTokenUsdPrice = async (
         account: ZeroAddress as `0x${string}`,
         chainId,
       });
-      return data.result[0] || 0n;
+      return boundQuoterOutput(
+        data.result[0] || 0n,
+        previousPrice,
+        "getCyTokenUsdPrice",
+      );
     } catch (error) {
       console.error("Error getting cyTokenUsdPrice:", error);
       return 0n;
@@ -552,6 +630,7 @@ const balancesStore = () => {
             network.usdcAddress,
             token,
             token.chainId,
+            get({ subscribe }).stats[token.name]?.price ?? 0n,
           ).catch((error) => {
             console.log(`Failed to fetch price for ${token.name}:`, error);
             return BigInt(0);
