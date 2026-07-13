@@ -8,7 +8,6 @@ import {
 } from "../generated";
 import { get, writable } from "svelte/store";
 import type { Hex } from "viem";
-import { ZeroAddress } from "ethers";
 import { zeroAddress } from "viem";
 import { arbitrum } from "@wagmi/core/chains";
 import type { CyToken } from "./types";
@@ -92,7 +91,7 @@ const getDepositPreviewSwapValue = async (
       await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
         address: selectedToken.address,
         args: [depositAmount, 0n],
-        account: ZeroAddress as `0x${string}`,
+        account: zeroAddress,
         blockNumber: blockNumber,
         chainId: selectedToken.chainId,
       });
@@ -217,7 +216,7 @@ const getCyTokenUsdPrice = async (
           sqrtPriceLimitX96: BigInt(0),
         },
       ],
-      account: ZeroAddress as `0x${string}`,
+      account: zeroAddress,
       chainId,
     });
     return data.result[0] || 0n;
@@ -235,7 +234,7 @@ const getCyTokenUsdPrice = async (
             sqrtPriceLimitX96: BigInt(0),
           },
         ],
-        account: ZeroAddress as `0x${string}`,
+        account: zeroAddress,
         chainId,
       });
       return data.result[0] || 0n;
@@ -256,7 +255,7 @@ const getLockPrice = async (
     {
       address: selectedToken.address,
       args: [BigInt(1e18), 0n],
-      account: ZeroAddress as `0x${string}`,
+      account: zeroAddress,
       chainId,
     },
   );
@@ -339,7 +338,7 @@ const getLockPriceFooterStats = async (
         await simulateErc20PriceOracleReceiptVaultPreviewDeposit(config, {
           address: selectedToken.address,
           args: [BigInt(1e18), 0n],
-          account: ZeroAddress as `0x${string}`,
+          account: zeroAddress,
           chainId: effectiveChainId,
         });
       return result;
@@ -352,7 +351,7 @@ const getLockPriceFooterStats = async (
     {
       address: selectedToken.address,
       args: [BigInt(1e18), 0n],
-      account: ZeroAddress as `0x${string}`,
+      account: zeroAddress,
       chainId: effectiveChainId,
     },
   );
