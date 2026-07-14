@@ -159,6 +159,42 @@ describe("balancesStore", () => {
     expect(storeValue.status).toBe("Ready");
   });
 
+  it("stale refreshBalances response does not overwrite a newer call's result", async () => {
+    let resolveSlowCall!: () => void;
+    const slowCallUnblocked = new Promise<void>(
+      (res) => (resolveSlowCall = res),
+    );
+    const slowBalance = BigInt(1000);
+    const fastBalance = BigInt(2000);
+    const allTokenCount = 4; // 2 tokens × 2 readErc20BalanceOf calls each
+
+    for (let i = 0; i < allTokenCount; i++) {
+      (readErc20BalanceOf as Mock).mockImplementationOnce(async () => {
+        await slowCallUnblocked;
+        return slowBalance;
+      });
+    }
+    (readErc20BalanceOf as Mock).mockResolvedValue(fastBalance);
+
+    const slowCall = refreshBalances(
+      mockWagmiConfigStore as unknown as Config,
+      mockSignerAddress,
+    );
+    await refreshBalances(
+      mockWagmiConfigStore as unknown as Config,
+      mockSignerAddress,
+    );
+
+    expect(get(balancesStore).balances.cysFLR.signerBalance).toBe(fastBalance);
+    expect(get(balancesStore).status).toBe("Ready");
+
+    resolveSlowCall();
+    await slowCall;
+
+    expect(get(balancesStore).balances.cysFLR.signerBalance).toBe(fastBalance);
+    expect(get(balancesStore).status).toBe("Ready");
+  });
+
   it("should reset the store to its initial state", () => {
     const mockWFlrBalance = BigInt(1000);
     (readErc20BalanceOf as Mock).mockResolvedValue(mockWFlrBalance);
