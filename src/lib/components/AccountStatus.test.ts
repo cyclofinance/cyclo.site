@@ -182,4 +182,74 @@ describe("AccountStatus Component", () => {
       expect(screen.getByText("Sent to 0x2345...8901")).toBeInTheDocument();
     });
   });
+
+  it("should show an error and not query the subgraph when account is not an address", async () => {
+    const { fetchAccountStatus } = await import(
+      "$lib/queries/fetchAccountStatus"
+    );
+    vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
+
+    render(AccountStatus, {
+      props: { account: "../admin?redirect=evil" },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Invalid account address")).toBeInTheDocument();
+    });
+    expect(fetchAccountStatus).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("period-stats")).not.toBeInTheDocument();
+  });
+
+  it("should render transfer rows without an explorer link when transactionHash is malformed", async () => {
+    const { fetchAccountStatus } = await import(
+      "$lib/queries/fetchAccountStatus"
+    );
+    // mockStats transactionHashes ("hash1"/"hash2") are not 32-byte hex.
+    vi.mocked(fetchAccountStatus).mockResolvedValue(mockStats);
+
+    render(AccountStatus, {
+      props: { account: "0x1234567890123456789012345678901234567890" },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Sent to 0x2345...8901")).toBeInTheDocument();
+    });
+    const row = screen.getByText("Sent to 0x2345...8901").closest("a");
+    expect(row).not.toBeNull();
+    expect(row).not.toHaveAttribute("href");
+  });
+
+  it("should link the explorer with the lowercased hash when transactionHash is valid", async () => {
+    const { fetchAccountStatus } = await import(
+      "$lib/queries/fetchAccountStatus"
+    );
+    const validHash = `0x${"AB12CD34".repeat(8)}`;
+    vi.mocked(fetchAccountStatus).mockResolvedValue({
+      ...mockStats,
+      transfers: {
+        in: [],
+        out: [
+          {
+            ...mockStats.transfers.out[0],
+            transactionHash: validHash,
+          },
+        ],
+      },
+    });
+
+    render(AccountStatus, {
+      props: { account: "0x1234567890123456789012345678901234567890" },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Received from 0x2345...8901"),
+      ).toBeInTheDocument();
+    });
+    const row = screen.getByText("Received from 0x2345...8901").closest("a");
+    expect(row).toHaveAttribute(
+      "href",
+      `https://flarescan.com/tx/${validHash.toLowerCase()}`,
+    );
+  });
 });
