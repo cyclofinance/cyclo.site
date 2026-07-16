@@ -24,7 +24,7 @@
   }
   let buttonStatus: ButtonStatus = ButtonStatus.READY;
 
-  let erc1155balance = BigInt(receipt.balance);
+  $: erc1155balance = BigInt(receipt.balance);
   let readableAmountToRedeem: string = "";
   let amountToRedeem = BigInt(0);
   let sFlrToReceive = BigInt(0);
@@ -32,8 +32,16 @@
   let shouldCallContract = false;
   let debounceTimer: ReturnType<typeof setTimeout>;
 
-  const readableBalance = Number(formatUnits(receipt.balance, token.decimals));
-  const tokenId = receipt.tokenId;
+  $: readableBalance = Number(formatUnits(receipt.balance, token.decimals));
+  $: tokenId = receipt.tokenId;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  $: (receipt,
+    (() => {
+      readableAmountToRedeem = "";
+      amountToRedeem = BigInt(0);
+      sFlrToReceive = BigInt(0);
+    })());
 
   const checkBalance = async () => {
     if (isCalculating || !receipt.tokenId) {
@@ -66,12 +74,12 @@
     }
   };
 
+  $: signerCyTokenBalance =
+    $balancesStore.balances[token.name]?.signerBalance ?? 0n;
   $: maxRedeemable =
-    ($balancesStore.balances[receipt.token || "cysFLR"]?.signerBalance ?? 0n) <
-    (erc1155balance ?? 0n)
-      ? ($balancesStore.balances[receipt.token || "cysFLR"]?.signerBalance ??
-        0n)
-      : (erc1155balance ?? 0n);
+    signerCyTokenBalance < erc1155balance
+      ? signerCyTokenBalance
+      : erc1155balance;
 
   $: if (shouldCallContract && amountToRedeem !== undefined && !isCalculating) {
     if (debounceTimer) {
@@ -85,9 +93,12 @@
   }
 
   $: insufficientReceipts = erc1155balance < amountToRedeem;
-  $: insufficientcysFlr =
-    ($balancesStore.balances[receipt.token || "cysFLR"]?.signerBalance ?? 0n) <
-    amountToRedeem;
+  $: insufficientcysFlr = signerCyTokenBalance < amountToRedeem;
+
+  $: chainMismatch =
+    receipt.chainId !== undefined &&
+    Number(receipt.chainId) !== $selectedCyToken.chainId;
+  $: walletReady = !!$signerAddress && !chainMismatch;
 
   $: buttonStatus = !readableAmountToRedeem
     ? ButtonStatus.READY
@@ -245,7 +256,8 @@
     dataTestId="unlock-button"
     customClass="w-full bg-white text-primary"
     disabled={buttonStatus !== ButtonStatus.READY ||
-      amountToRedeem === BigInt(0)}
+      amountToRedeem === 0n ||
+      !walletReady}
     on:click={() =>
       transactionStore.handleUnlockTransaction({
         signerAddress: $signerAddress,
