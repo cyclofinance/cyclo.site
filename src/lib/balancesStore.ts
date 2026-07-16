@@ -315,20 +315,22 @@ const getLockPriceFooterStats = async (
       // If deltaExponent > 0: price * 10^deltaExponent
       // If deltaExponent < 0: price / 10^abs(deltaExponent)
       const pythPrice = priceData.price;
+      if (pythPrice <= 0n) {
+        throw new Error(
+          `Pyth returned non-positive price ${pythPrice} for ${selectedToken.name}`,
+        );
+      }
       const pythExpo = Number(priceData.expo);
       const targetDecimals = 18;
       const deltaExponent = targetDecimals + pythExpo;
 
-      // Ensure price is positive (lock price should be positive)
-      const unsignedPrice = pythPrice < 0n ? -pythPrice : pythPrice;
-
       let normalizedPrice: bigint;
       if (deltaExponent > 0) {
-        normalizedPrice = unsignedPrice * BigInt(10 ** deltaExponent);
+        normalizedPrice = pythPrice * 10n ** BigInt(deltaExponent);
       } else if (deltaExponent < 0) {
-        normalizedPrice = unsignedPrice / BigInt(10 ** Math.abs(deltaExponent));
+        normalizedPrice = pythPrice / 10n ** BigInt(-deltaExponent);
       } else {
-        normalizedPrice = unsignedPrice;
+        normalizedPrice = pythPrice;
       }
 
       return normalizedPrice;
