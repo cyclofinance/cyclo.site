@@ -4,17 +4,25 @@
   import { onMount, setContext } from "svelte";
   import { writable } from "svelte/store";
 
-  // Create a writable store for the DataFetcher
   const dataFetcherStore = writable<DataFetcher | undefined>(undefined);
+  const dataFetcherError = writable<Error | undefined>(undefined);
 
   onMount(async () => {
-    const fetcher = await getAndStartDataFetcher();
-    dataFetcherStore.set(fetcher);
+    try {
+      const fetcher = await getAndStartDataFetcher();
+      dataFetcherStore.set(fetcher);
+    } catch (err) {
+      console.error("DataFetcherProvider: failed to initialise", err);
+      dataFetcherError.set(err instanceof Error ? err : new Error(String(err)));
+    }
   });
 
   setContext("dataFetcher", dataFetcherStore);
+  setContext("dataFetcherError", dataFetcherError);
 </script>
 
 {#if $dataFetcherStore}
   <slot />
+{:else if $dataFetcherError}
+  <slot name="error" error={$dataFetcherError} />
 {/if}
