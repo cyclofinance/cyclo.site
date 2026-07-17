@@ -209,6 +209,9 @@ describe("DcaStrategy Component", () => {
     // Change to "Sell"
     await fireEvent.change(buySelect, { target: { value: "Sell" } });
 
+    // Re-fill required fields after mode switch to clear any validation errors
+    await fillRequiredFields();
+
     // Click Deploy again
     await fireEvent.click(deployButton);
 
