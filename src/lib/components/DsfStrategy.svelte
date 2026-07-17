@@ -9,7 +9,7 @@
     setActiveNetwork,
   } from "$lib/stores";
   import { switchNetwork } from "@wagmi/core";
-  import { wagmiConfig } from "svelte-wagmi";
+  import { wagmiConfig, chainId } from "svelte-wagmi";
   import type { CyToken, Token } from "$lib/types";
   import TradeAmountInput from "$lib/components/TradeAmountInput.svelte";
   import Button from "$lib/components/Button.svelte";
@@ -30,6 +30,9 @@
   let networkTokens: Token[] = [];
   let lastSyncedNetworkKey: string | undefined;
   let lastSwitchedChainId: number | undefined;
+  // True once the user has picked a rotate token themselves; the selection
+  // restored from the persisted store on mount does not count.
+  let hasUserSelectedRotateToken = false;
   // DSF-specific token selections
   let amountToken: Token | undefined;
   let rotateToken: CyToken | undefined;
@@ -49,10 +52,16 @@
     setActiveNetwork(selectedNetworkForRotateToken.key);
     lastSyncedNetworkKey = selectedNetworkForRotateToken.key;
 
-    // Prompt the wallet to switch chains to match the selected token's network
+    // Prompt the wallet to switch chains only after the user has picked a
+    // rotate token; the wallet is never prompted for the selection restored
+    // from the persisted store on mount.
     const config = $wagmiConfig;
     const targetChainId = selectedNetworkForRotateToken.chain.id;
-    if (config && targetChainId !== lastSwitchedChainId) {
+    if (
+      hasUserSelectedRotateToken &&
+      config &&
+      targetChainId !== lastSwitchedChainId
+    ) {
       switchNetwork(config, { chainId: targetChainId }).catch((error) =>
         console.warn(
           `Failed to switch wallet network to ${selectedNetworkForRotateToken.key}:`,
@@ -126,11 +135,29 @@
 
   const dataFetcher: DataFetcher = useDataFetcher();
 
-  const handleDeploy = () => {
+  const handleDeploy = async () => {
     if (!amountToken || !rotateToken) return;
 
     // Ensure the active network matches the rotateToken's network
     setActiveNetwork(selectedNetworkForRotateToken.key);
+
+    // Ensure the wallet is on the rotateToken's chain before deploying; if
+    // the switch fails the deploy is aborted rather than sent to the wrong
+    // chain.
+    const config = $wagmiConfig;
+    const targetChainId = selectedNetworkForRotateToken.chain.id;
+    if (config && $chainId !== targetChainId) {
+      try {
+        await switchNetwork(config, { chainId: targetChainId });
+        lastSwitchedChainId = targetChainId;
+      } catch (error) {
+        console.warn(
+          `Failed to switch wallet network to ${selectedNetworkForRotateToken.key}:`,
+          error,
+        );
+        return;
+      }
+    }
 
     transactionStore.handleDeployDsf(
       {
@@ -193,6 +220,7 @@
       <Select
         options={$allTokens}
         bind:selected={rotateToken}
+        on:change={() => (hasUserSelectedRotateToken = true)}
         getOptionLabel={(token) => token?.name || ""}
         dataTestId="cy-token-select"
       />
