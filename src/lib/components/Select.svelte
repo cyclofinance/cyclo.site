@@ -7,6 +7,7 @@
   export let getOptionLabel: (option: T) => string;
 
   export let dataTestId: string = "";
+  export let disabled: boolean = false;
 
   // Ensure selected is in options, or default to first option
   $: if (options.length > 0 && (!selected || !options.includes(selected))) {
@@ -16,10 +17,11 @@
 
 {#if options.length > 0}
   <select
-    class="rounded border border-white bg-transparent px-2 py-1"
+    class="rounded border border-white bg-transparent px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50"
     bind:value={selected}
     on:change
     data-testid={dataTestId}
+    {disabled}
   >
     {#each options as option}
       <option value={option}>

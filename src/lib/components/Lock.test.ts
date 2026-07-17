@@ -45,12 +45,16 @@ vi.mock("$lib/balancesStore", async () => {
   };
 });
 
-vi.mock("$lib/transactionStore", async (importOriginal) => ({
-  default: {
-    ...((await importOriginal) as object),
-    handleLockTransaction: vi.fn().mockResolvedValue({}),
-  },
-}));
+vi.mock("$lib/transactionStore", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("$lib/transactionStore")>();
+  return {
+    ...mod,
+    default: {
+      ...mod.default,
+      handleLockTransaction: vi.fn().mockResolvedValue({}),
+    },
+  };
+});
 
 describe("Lock Component", () => {
   const initiateLockTransactionSpy = vi.spyOn(
