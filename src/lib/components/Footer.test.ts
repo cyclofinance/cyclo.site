@@ -1,6 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
 import Footer from "./Footer.svelte";
-import { describe, it, vi, expect, beforeEach } from "vitest";
+import { describe, it, vi, expect, beforeEach, afterEach } from "vitest";
+import { get } from "svelte/store";
+import { flare } from "@wagmi/core/chains";
+import { allTokens } from "$lib/stores";
+import type { CyToken } from "$lib/types";
+import type { Hex } from "viem";
 
 const { mockBalancesStore } = await vi.hoisted(
   () => import("$lib/mocks/mockStores"),
@@ -29,7 +34,13 @@ vi.mock("$lib/balancesStore", async () => {
   };
 });
 
+const initialAllTokens = get(allTokens);
+
 describe("Footer.svelte", () => {
+  afterEach(() => {
+    allTokens.set(initialAllTokens);
+  });
+
   beforeEach(() => {
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
@@ -168,6 +179,33 @@ describe("Footer.svelte", () => {
     await waitFor(() => {
       expect(screen.getByTestId("market-cap-cysFLR")).toBeInTheDocument();
       expect(screen.getByText("$ 1000000000000")).toBeInTheDocument();
+    });
+  });
+
+  it("updates the per-network breakdown when allTokens changes", async () => {
+    render(Footer);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("global-tvl")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("cyNEW")).not.toBeInTheDocument();
+
+    const newToken: CyToken = {
+      name: "cyNEW",
+      symbol: "cyNEW",
+      decimals: 18,
+      address: "0x0000000000000000000000000000000000000001" as Hex,
+      underlyingAddress: "0x0000000000000000000000000000000000000002" as Hex,
+      underlyingSymbol: "NEW",
+      receiptAddress: "0x0000000000000000000000000000000000000003" as Hex,
+      chainId: flare.id,
+      networkName: "Flare",
+      active: true,
+    };
+    allTokens.update((tokens) => [...tokens, newToken]);
+
+    await waitFor(() => {
+      expect(screen.getByText("cyNEW")).toBeInTheDocument();
     });
   });
 });
