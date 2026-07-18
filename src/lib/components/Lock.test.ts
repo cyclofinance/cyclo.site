@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
 import { tick } from "svelte";
 import Lock from "./Lock.svelte";
-import transactionStore from "$lib/transactionStore";
+import transactionStore, { TransactionStatus } from "$lib/transactionStore";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, beforeEach, it, expect } from "vitest";
 import {
@@ -11,8 +11,14 @@ import {
 } from "$lib/mocks/mockStores";
 import { parseEther } from "ethers";
 import { parseUnits, type Hex } from "viem";
-import { selectedCyToken } from "$lib/stores";
+import {
+  selectedCyToken,
+  allTokens,
+  setActiveNetworkByChainId,
+} from "$lib/stores";
+import { get } from "svelte/store";
 import { switchNetwork } from "@wagmi/core";
+import { arbitrum } from "@wagmi/core/chains";
 import type { CyToken } from "$lib/types";
 
 vi.mock("@wagmi/core", async (importOriginal) => ({
@@ -45,12 +51,35 @@ vi.mock("$lib/balancesStore", async () => {
   };
 });
 
-vi.mock("$lib/transactionStore", async (importOriginal) => ({
-  default: {
-    ...((await importOriginal) as object),
-    handleLockTransaction: vi.fn().mockResolvedValue({}),
-  },
-}));
+vi.mock("$lib/transactionStore", async (importOriginal) => {
+  const actual =
+    (await importOriginal()) as typeof import("$lib/transactionStore");
+  const { writable } = await import("svelte/store");
+  const state = writable({
+    status: actual.TransactionStatus.IDLE,
+    error: "",
+    hash: "",
+    data: null,
+    functionName: "",
+    message: "",
+  });
+  return {
+    ...actual,
+    default: {
+      subscribe: state.subscribe,
+      handleLockTransaction: vi.fn().mockResolvedValue({}),
+      handlePythPriceUpdate: vi.fn(),
+      // Test-only hook to drive the status the component reacts to.
+      mockSetStatus: (
+        status: (typeof actual.TransactionStatus)[keyof typeof actual.TransactionStatus],
+      ) => state.update((s) => ({ ...s, status })),
+    },
+  };
+});
+
+const mockTxStore = transactionStore as unknown as typeof transactionStore & {
+  mockSetStatus: (status: TransactionStatus) => void;
+};
 
 describe("Lock Component", () => {
   const initiateLockTransactionSpy = vi.spyOn(
@@ -60,6 +89,7 @@ describe("Lock Component", () => {
 
   beforeEach(() => {
     initiateLockTransactionSpy.mockClear();
+    mockTxStore.mockSetStatus(TransactionStatus.IDLE);
     mockSignerAddressStore.mockSetSubscribeValue(
       "0x1234567890123456789012345678901234567890",
     );
@@ -487,6 +517,7 @@ describe("Lock component wallet auto-switch guard", () => {
     vi.mocked(switchNetwork).mockResolvedValue(
       undefined as unknown as Awaited<ReturnType<typeof switchNetwork>>,
     );
+    mockTxStore.mockSetStatus(TransactionStatus.IDLE);
     mockSignerAddressStore.mockSetSubscribeValue(
       "0x1234567890123456789012345678901234567890",
     );
@@ -560,5 +591,73 @@ describe("Lock component wallet auto-switch guard", () => {
     expect(vi.mocked(switchNetwork).mock.calls[1][1]).toEqual({
       chainId: 888,
     });
+  });
+
+  it("disables the token select and LOCK button while a transaction is in flight", async () => {
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "1");
+
+    mockTxStore.mockSetStatus(TransactionStatus.PENDING_LOCK);
+    await tick();
+
+    expect(screen.getByRole("combobox")).toBeDisabled();
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton).toBeDisabled();
+    vi.mocked(transactionStore.handleLockTransaction).mockClear();
+    await userEvent.click(lockButton);
+    expect(transactionStore.handleLockTransaction).not.toHaveBeenCalled();
+  });
+
+  it("re-enables the token select and LOCK button once the transaction settles", async () => {
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "1");
+
+    mockTxStore.mockSetStatus(TransactionStatus.PENDING_APPROVAL);
+    await tick();
+    expect(screen.getByRole("combobox")).toBeDisabled();
+
+    mockTxStore.mockSetStatus(TransactionStatus.SUCCESS);
+    await tick();
+    expect(screen.getByRole("combobox")).not.toBeDisabled();
+    expect(screen.getByTestId("lock-button")).not.toBeDisabled();
+  });
+
+  it("suppresses the wallet auto-switch while a transaction is in flight and resumes after it settles", async () => {
+    // A real cross-chain token from allTokens: the Select keeps it selected
+    // (a token outside the options list is normalized back to options[0]).
+    const arbToken = get(allTokens).find(
+      (token) => token.chainId === arbitrum.id,
+    );
+    expect(arbToken).toBeDefined();
+
+    render(Lock);
+
+    mockTxStore.mockSetStatus(TransactionStatus.PENDING_LOCK);
+    await tick();
+
+    // A token on a different chain arrives mid-transaction (e.g. from
+    // another component writing the shared store): no wallet switch may
+    // fire while the tx is in flight.
+    selectedCyToken.set(arbToken as CyToken);
+    await tick();
+    await tick();
+    expect(switchNetwork).not.toHaveBeenCalled();
+
+    // Once the tx settles the mismatch is still present, so the
+    // auto-switch re-evaluates and fires exactly once.
+    mockTxStore.mockSetStatus(TransactionStatus.SUCCESS);
+    await waitFor(() => {
+      expect(switchNetwork).toHaveBeenCalledTimes(1);
+    });
+    expect(vi.mocked(switchNetwork).mock.calls[0][1]).toEqual({
+      chainId: arbitrum.id,
+    });
+
+    // Restore the global network selection for any later test.
+    setActiveNetworkByChainId(14);
   });
 });

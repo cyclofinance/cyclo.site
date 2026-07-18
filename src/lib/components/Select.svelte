@@ -8,6 +8,8 @@
 
   export let dataTestId: string = "";
 
+  export let disabled: boolean = false;
+
   // Ensure selected is in options, or default to first option
   $: if (options.length > 0 && (!selected || !options.includes(selected))) {
     selected = options[0];
@@ -16,9 +18,10 @@
 
 {#if options.length > 0}
   <select
-    class="rounded border border-white bg-transparent px-2 py-1"
+    class="rounded border border-white bg-transparent px-2 py-1 disabled:cursor-not-allowed disabled:opacity-60"
     bind:value={selected}
     on:change
+    {disabled}
     data-testid={dataTestId}
   >
     {#each options as option}
