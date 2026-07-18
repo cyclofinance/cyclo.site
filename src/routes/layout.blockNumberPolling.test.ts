@@ -92,9 +92,7 @@ describe("root layout block number polling", () => {
   });
 
   it("swallows blockNumberStore.refresh rejections in the polling loop", async () => {
-    (blockNumberStore.refresh as Mock).mockRejectedValue(
-      new Error("rpc down"),
-    );
+    (blockNumberStore.refresh as Mock).mockRejectedValue(new Error("rpc down"));
 
     render(Layout);
 
