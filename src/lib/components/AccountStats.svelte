@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { AccountStats } from "$lib/types";
+  import type { AccountStats, Share } from "$lib/types";
   import { formatEther, formatUnits } from "viem";
   import { tokens } from "$lib/stores";
 
@@ -8,6 +8,16 @@
   $: isEligible =
     stats?.eligibleBalances &&
     Object.values(stats.eligibleBalances).some((balance) => balance > 0n);
+
+  $: eligibleBalancesLower = Object.fromEntries(
+    Object.entries(stats.eligibleBalances ?? {}).map(([k, v]) => [
+      k.toLowerCase(),
+      v,
+    ]),
+  );
+  $: sharesLower = Object.fromEntries(
+    Object.entries(stats.shares ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
+  ) as Record<string, Share>;
 </script>
 
 {#if !isEligible}
@@ -27,7 +37,7 @@
           data-testid={`net-${token.symbol.toLowerCase()}-value`}
         >
           {formatUnits(
-            stats.eligibleBalances[token.symbol] || 0n,
+            eligibleBalancesLower[token.symbol.toLowerCase()] || 0n,
             token.decimals,
           )}
         </div>
@@ -41,13 +51,15 @@
         </div>
         <div class="flex flex-col gap-y-2 break-words font-mono text-white">
           <span data-testid={`${token.symbol.toLowerCase()}-rewards-value`}>
-            {formatEther(stats.shares[token.symbol]?.rewardsAmount || 0n)}
+            {formatEther(
+              sharesLower[token.symbol.toLowerCase()]?.rewardsAmount || 0n,
+            )}
           </span>
           <span
             data-testid={`${token.symbol.toLowerCase()}-rewards-percentage`}
           >
             ({formatUnits(
-              stats.shares[token.symbol]?.percentageShare || 0n,
+              sharesLower[token.symbol.toLowerCase()]?.percentageShare || 0n,
               16,
             )}%)
           </span>

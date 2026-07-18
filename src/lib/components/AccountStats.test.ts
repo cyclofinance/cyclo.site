@@ -110,6 +110,51 @@ describe("AccountSummary Component", () => {
     });
   });
 
+  it("should display stats when balance and share keys differ in case from token symbols", async () => {
+    const { fetchAccountStatus } = await import(
+      "$lib/queries/fetchAccountStatus"
+    );
+    vi.mocked(fetchAccountStatus).mockResolvedValue({
+      ...mockStats,
+      eligibleBalances: {
+        CYSFLR: BigInt(100) * ONE,
+        cyweth: BigInt(200) * ONE,
+      },
+      shares: {
+        CYSFLR: {
+          percentageShare: ONE / 2n,
+          rewardsAmount: BigInt(10) * ONE,
+        },
+        cyweth: {
+          percentageShare: ONE / 2n,
+          rewardsAmount: BigInt(10) * ONE,
+        },
+        totalRewards: BigInt(20) * ONE,
+      } as unknown as AccountStats["shares"],
+    });
+
+    render(AccountSummary, {
+      props: { account: "0x1234567890123456789012345678901234567890" },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("net-cysflr-value")).toHaveTextContent("100");
+      expect(screen.getByTestId("net-cyweth-value")).toHaveTextContent("200");
+      expect(screen.getByTestId("cysflr-rewards-value")).toHaveTextContent(
+        "10",
+      );
+      expect(screen.getByTestId("cysflr-rewards-percentage")).toHaveTextContent(
+        "50%",
+      );
+      expect(screen.getByTestId("cyweth-rewards-value")).toHaveTextContent(
+        "10",
+      );
+      expect(screen.getByTestId("cyweth-rewards-percentage")).toHaveTextContent(
+        "50%",
+      );
+    });
+  });
+
   it("should display basic stats", async () => {
     const { fetchAccountStatus } = await import(
       "$lib/queries/fetchAccountStatus"
