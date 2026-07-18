@@ -96,4 +96,26 @@ describe("AccountSummary Component", () => {
       "/rewards/0x1234567890123456789012345678901234567890",
     );
   });
+
+  it("should render generic error copy instead of the raw error message", async () => {
+    const { fetchAccountStatus } = await import(
+      "$lib/queries/fetchAccountStatus"
+    );
+    vi.mocked(fetchAccountStatus).mockRejectedValue(
+      new Error("HTTP 500 from https://internal.example/subgraph"),
+    );
+
+    render(AccountSummary, {
+      props: { account: "0x1234567890123456789012345678901234567890" },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Could not load account rewards. Please try again later.",
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/internal\.example/)).not.toBeInTheDocument();
+  });
 });

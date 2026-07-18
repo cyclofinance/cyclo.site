@@ -182,4 +182,26 @@ describe("AccountStatus Component", () => {
       expect(screen.getByText("Sent to 0x2345...8901")).toBeInTheDocument();
     });
   });
+
+  it("should render generic error copy instead of the raw error message", async () => {
+    const { fetchAccountStatus } = await import(
+      "$lib/queries/fetchAccountStatus"
+    );
+    vi.mocked(fetchAccountStatus).mockRejectedValue(
+      new Error("HTTP 500 from https://internal.example/subgraph"),
+    );
+
+    render(AccountStatus, {
+      props: { account: "0x1234567890123456789012345678901234567890" },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Could not load account status. Please try again later.",
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/internal\.example/)).not.toBeInTheDocument();
+  });
 });
