@@ -34,7 +34,7 @@
       loading = false;
     } catch (e) {
       console.error(e);
-      error = e instanceof Error ? e.message : "Failed to fetch account status";
+      error = "Could not load account status. Please try again later.";
       loading = false;
     }
   });

@@ -110,15 +110,20 @@ describe("StatsPanel Component", () => {
     });
   });
 
-  it("should display error message when fetch fails", async () => {
+  it("should render generic error copy instead of the raw error message when fetch fails", async () => {
     const { fetchStats } = await import("$lib/queries/fetchStats");
-    vi.mocked(fetchStats).mockRejectedValue(new Error("Failed to fetch stats"));
+    vi.mocked(fetchStats).mockRejectedValue(
+      new Error("HTTP 500 from https://internal.example/subgraph"),
+    );
 
     render(StatsPanel);
 
     await waitFor(() => {
       expect(screen.getByTestId("error")).toBeInTheDocument();
-      expect(screen.getByText("Failed to fetch stats")).toBeInTheDocument();
+      expect(
+        screen.getByText("Could not load stats. Please try again later."),
+      ).toBeInTheDocument();
     });
+    expect(screen.queryByText(/internal\.example/)).not.toBeInTheDocument();
   });
 });
