@@ -1,6 +1,6 @@
 <script lang="ts">
   import Card from "$lib/components/Card.svelte";
-  import transactionStore from "$lib/transactionStore";
+  import transactionStore, { TransactionStatus } from "$lib/transactionStore";
   import { RefreshOutline } from "flowbite-svelte-icons";
   import balancesStore from "$lib/balancesStore";
   import Input from "$lib/components/Input.svelte";
@@ -53,14 +53,30 @@
       ? `INSUFFICIENT ${$selectedCyToken.underlyingSymbol}`
       : ButtonStatus.READY;
 
+  // A transaction is in flight from the moment the allowance check starts
+  // until the store settles on SUCCESS/ERROR/IDLE. While in flight, the
+  // token Select and the LOCK button are disabled and the network
+  // auto-switch is suppressed, so the wallet's active chain cannot change
+  // between transaction legs (approve → deposit).
+  const isTxInFlight = (status: TransactionStatus) =>
+    status === TransactionStatus.CHECKING_ALLOWANCE ||
+    status === TransactionStatus.PENDING_WALLET ||
+    status === TransactionStatus.PENDING_APPROVAL ||
+    status === TransactionStatus.PENDING_LOCK ||
+    status === TransactionStatus.PENDING_UNLOCK;
+  $: txInFlight = isTxInFlight($transactionStore.status);
+
   // One wallet switch attempt per desired chain id: when the token's chain
   // has no supportedNetworks entry, setActiveNetworkByChainId is a no-op and
   // the mismatch condition below stays true, so without this guard every
   // unrelated store update would re-fire the wallet switch popup.
   let lastSwitchAttempted: number | null = null;
 
-  // Auto-switch network when token is selected (only if network is different)
+  // Auto-switch network when token is selected (only if network is different
+  // and no transaction is in flight; the block re-evaluates once the tx
+  // settles, so a mismatch that arose mid-flight aligns then).
   $: if (
+    !txInFlight &&
     $selectedCyToken &&
     $selectedNetwork.chain.id !== $selectedCyToken.chainId
   ) {
@@ -96,11 +112,12 @@
   };
 
   const runLockTransaction = () => {
-    // Defence-in-depth: the LOCK button is disabled on $wrongNetwork, but
-    // re-check synchronously in case the wallet chain changes between
-    // render and click (e.g. the disclaimer modal is acknowledged after
-    // a chain switch).
-    if ($wrongNetwork) return;
+    // Defence-in-depth: the LOCK button is disabled on $wrongNetwork and
+    // txInFlight, but re-check synchronously in case the wallet chain
+    // changes between render and click (e.g. the disclaimer modal is
+    // acknowledged after a chain switch) or a second click lands before
+    // the disabled state renders.
+    if ($wrongNetwork || txInFlight) return;
     transactionStore.handleLockTransaction({
       signerAddress: $signerAddress,
       config: $wagmiConfig,
@@ -145,6 +162,7 @@
       <Select
         options={$allTokens}
         bind:selected={$selectedCyToken}
+        disabled={txInFlight}
         getOptionLabel={(option) => `${option.symbol} · ${option.networkName}`}
       />
     </div>
@@ -401,7 +419,8 @@
         disabled={insufficientFunds ||
           !assets ||
           !amountToLock ||
-          $wrongNetwork}
+          $wrongNetwork ||
+          txInFlight}
         customClass="sm:text-xl text-lg w-full bg-white text-primary"
         dataTestId="lock-button"
         on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
