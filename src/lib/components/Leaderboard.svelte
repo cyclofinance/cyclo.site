@@ -31,7 +31,9 @@
 
 <Card>
   <div class="space-y-6">
-    <h2 class="text-xl font-semibold text-white">Top 50 Accounts</h2>
+    <h2 class="text-xl font-semibold text-white">
+      {loading || error ? "Top Accounts" : `Top ${leaderboard.length} Accounts`}
+    </h2>
 
     {#if loading}
       <div
