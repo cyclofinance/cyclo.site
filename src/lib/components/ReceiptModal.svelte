@@ -49,8 +49,9 @@
 
   // An amount typed against one receipt is meaningless for another: reset the
   // input state whenever the bound receipt changes.
-  $: resetInputState(receipt);
-  function resetInputState(_receipt: Receipt) {
+  let boundReceipt: Receipt | null = null;
+  $: if (receipt !== boundReceipt) {
+    boundReceipt = receipt;
     readableAmountToRedeem = "";
     amountToRedeem = BigInt(0);
     sFlrToReceive = BigInt(0);
