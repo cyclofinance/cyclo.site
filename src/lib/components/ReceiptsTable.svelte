@@ -21,27 +21,38 @@
   let selectedReceipt: ReceiptType | null = null;
 
   const mappedReceipts = receipts.map((receipt) => {
-    // Guard against undefined values
-    if (!receipt.balance || !receipt.tokenId) {
+    let balance: bigint;
+    let tokenId: bigint;
+    try {
+      balance = BigInt(receipt.balance);
+      tokenId = BigInt(receipt.tokenId);
+    } catch {
       return {
         ...receipt,
-        totalsFlr: BigInt(0),
+        totalsFlr: 0n,
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
+        readableLockedPrice: "0.00000",
       };
     }
-
-    const balance = BigInt(receipt.balance);
-    const tokenId = BigInt(receipt.tokenId);
+    if (tokenId === 0n) {
+      return {
+        ...receipt,
+        totalsFlr: 0n,
+        readableFlrPerReceipt: "0.00000",
+        readableTotalsFlr: "0.00000",
+        readableLockedPrice: "0.00000",
+      };
+    }
 
     // Calculate totals: (balance * 10^18) / tokenId
     // balance is in token.decimals, we scale to 18 decimals, then divide by tokenId (in 18 decimals)
     // Result is total underlying token locked in 18 decimals
-    const totalsFlr = (balance * BigInt(10 ** 18)) / tokenId;
+    const totalsFlr = (balance * 10n ** 18n) / tokenId;
 
     // Calculate per-receipt: 10^36 / tokenId
     // This gives the cyToken per locked underlying token (in 18 decimals)
-    const flrPerReceipt = BigInt(10 ** 36) / tokenId;
+    const flrPerReceipt = 10n ** 36n / tokenId;
 
     return {
       ...receipt,
@@ -52,6 +63,7 @@
       readableTotalsFlr: Number(formatUnits(totalsFlr, token.decimals)).toFixed(
         5,
       ),
+      readableLockedPrice: Number(formatUnits(tokenId, 18)).toFixed(5),
     };
   });
 </script>
@@ -83,7 +95,7 @@
             {Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
           </TableBodyCell>
           <TableBodyCell data-testid={`locked-price-${index}`}>
-            {Number(formatUnits(BigInt(receipt.tokenId), 18)).toFixed(5)}
+            {receipt.readableLockedPrice ?? "0.00000"}
           </TableBodyCell>
           <TableBodyCell class="">
             <Button
