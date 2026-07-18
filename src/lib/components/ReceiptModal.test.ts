@@ -6,9 +6,9 @@ import { readContract } from "@wagmi/core";
 import { formatEther, parseEther } from "ethers";
 import { mockReceipt } from "$lib/mocks/mockReceipt";
 import userEvent from "@testing-library/user-event";
-import type { CyToken } from "$lib/types";
+import type { CyToken, Receipt } from "$lib/types";
 
-const { mockBalancesStore } = await vi.hoisted(
+const { mockBalancesStore, mockSignerAddressStore } = await vi.hoisted(
   () => import("$lib/mocks/mockStores"),
 );
 
@@ -43,9 +43,156 @@ describe("ReceiptModal Component", () => {
     active: true,
   };
 
+  const setSignerBalances = (cysFLR: bigint, cyWETH: bigint) =>
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: cyWETH,
+          signerUnderlyingBalance: cyWETH,
+        },
+        cysFLR: {
+          signerBalance: cysFLR,
+          signerUnderlyingBalance: cysFLR,
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
   beforeEach(() => {
     initiateUnlockTransactionSpy.mockClear();
     vi.resetAllMocks();
+    mockSignerAddressStore.mockSetSubscribeValue(
+      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    );
+  });
+
+  it("tracks the live receipt when the bound receipt prop is swapped", async () => {
+    setSignerBalances(parseEther("1000"), BigInt(0));
+
+    const receiptB = {
+      ...mockReceipt,
+      balance: 50000000000000000n,
+      tokenId: "46160000000000000",
+    } as Receipt;
+
+    const { rerender } = render(ReceiptModal, {
+      receipt: mockReceipt,
+      token: selectedToken,
+    });
+    await rerender({ receipt: receiptB, token: selectedToken });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("lock-up-price")).toHaveTextContent(
+        Number(formatEther(receiptB.tokenId)).toString(),
+      );
+      expect(screen.getByTestId("balance")).toHaveTextContent(
+        Number(formatEther(receiptB.balance)).toString(),
+      );
+    });
+
+    const maxButton = screen.getByTestId("set-val-to-max");
+    await fireEvent.click(maxButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue(
+        formatEther(receiptB.balance),
+      );
+    });
+
+    await waitFor(() => {
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton.getAttribute("disabled")).toBeFalsy();
+    });
+    await userEvent.click(screen.getByTestId("unlock-button"));
+
+    await waitFor(() => {
+      expect(initiateUnlockTransactionSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokenId: receiptB.tokenId,
+          assets: receiptB.balance,
+        }),
+      );
+    });
+  });
+
+  it("caps max redeem by the modal token's balance when receipt.token is unset", async () => {
+    setSignerBalances(BigInt(0), parseEther("1000"));
+
+    const cyWethToken: CyToken = {
+      ...selectedToken,
+      name: "cyWETH",
+      symbol: "cyWETH",
+    };
+    const tokenlessReceipt = { ...mockReceipt, token: undefined } as Receipt;
+
+    render(ReceiptModal, { receipt: tokenlessReceipt, token: cyWethToken });
+
+    const maxButton = screen.getByTestId("set-val-to-max");
+    await fireEvent.click(maxButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue(
+        formatEther(mockReceipt.balance),
+      );
+    });
+  });
+
+  it("blocks unlock and shows CONNECT WALLET when no signer is present", async () => {
+    mockSignerAddressStore.mockSetSubscribeValue("");
+    setSignerBalances(parseEther("1000"), BigInt(0));
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton).toHaveTextContent("CONNECT WALLET");
+      expect(unlockButton).toBeDisabled();
+    });
+    await userEvent.click(screen.getByTestId("unlock-button"));
+    expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
+  });
+
+  it("blocks unlock and shows WRONG NETWORK when the receipt chain mismatches the selected token", async () => {
+    setSignerBalances(parseEther("1000"), BigInt(0));
+
+    const wrongChainReceipt = { ...mockReceipt, chainId: "42161" } as Receipt;
+
+    render(ReceiptModal, { receipt: wrongChainReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton).toHaveTextContent("WRONG NETWORK");
+      expect(unlockButton).toBeDisabled();
+    });
+    await userEvent.click(screen.getByTestId("unlock-button"));
+    expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
   });
 
   it("should render the modal with the correct receipt balance and lock-up price", async () => {
