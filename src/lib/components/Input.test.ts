@@ -15,6 +15,19 @@ describe("Input", () => {
     expect(maxButton).toBeInTheDocument();
   });
 
+  it("carries no inert numeric constraint attributes on the text input", () => {
+    render(Input, { amount: "0.0" });
+
+    const input = screen.getByPlaceholderText("0.0");
+
+    // On type="text" the browser ignores min/step entirely, so their presence
+    // only suggests a validation guard that does not exist; the real guard is
+    // handleDecimalSeparator.
+    expect(input).toHaveAttribute("type", "text");
+    expect(input).not.toHaveAttribute("min");
+    expect(input).not.toHaveAttribute("step");
+  });
+
   describe("decimal separator handling", () => {
     it("converts comma to dot", async () => {
       const mockDispatch = vi.fn();
