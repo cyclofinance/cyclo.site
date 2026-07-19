@@ -1,6 +1,11 @@
 <script lang="ts">
   import Card from "./Card.svelte";
   import { base } from "$app/paths";
+  import { formatUnits } from "viem";
+  import { REWARD_EPOCHS } from "$lib/constants";
+
+  const formatPoolRflr = (pool: bigint) =>
+    new Intl.NumberFormat("en-US").format(Number(formatUnits(pool, 18)));
 </script>
 
 <Card>
@@ -8,14 +13,24 @@
     <div>
       <h2 class="mt-0 text-xl font-semibold text-white">Cyclo Rewards</h2>
       <p class="text-gray-300">
-        The first rewards period runs from January 2, 2025 at 00:00 UTC to
-        February 1, 2025 at 00:00 UTC. After this period ends, 1M rFLR will be
-        distributed to eligible cysFLR holders based on their participation
-        during the period.
+        Rewards are distributed each month to eligible cyToken holders. The
+        reward pool for each epoch is shown below.
       </p>
+      <ul
+        class="mt-2 list-disc space-y-1 pl-4 text-gray-300"
+        data-testid="reward-epochs"
+      >
+        {#each REWARD_EPOCHS as epoch}
+          <li>
+            <span class="font-semibold text-white">{epoch.label}</span>:
+            {epoch.startUtc} – {epoch.endUtc} — {formatPoolRflr(epoch.poolRflr)}
+            rFLR
+          </li>
+        {/each}
+      </ul>
       <p class="text-gray-300">
-        Note that rewards are calculated based on all transfers since the cysFLR
-        token deployment, not from the beginning of the period.
+        Note that rewards are calculated based on all eligible transfers since
+        the cyToken deployment, not from the beginning of the period.
       </p>
     </div>
 
