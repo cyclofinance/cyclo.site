@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
 import { vi, describe, beforeEach, it, expect, afterEach } from "vitest";
 import AccountSummary from "./AccountSummary.svelte";
+import AccountStatsComponent from "./AccountStats.svelte";
 import type { AccountStats, CyToken } from "$lib/types";
 import { ONE } from "$lib/constants";
 import type { Hex } from "viem";
@@ -136,6 +137,74 @@ describe("AccountSummary Component", () => {
         "50%",
       );
       expect(screen.getByTestId("total-rewards-value")).toHaveTextContent("20");
+    });
+  });
+
+  it("should render zero fallbacks instead of crashing on malformed stats", async () => {
+    // Malformed subgraph shape: `shares` is missing entirely and one
+    // eligibleBalances value is a string rather than a bigint.
+    const malformedStats = {
+      account: "0x1234567890123456789012345678901234567890",
+      eligibleBalances: {
+        cysFLR: "123000000000000000000",
+        cyWETH: BigInt(200) * ONE,
+      },
+      transfers: {
+        in: [],
+        out: [],
+      },
+      liquidityChanges: [],
+    } as unknown as AccountStats;
+
+    render(AccountStatsComponent, { props: { stats: malformedStats } });
+
+    await waitFor(() => {
+      // Valid bigint still renders.
+      expect(screen.getByTestId("net-cyweth-value")).toHaveTextContent(/^200$/);
+      // String eligibleBalance falls back to zero.
+      expect(screen.getByTestId("net-cysflr-value")).toHaveTextContent(/^0$/);
+      // Missing shares falls back to zero everywhere.
+      expect(screen.getByTestId("cysflr-rewards-value")).toHaveTextContent(
+        /^0$/,
+      );
+      expect(screen.getByTestId("cysflr-rewards-percentage")).toHaveTextContent(
+        /^\(0%\)$/,
+      );
+      expect(screen.getByTestId("cyweth-rewards-value")).toHaveTextContent(
+        /^0$/,
+      );
+      expect(screen.getByTestId("cyweth-rewards-percentage")).toHaveTextContent(
+        /^\(0%\)$/,
+      );
+      expect(screen.getByTestId("total-rewards-value")).toHaveTextContent(
+        /^0$/,
+      );
+    });
+  });
+
+  it("should render a zero total when totalRewards is a non-bigint truthy value", async () => {
+    // Malformed subgraph shape: `shares` exists but `totalRewards` is a
+    // decimal string rather than a bigint. A truthy non-bigint must not be
+    // forwarded to formatEther as if it were a valid wei amount.
+    const malformedStats = {
+      ...mockStats,
+      shares: {
+        ...(mockStats.shares as unknown as Record<string, unknown>),
+        totalRewards: "20000000000000000000",
+      },
+    } as unknown as AccountStats;
+
+    render(AccountStatsComponent, { props: { stats: malformedStats } });
+
+    await waitFor(() => {
+      // Sibling bigint fields still render.
+      expect(screen.getByTestId("cysflr-rewards-value")).toHaveTextContent(
+        "10",
+      );
+      // The string totalRewards falls back to zero.
+      expect(screen.getByTestId("total-rewards-value")).toHaveTextContent(
+        /^0$/,
+      );
     });
   });
 });
