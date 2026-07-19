@@ -20,12 +20,13 @@
   export let receipts: ReceiptType[];
   let selectedReceipt: ReceiptType | null = null;
 
-  const mappedReceipts = receipts.map((receipt) => {
+  $: mappedReceipts = receipts.map((receipt) => {
     // Guard against undefined values
     if (!receipt.balance || !receipt.tokenId) {
       return {
         ...receipt,
         totalsFlr: BigInt(0),
+        readableBalance: "0.00000",
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
       };
@@ -46,6 +47,7 @@
     return {
       ...receipt,
       totalsFlr: totalsFlr,
+      readableBalance: Number(formatUnits(balance, token.decimals)).toFixed(5),
       readableFlrPerReceipt: Number(
         formatUnits(flrPerReceipt, token.decimals),
       ).toFixed(5),
@@ -80,7 +82,7 @@
             {receipt.readableTotalsFlr}
           </TableBodyCell>
           <TableBodyCell data-testid={`number-held-${index}`}>
-            {Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
+            {receipt.readableBalance}
           </TableBodyCell>
           <TableBodyCell data-testid={`locked-price-${index}`}>
             {Number(formatUnits(BigInt(receipt.tokenId), 18)).toFixed(5)}

@@ -55,4 +55,58 @@ describe("ReceiptsTable Component", () => {
       expect(screen.getByTestId("receipt-modal")).toBeInTheDocument();
     });
   });
+
+  it("re-renders rows when the receipts prop is updated (#360)", async () => {
+    const initialReceipts = [
+      {
+        ...mockReceipt,
+        balance: 1000000000000000000n,
+        tokenId: "2000000000000000000",
+      },
+    ];
+    const updatedReceipts = [
+      {
+        ...mockReceipt,
+        balance: 2500000000000000000n,
+        tokenId: "2000000000000000000",
+      },
+      {
+        ...mockReceipt,
+        balance: 500000000000000000n,
+        tokenId: "4000000000000000000",
+      },
+    ];
+
+    const { rerender } = render(ReceiptsTable, {
+      receipts: initialReceipts as unknown as Receipt[],
+      token: selectedToken,
+    });
+
+    expect(screen.getByTestId("number-held-0")).toHaveTextContent("1.00000");
+    expect(screen.queryByTestId("receipt-row-1")).not.toBeInTheDocument();
+
+    await rerender({ receipts: updatedReceipts as unknown as Receipt[] });
+
+    expect(screen.getByTestId("number-held-0")).toHaveTextContent("2.50000");
+    expect(screen.getByTestId("receipt-row-1")).toBeInTheDocument();
+    expect(screen.getByTestId("number-held-1")).toHaveTextContent("0.50000");
+    expect(screen.getByTestId("locked-price-1")).toHaveTextContent("4.00000");
+  });
+
+  it('renders the "0.00000" fallback for malformed balances instead of throwing (#358)', async () => {
+    const malformedReceipts = [
+      { ...mockReceipt, balance: undefined },
+      { ...mockReceipt, balance: "" },
+    ];
+
+    render(ReceiptsTable, {
+      receipts: malformedReceipts as unknown as Receipt[],
+      token: selectedToken,
+    });
+
+    expect(screen.getByTestId("number-held-0")).toHaveTextContent("0.00000");
+    expect(screen.getByTestId("total-locked-0")).toHaveTextContent("0.00000");
+    expect(screen.getByTestId("number-held-1")).toHaveTextContent("0.00000");
+    expect(screen.getByTestId("total-locked-1")).toHaveTextContent("0.00000");
+  });
 });
