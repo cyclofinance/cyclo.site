@@ -215,8 +215,8 @@ describe("fetchTopRewards", () => {
     const result = await fetchTopRewards();
 
     expect(result.map((entry) => entry.account)).toEqual(["0x123", "0x456"]);
-    expect(
-      result[0].shares.totalRewards > result[1].shares.totalRewards,
-    ).toBe(true);
+    expect(result[0].shares.totalRewards > result[1].shares.totalRewards).toBe(
+      true,
+    );
   });
 });
