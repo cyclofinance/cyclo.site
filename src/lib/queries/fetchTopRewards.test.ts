@@ -153,4 +153,70 @@ describe("fetchTopRewards", () => {
       body: JSON.stringify({ query: TopAccounts }),
     });
   });
+
+  it("ranks entries by totalRewards descending regardless of response order", async () => {
+    const richAccount = {
+      id: "0x123",
+      totalCyBalance: "2000000000000000000000",
+      totalCyBalanceSnapshot: "3000000000000000000000",
+      vaultBalances: [
+        {
+          balance: (ONE + 2n).toString(),
+          balanceAvgSnapshot: ONE.toString(),
+          vault: {
+            address: "0x19831cfB53A0dbeAD9866C43557C1D48DfF76567" as Hex, // cysFLR
+            totalEligible: "1000000000000000000000",
+            totalEligibleSnapshot: "2000000000000000000000",
+          },
+        },
+      ],
+    };
+    const poorAccount = {
+      id: "0x456",
+      totalCyBalance: "1600000000000000000000",
+      totalCyBalanceSnapshot: "1500000000000000000000",
+      vaultBalances: [
+        {
+          balance: (ONE / 2n).toString(),
+          balanceAvgSnapshot: (ONE / 2n).toString(),
+          vault: {
+            address: "0x19831cfB53A0dbeAD9866C43557C1D48DfF76567" as Hex, // cysFLR
+            totalEligible: "1000000000000000000000",
+            totalEligibleSnapshot: "2000000000000000000000",
+          },
+        },
+      ],
+    };
+
+    // Poorer account FIRST: a mis-ordered subgraph response must not become
+    // the returned ranking.
+    const mockResponse = {
+      data: {
+        accountsByCyBalance: [poorAccount, richAccount],
+        eligibleTotals: {
+          id: "SINGLETON",
+          totalEligibleSum: "2000000000000000000000",
+          totalEligibleSumSnapshot: "3000000000000000000000",
+        },
+        cycloVaults: [
+          {
+            address: "0x19831cfB53A0dbeAD9866C43557C1D48DfF76567" as Hex, // cysFLR
+            totalEligible: "2000000000000000000000",
+            totalEligibleSnapshot: "2000000000000000000000",
+          },
+        ],
+      },
+    };
+
+    vi.mocked(global.fetch).mockResolvedValueOnce({
+      json: async () => mockResponse,
+    } as Response);
+
+    const result = await fetchTopRewards();
+
+    expect(result.map((entry) => entry.account)).toEqual(["0x123", "0x456"]);
+    expect(result[0].shares.totalRewards > result[1].shares.totalRewards).toBe(
+      true,
+    );
+  });
 });
