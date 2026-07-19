@@ -1,9 +1,28 @@
 import { writable } from "svelte/store";
 
 import { type Config } from "@wagmi/core";
+import { flare } from "@wagmi/core/chains";
 import type { Hex } from "viem";
 import { mockWeb3Config } from "./mockWagmiConfig";
 import type { CyToken, Receipt } from "$lib/types";
+
+// Default cysFLR-shaped token for the mock selectedCyToken writable. Tests
+// that don't override get this value, matching the production default in
+// stores.ts. Tests that need a different shape call
+// mockSelectedCyToken.mockSetSubscribeValue(custom).
+export const DEFAULT_SELECTED_CYTOKEN: CyToken = {
+  name: "cysFLR",
+  symbol: "cysFLR",
+  decimals: 18,
+  underlyingDecimals: 18,
+  address: "0x19831cfb53a0dbead9866c43557c1d48dff76567" as Hex,
+  underlyingAddress: "0x12e605bc104e93b45e1ad99f9e555f659051c2bb" as Hex,
+  underlyingSymbol: "sFLR",
+  receiptAddress: "0xd387fc43e19a63036d8fced559e81f5ddef7ef09" as Hex,
+  chainId: flare.id,
+  networkName: "Flare",
+  active: true,
+};
 
 // Mock writable stores
 export const web3ModalStore = writable<{ open: () => void } | null>({
@@ -25,7 +44,7 @@ const mockSFlrAddressWritable = writable<Hex>(
   "0x91e3B9820b47c7D4e6765E90F94C163123456789",
 );
 const mockMyReceiptsWritable = writable<Receipt[]>([]);
-const mockSelectedCyTokenWritable = writable<CyToken>();
+const mockSelectedCyTokenWritable = writable<CyToken>(DEFAULT_SELECTED_CYTOKEN);
 
 type BalanceData = {
   signerBalance: bigint;
