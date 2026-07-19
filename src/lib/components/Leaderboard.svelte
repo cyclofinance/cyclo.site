@@ -6,6 +6,7 @@
   import type { LeaderboardEntry } from "$lib/types";
   import { formatEther, formatUnits } from "viem";
   import { tokens } from "$lib/stores";
+  import { safeBigInt } from "$lib/utils/safeBigInt";
 
   // Calculate grid columns: 1 for account + 2 per token (balance + rewards) + 1 for total
   $: gridCols = 1 + $tokens.length * 2 + 1;
@@ -77,26 +78,28 @@
               {#each $tokens as token}
                 <div class="font-medium text-white">
                   {(+formatUnits(
-                    entry.eligibleBalances[token.symbol] || 0n,
+                    safeBigInt(entry.eligibleBalances?.[token.symbol]),
                     token.decimals,
                   )).toFixed(4)}
                 </div>
                 <div class="flex flex-col gap-y-2 font-medium text-white">
                   <span
                     >{(+formatEther(
-                      entry.shares[token.symbol]?.rewardsAmount || 0n,
+                      safeBigInt(entry.shares?.[token.symbol]?.rewardsAmount),
                     )).toFixed(4)}</span
                   >
                   <span>
                     ({(+formatUnits(
-                      entry.shares[token.symbol]?.percentageShare || 0n,
+                      safeBigInt(entry.shares?.[token.symbol]?.percentageShare),
                       16,
                     )).toFixed(4)}%)
                   </span>
                 </div>
               {/each}
               <div data-testid="total-rewards" class="font-medium text-white">
-                {(+formatEther(entry.shares.totalRewards)).toFixed(4)}
+                {(+formatEther(safeBigInt(entry.shares?.totalRewards))).toFixed(
+                  4,
+                )}
               </div>
             </a>
           {/each}
