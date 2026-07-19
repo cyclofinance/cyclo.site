@@ -4,6 +4,7 @@ import { describe, it, expect } from "vitest";
 import { mockReceipt } from "$lib/mocks/mockReceipt";
 import type { CyToken, Receipt } from "$lib/types";
 import { formatEther } from "ethers";
+import { trimToDecimals } from "$lib/utils/trimToDecimals";
 
 const mockReceipts = [mockReceipt, mockReceipt];
 
@@ -31,13 +32,13 @@ describe("ReceiptsTable Component", () => {
 
     for (let i = 0; i < mockReceipts.length; i++) {
       expect(screen.getByTestId(`locked-price-${i}`)).toHaveTextContent(
-        Number(formatEther(mockReceipts[i].tokenId)).toFixed(5),
+        trimToDecimals(formatEther(mockReceipts[i].tokenId), 5),
       );
       expect(screen.getByTestId(`number-held-${i}`)).toHaveTextContent(
-        Number(formatEther(mockReceipts[i].balance)).toFixed(5),
+        trimToDecimals(formatEther(mockReceipts[i].balance), 5),
       );
       expect(screen.getByTestId(`total-locked-${i}`)).toHaveTextContent(
-        Number(mockReceipts[i].readableTotalsFlr).toFixed(5),
+        trimToDecimals(mockReceipts[i].readableTotalsFlr!, 5),
       );
     }
   });
