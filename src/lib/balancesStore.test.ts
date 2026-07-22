@@ -191,6 +191,36 @@ describe("balancesStore", () => {
     }
   });
 
+  it("keeps the successful 10000-fee fallback quote when the 3000-fee tier fails", async () => {
+    (readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
+    (readErc20BalanceOf as Mock).mockResolvedValue(BigInt(0));
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(1) });
+    // Flare quoter: the 3000-fee tier has no pool, the 10000-fee tier quotes.
+    (simulateQuoterQuoteExactOutputSingle as Mock).mockImplementation(
+      async (_config: unknown, call: { args: [{ fee: number }] }) => {
+        if (call.args[0].fee === 3000) {
+          throw new Error("no 3000 pool");
+        }
+        return { result: [BigInt(7)] };
+      },
+    );
+    (simulateContract as Mock).mockRejectedValue(new Error("no pool"));
+    (readContract as Mock).mockRejectedValue(new Error("rpc down"));
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    const flareTokens = supportedNetworks.flatMap((network) =>
+      network.tokens.filter((token) => token.chainId === 14),
+    );
+    expect(flareTokens.length).toBeGreaterThan(0);
+    for (const token of flareTokens) {
+      expect(stats[token.name].price).toBe(BigInt(7));
+    }
+  });
+
   it("keeps a genuine zero quote as 0n, distinct from quoter failure", async () => {
     (readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
     (readErc20BalanceOf as Mock).mockResolvedValue(BigInt(0));
