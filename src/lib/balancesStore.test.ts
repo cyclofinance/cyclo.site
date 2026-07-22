@@ -7,7 +7,12 @@ import {
   readErc20TotalSupply,
 } from "../generated";
 import balancesStore from "./balancesStore";
-import { getBlock, type Config } from "@wagmi/core";
+import {
+  getBlock,
+  readContract,
+  simulateContract,
+  type Config,
+} from "@wagmi/core";
 import type { CyToken } from "$lib/types";
 import { supportedNetworks } from "./stores";
 
@@ -24,19 +29,22 @@ vi.mock("../generated", () => ({
 
 vi.mock("@wagmi/core", () => ({
   getBlock: vi.fn(),
+  readContract: vi.fn(),
+  simulateContract: vi.fn(),
 }));
 
 describe("balancesStore", () => {
   const mockSignerAddress = "0x1234567890abcdef";
 
-  const { reset, refreshBalances, refreshPrices } = balancesStore;
+  const { reset, refreshBalances, refreshPrices, refreshFooterStats } =
+    balancesStore;
 
   const buildInitialState = () => {
     const stats: Record<
       string,
       {
         supply: bigint;
-        price: bigint;
+        price: bigint | null;
         lockPrice: bigint;
         underlyingTvl: bigint;
         usdTvl: bigint;
@@ -55,7 +63,7 @@ describe("balancesStore", () => {
     allTokens.forEach((token) => {
       stats[token.name] = {
         supply: BigInt(0),
-        price: BigInt(0),
+        price: null,
         lockPrice: BigInt(0),
         underlyingTvl: BigInt(0),
         usdTvl: BigInt(0),
@@ -157,6 +165,83 @@ describe("balancesStore", () => {
       (BigInt(3e18) * BigInt(1000n)) / BigInt(1e18),
     );
     expect(storeValue.status).toBe("Ready");
+  });
+
+  it("stores null price for every token when all quoter attempts fail", async () => {
+    (readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
+    (readErc20BalanceOf as Mock).mockResolvedValue(BigInt(0));
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(1) });
+    // Flare quoter: both fee tiers reject; Arbitrum Algebra quoter rejects;
+    // Pyth reads reject (lock price falls back to previewDeposit).
+    (simulateQuoterQuoteExactOutputSingle as Mock).mockRejectedValue(
+      new Error("no pool"),
+    );
+    (simulateContract as Mock).mockRejectedValue(new Error("no pool"));
+    (readContract as Mock).mockRejectedValue(new Error("rpc down"));
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    const allTokens = supportedNetworks.flatMap((network) => network.tokens);
+    expect(allTokens.length).toBeGreaterThan(0);
+    for (const token of allTokens) {
+      expect(stats[token.name].price).toBeNull();
+    }
+  });
+
+  it("keeps the successful 10000-fee fallback quote when the 3000-fee tier fails", async () => {
+    (readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
+    (readErc20BalanceOf as Mock).mockResolvedValue(BigInt(0));
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(1) });
+    // Flare quoter: the 3000-fee tier has no pool, the 10000-fee tier quotes.
+    (simulateQuoterQuoteExactOutputSingle as Mock).mockImplementation(
+      async (_config: unknown, call: { args: [{ fee: number }] }) => {
+        if (call.args[0].fee === 3000) {
+          throw new Error("no 3000 pool");
+        }
+        return { result: [BigInt(7)] };
+      },
+    );
+    (simulateContract as Mock).mockRejectedValue(new Error("no pool"));
+    (readContract as Mock).mockRejectedValue(new Error("rpc down"));
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    const flareTokens = supportedNetworks.flatMap((network) =>
+      network.tokens.filter((token) => token.chainId === 14),
+    );
+    expect(flareTokens.length).toBeGreaterThan(0);
+    for (const token of flareTokens) {
+      expect(stats[token.name].price).toBe(BigInt(7));
+    }
+  });
+
+  it("keeps a genuine zero quote as 0n, distinct from quoter failure", async () => {
+    (readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
+    (readErc20BalanceOf as Mock).mockResolvedValue(BigInt(0));
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(1) });
+    // Every quoter answers successfully with a genuine zero quote.
+    (simulateQuoterQuoteExactOutputSingle as Mock).mockResolvedValue({
+      result: [BigInt(0)],
+    });
+    (simulateContract as Mock).mockResolvedValue({ result: [BigInt(0)] });
+    (readContract as Mock).mockRejectedValue(new Error("rpc down"));
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    const allTokens = supportedNetworks.flatMap((network) => network.tokens);
+    for (const token of allTokens) {
+      expect(stats[token.name].price).toBe(BigInt(0));
+      expect(stats[token.name].price).not.toBeNull();
+    }
   });
 
   it("should reset the store to its initial state", () => {

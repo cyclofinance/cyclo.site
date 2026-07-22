@@ -82,6 +82,7 @@
           </div>
 
           {#each network.tokens as token (token.name)}
+            {@const price = $balancesStore.stats[token.name]?.price ?? null}
             <div
               class="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2"
             >
@@ -111,14 +112,11 @@
                 data-testId="price"
               >
                 <span>Current {token.symbol} Price</span>
-                <span>
-                  $ {Number(
-                    formatUnits(
-                      $balancesStore.stats[token.name]?.price || 0n,
-                      6,
-                    ),
-                  )}
-                </span>
+                {#if price === null}
+                  <span>—</span>
+                {:else}
+                  <span>$ {Number(formatUnits(price, 6))}</span>
+                {/if}
               </div>
               {#if $balancesStore.stats[token.name]?.supply}
                 <div
@@ -143,17 +141,21 @@
                 data-testId={`market-cap-${token.symbol}`}
               >
                 <span>{token.symbol} Market Cap</span>
-                <span>
-                  $ {Number(
-                    formatUnits(
-                      calculateMarketCap(
-                        $balancesStore.stats[token.name]?.price || 0n,
-                        $balancesStore.stats[token.name]?.supply || 0n,
+                {#if price === null}
+                  <span>—</span>
+                {:else}
+                  <span>
+                    $ {Number(
+                      formatUnits(
+                        calculateMarketCap(
+                          price,
+                          $balancesStore.stats[token.name]?.supply ?? 0n,
+                        ),
+                        token.decimals,
                       ),
-                      token.decimals,
-                    ),
-                  )}
-                </span>
+                    )}
+                  </span>
+                {/if}
               </div>
               {#if $balancesStore.stats[token.name]?.underlyingTvl}
                 <div
