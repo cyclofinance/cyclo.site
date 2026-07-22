@@ -18,7 +18,7 @@ import {
   quoterAddress,
   type NetworkConfig,
 } from "./stores";
-import { ALGEBRA_QUOTER_ABI, FRONTEND_PYTH_MAX_AGE_SECONDS } from "./constants";
+import { ALGEBRA_QUOTER_ABI } from "./constants";
 import blockNumberStore from "./blockNumberStore";
 import { I_PYTH_ABI, PYTH_ORACLE_ABI, CYCLO_VAULT_ABI } from "./pyth";
 
@@ -300,11 +300,21 @@ const getLockPriceFooterStats = async (
         chainId: effectiveChainId,
       })) as Hex;
 
+      // The oracle's own staleness bound: the display accepts exactly the
+      // prices the vault's oracle itself would accept.
+      const staleAfter = (await readContract(config, {
+        abi: PYTH_ORACLE_ABI,
+        address: priceOracleAddress as Hex,
+        functionName: "I_STALE_AFTER",
+        args: [],
+        chainId: effectiveChainId,
+      })) as bigint;
+
       const priceData = (await readContract(config, {
         abi: I_PYTH_ABI,
         address: pythContractAddress as Hex,
         functionName: "getPriceNoOlderThan",
-        args: [iPythFeedId, FRONTEND_PYTH_MAX_AGE_SECONDS],
+        args: [iPythFeedId, staleAfter],
         chainId: effectiveChainId,
       })) as { price: bigint; conf: bigint; expo: bigint; publishTime: bigint };
 

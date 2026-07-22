@@ -3,8 +3,6 @@ import type { Hex } from "viem";
 import { parseAbi } from "viem";
 
 export const ONE = 10n ** 18n;
-export const STALE_PERIOD = 86400n * 30n;
-export const FRONTEND_PYTH_MAX_AGE_SECONDS = 300n;
 
 // Algebra Quoter ABI for Arbitrum
 export const ALGEBRA_QUOTER_ABI = parseAbi([
