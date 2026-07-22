@@ -606,7 +606,7 @@ const balancesStore = () => {
         if (!updatedStats[tokenName]) {
           updatedStats[tokenName] = {
             supply: BigInt(0),
-            price: BigInt(0),
+            price: null,
             lockPrice: BigInt(0),
             underlyingTvl: BigInt(0),
             usdTvl: BigInt(0),
