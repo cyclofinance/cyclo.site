@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
+import type { Writable } from "svelte/store";
+import { get } from "svelte/store";
 import DsfStrategy from "./DsfStrategy.svelte";
 import transactionStore from "$lib/transactionStore";
+import { allTokens, selectedCyToken, setActiveNetwork } from "$lib/stores";
 import { useDataFetcher } from "$lib/dataFetcher";
 import { Router } from "sushi/router";
+import { switchNetwork } from "@wagmi/core";
+import type { Config } from "@wagmi/core";
+import { wagmiConfig, chainId } from "svelte-wagmi";
+import { mockWeb3Config } from "$lib/mocks/mockWagmiConfig";
 
 // Mock ethers
 vi.mock("ethers", async (importOriginal) => {
@@ -87,6 +94,19 @@ vi.mock("$lib/stores", async () => {
     active: true,
   };
 
+  const mockCyToken2 = {
+    address: "0xdef4570000000000000000000000000000000000",
+    symbol: "cyTEST",
+    name: "cyTEST",
+    decimals: 18,
+    chainId: 999,
+    underlyingAddress: "0x1234570000000000000000000000000000000000",
+    underlyingSymbol: "TST",
+    receiptAddress: "0xabcdee0000000000000000000000000000000000",
+    networkName: "test",
+    active: true,
+  };
+
   const MOCK_REWARDS_SUBGRAPH_URL = "https://mock-rewards-subgraph/gn";
   const mockNetworkConfig = {
     key: "flare",
@@ -103,12 +123,19 @@ vi.mock("$lib/stores", async () => {
     tokens: [mockCyToken],
   };
 
+  const mockNetworkConfig2 = {
+    ...mockNetworkConfig,
+    key: "test",
+    chain: { ...flare, id: 999, name: "Test Network" },
+    tokens: [mockCyToken2],
+  };
+
   return {
     tokens: writable([mockCyToken]),
-    allTokens: writable([mockCyToken]),
+    allTokens: writable([mockCyToken, mockCyToken2]),
     selectedCyToken: writable(mockCyToken),
     selectedNetwork: writable(mockNetworkConfig),
-    supportedNetworks: [mockNetworkConfig],
+    supportedNetworks: [mockNetworkConfig, mockNetworkConfig2],
     setActiveNetwork: vi.fn(),
   };
 });
@@ -138,12 +165,23 @@ describe("DsfStrategy Component", () => {
     }
   };
 
+  const mockWagmiConfigStore = wagmiConfig as unknown as Writable<
+    Config | undefined
+  >;
+  const mockChainIdStore = chainId as unknown as Writable<number | undefined>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useDataFetcher).mockReturnValue(mockDataFetcher as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as any);
+    mockWagmiConfigStore.set(undefined);
+    mockChainIdStore.set(undefined);
+    vi.mocked(switchNetwork).mockResolvedValue(undefined as never);
+    // The component persists the rotate-token selection back into
+    // selectedCyToken, so reset it to the first token between tests.
+    selectedCyToken.set(get(allTokens)[0]);
   });
 
   it("should render the DSF form", () => {
@@ -557,5 +595,87 @@ describe("DsfStrategy Component", () => {
     // A positive override deposit enables Deploy.
     await fireEvent.input(depositAmountInput, { target: { value: "50" } });
     expect(deployButton).not.toBeDisabled();
+  });
+
+  it("does not prompt the wallet to switch chains on mount from the persisted token", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(999); // wallet on a different chain than the persisted token
+
+    render(DsfStrategy);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(switchNetwork).not.toHaveBeenCalled();
+    // The app-internal network state still syncs to the persisted token's network.
+    expect(setActiveNetwork).toHaveBeenCalledWith("flare");
+  });
+
+  it("prompts the wallet to switch chains when the user selects a rotate token on another chain", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+
+    render(DsfStrategy);
+    await new Promise((r) => setTimeout(r, 0));
+
+    const rotateSelect = screen.getByTestId(
+      "cy-token-select",
+    ) as HTMLSelectElement;
+    rotateSelect.selectedIndex = 1; // cyTEST on chain 999
+    await fireEvent.change(rotateSelect);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+    expect(switchNetwork).toHaveBeenCalledWith(mockWeb3Config, {
+      chainId: 999,
+    });
+  });
+
+  it("switches the wallet to the rotate token's chain when deploying", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(999); // wallet not on the rotate token's chain
+
+    render(DsfStrategy);
+    await fillRequiredFields();
+    vi.mocked(switchNetwork).mockClear();
+
+    const deployButton = screen.getByTestId("deploy-button");
+    await fireEvent.click(deployButton);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+    expect(switchNetwork).toHaveBeenCalledWith(mockWeb3Config, {
+      chainId: 14,
+    });
+    expect(transactionStore.handleDeployDsf).toHaveBeenCalled();
+  });
+
+  it("does not deploy when the wallet chain switch fails", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(999);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.mocked(switchNetwork).mockRejectedValue(new Error("user rejected"));
+
+    render(DsfStrategy);
+    await fillRequiredFields();
+
+    const deployButton = screen.getByTestId("deploy-button");
+    await fireEvent.click(deployButton);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(transactionStore.handleDeployDsf).not.toHaveBeenCalled();
+  });
+
+  it("does not prompt the wallet when deploying already on the rotate token's chain", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(14); // wallet already on the rotate token's chain
+
+    render(DsfStrategy);
+    await fillRequiredFields();
+    vi.mocked(switchNetwork).mockClear();
+
+    const deployButton = screen.getByTestId("deploy-button");
+    await fireEvent.click(deployButton);
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(switchNetwork).not.toHaveBeenCalled();
+    expect(transactionStore.handleDeployDsf).toHaveBeenCalled();
   });
 });
