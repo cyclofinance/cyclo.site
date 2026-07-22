@@ -490,6 +490,113 @@ describe("DsfStrategy Component", () => {
     expect(callArgs.selectedNetworkKey).toBe("flare");
   });
 
+  it.each([
+    ["next-trade-multiplier-input", "0", "Period must be greater than 0"],
+    ["next-trade-multiplier-input", "", "Period is required"],
+    ["cost-basis-multiplier-input", "0", "Period must be greater than 0"],
+    ["cost-basis-multiplier-input", "", "Period is required"],
+    ["time-per-epoch-input", "0", "Period must be greater than 0"],
+    ["time-per-epoch-input", "", "Period is required"],
+  ])(
+    "should show a validation error and disable Deploy when %s is set to %j",
+    async (testId, value, expectedError) => {
+      render(DsfStrategy);
+
+      await fillRequiredFields();
+
+      const deployButton = screen.getByTestId("deploy-button");
+      expect(deployButton).not.toBeDisabled();
+
+      const advancedOptionsButton = screen.getByText("Show advanced options");
+      await fireEvent.click(advancedOptionsButton);
+
+      await fireEvent.input(screen.getByTestId(testId), {
+        target: { value },
+      });
+
+      expect(screen.getByText(expectedError)).toBeInTheDocument();
+      expect(deployButton).toBeDisabled();
+    },
+  );
+
+  it("should disable Deploy when the rotate deposit amount is empty or zero", async () => {
+    render(DsfStrategy);
+
+    await fillRequiredFields();
+
+    const advancedOptionsButton = screen.getByText("Show advanced options");
+    await fireEvent.click(advancedOptionsButton);
+
+    const customDepositText = screen.getByText("Custom deposit amount");
+    const customDepositContainer = customDepositText.closest("div");
+    const customDepositToggle = customDepositContainer?.querySelector(
+      'input[type="checkbox"]',
+    ) as HTMLInputElement;
+    expect(customDepositToggle).toBeTruthy();
+    await fireEvent.click(customDepositToggle!);
+
+    const deployButton = screen.getByTestId("deploy-button");
+
+    // Amount-token deposit filled while the rotate deposit is still empty.
+    await fireEvent.input(screen.getByTestId("deposit-amount-input"), {
+      target: { value: "50" },
+    });
+    expect(deployButton).toBeDisabled();
+
+    // A zero rotate deposit is invalid.
+    const rotateDepositAmountInput = screen.getByTestId(
+      "rotate-deposit-amount-input",
+    );
+    await fireEvent.input(rotateDepositAmountInput, {
+      target: { value: "0" },
+    });
+    expect(
+      screen.getByText("Override deposit amount must be greater than 0"),
+    ).toBeInTheDocument();
+    expect(deployButton).toBeDisabled();
+
+    // A positive rotate deposit enables Deploy.
+    await fireEvent.input(rotateDepositAmountInput, {
+      target: { value: "25" },
+    });
+    expect(deployButton).not.toBeDisabled();
+  });
+
+  it("should disable Deploy when the override deposit amount is zero", async () => {
+    render(DsfStrategy);
+
+    await fillRequiredFields();
+
+    const advancedOptionsButton = screen.getByText("Show advanced options");
+    await fireEvent.click(advancedOptionsButton);
+
+    const customDepositText = screen.getByText("Custom deposit amount");
+    const customDepositContainer = customDepositText.closest("div");
+    const customDepositToggle = customDepositContainer?.querySelector(
+      'input[type="checkbox"]',
+    ) as HTMLInputElement;
+    expect(customDepositToggle).toBeTruthy();
+    await fireEvent.click(customDepositToggle!);
+
+    const deployButton = screen.getByTestId("deploy-button");
+
+    // Rotate deposit valid so the gate under test is the override deposit.
+    await fireEvent.input(screen.getByTestId("rotate-deposit-amount-input"), {
+      target: { value: "25" },
+    });
+
+    const depositAmountInput = screen.getByTestId("deposit-amount-input");
+    await fireEvent.input(depositAmountInput, { target: { value: "0" } });
+    expect(
+      screen.getByText("Override deposit amount must be greater than 0"),
+    ).toBeInTheDocument();
+    expect(deployButton).toBeDisabled();
+
+    // A positive override deposit enables Deploy.
+    await fireEvent.input(depositAmountInput, { target: { value: "50" } });
+    expect(deployButton).not.toBeDisabled();
+  });
+
   it("does not prompt the wallet to switch chains on mount from the persisted token", async () => {
     mockWagmiConfigStore.set(mockWeb3Config as Config);
     mockChainIdStore.set(999); // wallet on a different chain than the persisted token
