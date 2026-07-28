@@ -78,6 +78,7 @@ vi.mock("$lib/stores", async () => {
     address: "0x123" as `0x${string}`,
     underlyingAddress: "0x456" as `0x${string}`,
     underlyingSymbol: "sFLR",
+    underlyingDecimals: 18,
     receiptAddress: "0x789" as `0x${string}`,
     chainId: flare.id,
     networkName: "Flare",
