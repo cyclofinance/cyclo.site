@@ -81,6 +81,7 @@ vi.mock("$lib/stores", async () => {
     decimals: 18,
     underlyingAddress: "0x1234560000000000000000000000000000000000",
     underlyingSymbol: "UNDERLYING",
+    underlyingDecimals: 18,
     receiptAddress: "0xabcdef0000000000000000000000000000000000",
   };
 
