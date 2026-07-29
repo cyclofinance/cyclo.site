@@ -194,6 +194,10 @@ describe("ReceiptsTable re-up math (issue #237)", () => {
     // 1 WETH * 1000 = the "additional 1000 cyWETH" the issue describes.
     expect(cell("reup-total-0")).toBe("1000.00000");
     expect(cell("reup-total-sum")).toBe("1000.00000 cyWETH");
+    // The cell's tooltip shows the two prices the figure came from.
+    expect(screen.getByTestId("reup-per-1-0").getAttribute("title")).toContain(
+      "current: 4000.00000, original: 3000.00000",
+    );
   });
 
   it("clamps re-up to zero when the current lock price is below or equal to the mint price", async () => {
@@ -334,15 +338,22 @@ describe("ReceiptsTable re-up math (issue #237)", () => {
   });
 
   it("shows zero re-up when no lock price has loaded for the token yet", async () => {
-    // stats is empty: nothing is known about the current lock price.
+    // stats is empty: nothing is known about the current lock price. The
+    // receipt was minted at 0.001, low enough that any non-zero stand-in for
+    // the unknown price would surface as a non-zero re-up here.
     render(ReceiptsTable, {
-      receipts: [receiptAt(2n * 10n ** 18n, 2n * 10n ** 18n)],
+      receipts: [receiptAt(10n ** 15n, 10n ** 18n)],
       token: cysFLR,
     });
 
+    expect(cell("total-locked-0")).toBe("1000.00000");
     expect(cell("reup-per-1-0")).toBe("0.00000");
     expect(cell("reup-total-0")).toBe("0.00000");
     expect(cell("reup-total-sum")).toBe("0.00000 cysFLR");
+    // An unknown price is treated as zero, not as some placeholder price.
+    expect(screen.getByTestId("reup-per-1-0").getAttribute("title")).toContain(
+      "current: 0.00000, original: 0.00100",
+    );
   });
 
   it("shows zero re-up for a receipt with no balance left", async () => {
