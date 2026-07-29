@@ -62,7 +62,7 @@
         {#if leaderboard?.length > 0}
           {#each leaderboard as entry, i}
             <a
-              href={`/rewards/${entry.account}`}
+              href={`/rewards/${encodeURIComponent(entry.account)}`}
               class="grid gap-8 rounded py-4 text-left font-mono {isConnectedWallet(
                 entry.account,
               )
