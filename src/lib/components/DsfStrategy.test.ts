@@ -103,6 +103,7 @@ vi.mock("$lib/stores", async () => {
     chainId: 999,
     underlyingAddress: "0x1234570000000000000000000000000000000000",
     underlyingSymbol: "TST",
+    underlyingDecimals: 18,
     receiptAddress: "0xabcdee0000000000000000000000000000000000",
     networkName: "test",
     active: true,
