@@ -197,6 +197,7 @@ describe("Footer.svelte", () => {
       address: "0x0000000000000000000000000000000000000001" as Hex,
       underlyingAddress: "0x0000000000000000000000000000000000000002" as Hex,
       underlyingSymbol: "NEW",
+      underlyingDecimals: 18,
       receiptAddress: "0x0000000000000000000000000000000000000003" as Hex,
       chainId: flare.id,
       networkName: "Flare",
