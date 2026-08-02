@@ -32,8 +32,13 @@ export interface Token {
 export interface CyToken extends Token {
   name: string;
   address: Hex;
+  // The vault share token's decimals (inherited from Token.decimals).
+  // The vault wraps an underlying with its own decimals — formatting
+  // underlying balances or parsing user input as underlying must use
+  // underlyingDecimals, not decimals.
   underlyingAddress: Hex;
   underlyingSymbol: string;
+  underlyingDecimals: number;
   receiptAddress: Hex;
   chainId: number;
   networkName: string;
