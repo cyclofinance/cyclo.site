@@ -21,14 +21,20 @@ const blockNumberStore = () => {
     const token = ++inflightToken;
     try {
       const block = await getBlock(config);
-      if (token !== inflightToken) return block.number;
-      update((state) => ({
-        ...state,
-        blockNumber:
-          block.number > state.blockNumber ? block.number : state.blockNumber,
-        status: "Ready",
-      }));
-      return block.number;
+      if (block.number === null || block.number <= 0n) {
+        throw new Error(`Invalid block number from RPC: ${block.number}`);
+      }
+      if (token !== inflightToken) return block.number as bigint;
+      update((state) => {
+        const blockNumber = block.number as bigint;
+        return {
+          ...state,
+          blockNumber:
+            blockNumber > state.blockNumber ? blockNumber : state.blockNumber,
+          status: "Ready",
+        };
+      });
+      return block.number as bigint;
     } catch (error) {
       if (token !== inflightToken) throw error;
       console.error("Error getting block number:", error);

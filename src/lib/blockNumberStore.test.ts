@@ -94,4 +94,27 @@ describe("blockNumberStore", () => {
 
     expect(get(blockNumberStore).blockNumber).toBe(BigInt(5000));
   });
+
+  it("rejects and sets Error status when RPC returns block.number=0n", async () => {
+    (getBlock as Mock).mockResolvedValue({ number: BigInt(0) });
+
+    await expect(blockNumberStore.refresh(mockConfig)).rejects.toThrow(
+      "Invalid block number from RPC: 0",
+    );
+
+    const store = get(blockNumberStore);
+    expect(store.status).toBe("Error");
+    expect(store.blockNumber).toBe(BigInt(0));
+  });
+
+  it("rejects and sets Error status when RPC returns block.number=null", async () => {
+    (getBlock as Mock).mockResolvedValue({ number: null });
+
+    await expect(blockNumberStore.refresh(mockConfig)).rejects.toThrow(
+      "Invalid block number from RPC: null",
+    );
+
+    const store = get(blockNumberStore);
+    expect(store.status).toBe("Error");
+  });
 });
