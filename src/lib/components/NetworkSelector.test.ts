@@ -215,6 +215,7 @@ describe("NetworkSelector", () => {
       "network-switcher",
     ) as HTMLSelectElement;
     await fireEvent.change(selector, { target: { value: "test" } });
+    await new Promise((r) => setTimeout(r, 0));
 
     expect(calls[0]).toBe("switchNetwork");
     expect(calls).toContain("set:test");
