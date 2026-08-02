@@ -40,6 +40,7 @@
   <select
     class="rounded border border-white bg-transparent px-2 py-1"
     bind:value={selected}
+    on:change
     data-testid={dataTestId}
   >
     {#each options as option}
