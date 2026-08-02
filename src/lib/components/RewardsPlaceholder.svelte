@@ -14,6 +14,7 @@
         href={base + "/docs/rewards"}
         class="text-sm text-primary hover:underline"
         target="_blank"
+        rel="noopener noreferrer"
       >
         How are rewards calculated?
       </a>
