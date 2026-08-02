@@ -14,7 +14,7 @@
     typeof value === "bigint" ? value : 0n;
 
   $: isEligible =
-    stats?.eligibleBalances &&
+    stats.eligibleBalances &&
     Object.values(stats.eligibleBalances).some((balance) => balance > 0n);
 </script>
 
