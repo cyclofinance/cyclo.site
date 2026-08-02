@@ -343,6 +343,126 @@ describe("ReceiptModal Component", () => {
     });
   });
 
+  it("should disable unlock and show placeholder when tokenId is invalid", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
+    const invalidReceipt = { ...mockReceipt, tokenId: "not-a-number" };
+    render(ReceiptModal, { receipt: invalidReceipt, token: selectedToken });
+
+    // 0.0001 sits within both the receipt balance and the signer balance, so
+    // this same amount leaves UNLOCK enabled for a valid tokenId. The button
+    // status stays READY and the redeem amount stays non-zero, which makes the
+    // invalid tokenId the only thing disabling the button below.
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue("0.0001");
+      expect(screen.getByTestId("lock-up-price")).toHaveTextContent("—");
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton).toHaveTextContent("UNLOCK");
+      expect(unlockButton).toBeDisabled();
+    });
+  });
+
+  it("should surface previewRedeem errors without zeroing amountToRedeem", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.reject(new Error("contract reverted")),
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      const previewError = screen.getByTestId("preview-error");
+      expect(previewError).toHaveTextContent("contract reverted");
+    });
+
+    // The failed preview leaves the typed amount intact: UNLOCK stays live and
+    // submits exactly the amount that was entered before the failure.
+    const unlockButton = screen.getByTestId("unlock-button");
+    expect(unlockButton.getAttribute("disabled")).toBeFalsy();
+    await userEvent.click(unlockButton);
+
+    await waitFor(() => {
+      expect(initiateUnlockTransactionSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assets: parseEther("0.0001"),
+        }),
+      );
+    });
+  });
+
   it("should set cysFlrBalance when max button is clicked and receipt balance is greater than cysFlrBalance", async () => {
     const mockCysFlrBalance = parseEther("0.0001"); // 1 cysFLR
 
