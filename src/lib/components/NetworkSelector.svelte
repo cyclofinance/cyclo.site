@@ -7,11 +7,22 @@
   import { switchNetwork } from "@wagmi/core";
   import { wagmiConfig } from "svelte-wagmi";
 
+  // True while a wallet network switch is in flight; blocks further changes
+  // so only one switch runs at a time.
+  let switching = false;
+
   const handleChange = async (event: Event) => {
     const target = event.target as HTMLSelectElement;
     const networkKey = target.value;
 
     if (networkKey === $activeNetworkKey) return;
+
+    if (switching) {
+      // A switch is in flight; keep the select on the network being
+      // switched to and ignore this change.
+      target.value = $activeNetworkKey;
+      return;
+    }
 
     const selectedNetwork = availableNetworks.find(
       (network) => network.key === networkKey,
@@ -20,6 +31,7 @@
     setActiveNetwork(networkKey);
 
     if (selectedNetwork) {
+      switching = true;
       try {
         const config = $wagmiConfig;
         if (config) {
@@ -30,6 +42,8 @@
           `Failed to switch wallet network to ${selectedNetwork.key}:`,
           error,
         );
+      } finally {
+        switching = false;
       }
     }
   };
@@ -42,6 +56,7 @@
   <select
     class="rounded border border-white/40 bg-[#1C02B8] px-2 py-1 text-white focus:border-white focus:outline-none"
     value={$activeNetworkKey}
+    disabled={switching}
     on:change={handleChange}
     data-testid="network-switcher"
   >
