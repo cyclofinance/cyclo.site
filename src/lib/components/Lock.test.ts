@@ -643,12 +643,16 @@ describe("Lock Component", () => {
     await userEvent.type(input, "12");
 
     settleFirst();
+    // Drain the settled request's catch/finally hops deterministically. A
+    // waitFor here would pass on its first poll, before the reset runs, and so
+    // would hold whether or not outstanding requests are actually counted.
+    await first;
+    await Promise.resolve();
+    await Promise.resolve();
     await tick();
 
     const lockButton = screen.getByTestId("lock-button");
-    await waitFor(() => {
-      expect(lockButton.textContent?.trim()).toBe("FETCHING QUOTE...");
-    });
+    expect(lockButton.textContent?.trim()).toBe("FETCHING QUOTE...");
   });
 
   it("labels the lock button LOCK once price and quote are both live", async () => {
