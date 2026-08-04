@@ -365,6 +365,10 @@ describe("ReceiptModal Component", () => {
       { cusdxOutput: BigInt(0), cyTokenOutput: BigInt(0) },
     );
 
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.resolve(BigInt("10000000000000000")),
+    );
+
     // Arbitrum receipt while the selected token is on Flare.
     render(ReceiptModal, {
       receipt: { ...mockReceipt, chainId: "42161" },
@@ -372,7 +376,9 @@ describe("ReceiptModal Component", () => {
     });
 
     const input = screen.getByTestId("redeem-input");
-    await userEvent.type(input, "0.5");
+    // Below both the receipt balance and the cyToken balance, so neither
+    // insufficiency branch can disable the button on this test's behalf.
+    await userEvent.type(input, "0.01");
 
     await waitFor(() => {
       expect(screen.getByTestId("unlock-button")).toBeDisabled();
