@@ -35,13 +35,17 @@
   $: readableBalance = Number(formatUnits(receipt.balance, token.decimals));
   $: tokenId = receipt.tokenId;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  $: (receipt,
-    (() => {
-      readableAmountToRedeem = "";
-      amountToRedeem = BigInt(0);
-      sFlrToReceive = BigInt(0);
-    })());
+  // Clear the redeem entry when the modal is pointed at a different receipt,
+  // so a swap cannot carry one receipt's amount onto another. Keyed on the
+  // receipt's identity: the reset assigns the entry fields, so an unguarded
+  // block would re-run on its own writes and wipe the amount as it is typed.
+  let redeemEntryReceiptId: string | undefined;
+  $: if (receipt.tokenId !== redeemEntryReceiptId) {
+    redeemEntryReceiptId = receipt.tokenId;
+    readableAmountToRedeem = "";
+    amountToRedeem = BigInt(0);
+    sFlrToReceive = BigInt(0);
+  }
 
   const checkBalance = async () => {
     if (isCalculating || !receipt.tokenId) {
