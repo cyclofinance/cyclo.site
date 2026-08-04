@@ -29,9 +29,16 @@
   export let amountToLock = "";
   let disclaimerAcknowledged = false;
   let disclaimerOpen = false;
+  // True while a deposit-preview swap quote is in flight. A zero quote means
+  // "still loading" while this is true and "no route for this amount" once it
+  // is false; the button label distinguishes the two.
+  let quoteInFlight = false;
 
   enum ButtonStatus {
     READY = "LOCK",
+    STALE_PRICE = "STALE PRICE",
+    FETCHING_QUOTE = "FETCHING QUOTE...",
+    QUOTE_UNAVAILABLE = "QUOTE UNAVAILABLE",
   }
 
   // Derive assets reactively from amountToLock so the value the user sees
@@ -50,11 +57,22 @@
   $: insufficientFunds =
     ($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance ||
       0n) < assets;
+  // The two conditions that block a lock without the user having done
+  // anything wrong. Both feed the button's disabled state and its label, so
+  // a greyed-out button always names the reason it is greyed out.
+  $: staleLockPrice = !$balancesStore.stats[$selectedCyToken.name]?.lockPrice;
+  $: quoteMissing = !$balancesStore.swapQuotes.cyTokenOutput;
   $: buttonStatus = !amountToLock
     ? ButtonStatus.READY
     : insufficientFunds
       ? `INSUFFICIENT ${$selectedCyToken.underlyingSymbol}`
-      : ButtonStatus.READY;
+      : staleLockPrice
+        ? ButtonStatus.STALE_PRICE
+        : quoteMissing
+          ? quoteInFlight
+            ? ButtonStatus.FETCHING_QUOTE
+            : ButtonStatus.QUOTE_UNAVAILABLE
+          : ButtonStatus.READY;
 
   // One wallet switch attempt per desired chain id: when the token's chain
   // has no supportedNetworks entry, setActiveNetworkByChainId is a no-op and
@@ -129,12 +147,20 @@
   let refreshing = false;
 
   $: if (assets || amountToLock) {
-    balancesStore.refreshDepositPreviewSwapValue(
-      $wagmiConfig,
-      $selectedCyToken,
-      $usdcAddress,
-      assets,
-    );
+    quoteInFlight = true;
+    balancesStore
+      .refreshDepositPreviewSwapValue(
+        $wagmiConfig,
+        $selectedCyToken,
+        $usdcAddress,
+        assets,
+      )
+      .catch((e) => {
+        console.error("Error refreshing deposit preview swap value:", e);
+      })
+      .finally(() => {
+        quoteInFlight = false;
+      });
   }
   // Also refresh prices when selected token changes
   $: if ($selectedCyToken && $selectedCyToken.address) {
@@ -417,8 +443,8 @@
           !assets ||
           !amountToLock ||
           $wrongNetwork ||
-          !$balancesStore.stats[$selectedCyToken.name]?.lockPrice ||
-          !$balancesStore.swapQuotes.cyTokenOutput}
+          staleLockPrice ||
+          quoteMissing}
         customClass="sm:text-xl text-lg w-full bg-white text-primary"
         dataTestId="lock-button"
         on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
