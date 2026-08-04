@@ -29,10 +29,28 @@
   export let amountToLock = "";
   let disclaimerAcknowledged = false;
   let disclaimerOpen = false;
-  // True while a deposit-preview swap quote is in flight. A zero quote means
-  // "still loading" while this is true and "no route for this amount" once it
-  // is false; the button label distinguishes the two.
+  // True while at least one deposit-preview swap quote is in flight. A zero
+  // quote means "still loading" while this is true and "no route for this
+  // amount" once it is false; the button label distinguishes the two.
   let quoteInFlight = false;
+  // Quote requests overlap — the block that issues them re-runs on the amount,
+  // the config, the token and the value token — so this counts outstanding
+  // requests rather than tracking one. Settling the first of two would
+  // otherwise report "no route" while the second is still running. It is read
+  // only inside trackQuote so it never becomes a dependency of that block.
+  let outstandingQuotes = 0;
+  const trackQuote = (request: Promise<void>) => {
+    outstandingQuotes += 1;
+    quoteInFlight = true;
+    request
+      .catch((e) => {
+        console.error("Error refreshing deposit preview swap value:", e);
+      })
+      .finally(() => {
+        outstandingQuotes -= 1;
+        quoteInFlight = outstandingQuotes > 0;
+      });
+  };
 
   enum ButtonStatus {
     READY = "LOCK",
@@ -147,20 +165,14 @@
   let refreshing = false;
 
   $: if (assets || amountToLock) {
-    quoteInFlight = true;
-    balancesStore
-      .refreshDepositPreviewSwapValue(
+    trackQuote(
+      balancesStore.refreshDepositPreviewSwapValue(
         $wagmiConfig,
         $selectedCyToken,
         $usdcAddress,
         assets,
-      )
-      .catch((e) => {
-        console.error("Error refreshing deposit preview swap value:", e);
-      })
-      .finally(() => {
-        quoteInFlight = false;
-      });
+      ),
+    );
   }
   // Also refresh prices when selected token changes
   $: if ($selectedCyToken && $selectedCyToken.address) {

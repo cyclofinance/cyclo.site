@@ -594,6 +594,63 @@ describe("Lock Component", () => {
     });
   });
 
+  it("keeps FETCHING QUOTE... when only the first of two overlapping quotes settles", async () => {
+    // Quote requests overlap whenever the amount changes while one is still
+    // running. The first to settle must not report "no route" on behalf of the
+    // one still in flight.
+    let settleFirst: () => void = () => {};
+    const first = new Promise<void>((resolve) => {
+      settleFirst = resolve;
+    });
+    const second = new Promise<void>(() => {});
+    vi.mocked(balancesStore.refreshDepositPreviewSwapValue)
+      .mockReturnValueOnce(first)
+      .mockReturnValue(second);
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          // Comfortably above the typed amount, so the insufficient-funds
+          // branch cannot pre-empt the label under test.
+          signerBalance: 99000000000000000000n,
+          signerUnderlyingBalance: 99000000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 0n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    // Two characters, so the quote block fires twice and both are outstanding.
+    await userEvent.type(input, "12");
+
+    settleFirst();
+    await tick();
+
+    const lockButton = screen.getByTestId("lock-button");
+    await waitFor(() => {
+      expect(lockButton.textContent?.trim()).toBe("FETCHING QUOTE...");
+    });
+  });
+
   it("labels the lock button LOCK once price and quote are both live", async () => {
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
