@@ -24,6 +24,19 @@ vi.mock("@wagmi/core", () => {
   };
 });
 
+vi.mock("svelte-wagmi", async () => {
+  const { writable } = await import("svelte/store");
+  const { flare } = await import("@wagmi/core/chains");
+  return {
+    wagmiConfig: writable({}),
+    signerAddress: writable("0x1234567890123456789012345678901234567890"),
+    // stores.ts derives wrongNetwork from this; a file-level mock replaces the
+    // vitest-setup one wholesale, so omitting it breaks module init. Flare
+    // matches the default selected token, so the wallet reads as on-network.
+    chainId: writable(flare.id),
+  };
+});
+
 describe("ReceiptModal Component", () => {
   const initiateUnlockTransactionSpy = vi.spyOn(
     transactionStore,
@@ -223,6 +236,153 @@ describe("ReceiptModal Component", () => {
       expect(unlockButton.getAttribute("disabled")).toBeFalsy();
     });
     screen.debug();
+  });
+
+  it("clears the redeem entry when the modal is pointed at a different receipt", async () => {
+    // A20-1: fields captured once at mount mixed one receipt's entry with
+    // another's after a swap.
+    const { rerender } = render(ReceiptModal, {
+      receipt: mockReceipt,
+      token: selectedToken,
+    });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.5");
+    expect(input).toHaveValue("0.5");
+
+    await rerender({
+      receipt: { ...mockReceipt, tokenId: "34560000000000000" },
+      token: selectedToken,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue("");
+    });
+  });
+
+  it("keeps the typed redeem entry while the receipt is unchanged", async () => {
+    // The reset assigns the entry fields, so a block keyed on anything but the
+    // receipt's identity re-runs on its own writes and wipes the amount as it
+    // is typed.
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.25");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue("0.25");
+    });
+  });
+
+  it("reads the signer balance for the modal's own token, not a cysFLR default", async () => {
+    // A20-2: the hardcoded "cysFLR" fallback read the wrong balance for a
+    // receipt whose token is undefined. cyWETH holds 1, cysFLR holds 0, and
+    // the receipt names no token — a cysFLR read reports 0 and disables.
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+        cysFLR: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+      },
+      { cusdxOutput: BigInt(0), cyTokenOutput: BigInt(0) },
+    );
+
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.resolve(BigInt("10000000000000000")),
+    );
+
+    render(ReceiptModal, {
+      receipt: { ...mockReceipt, token: undefined },
+      token: { ...selectedToken, name: "cyWETH" },
+    });
+
+    const input = screen.getByTestId("redeem-input");
+    // Below the receipt's own balance, so the only thing that can report
+    // insufficiency here is the cyToken balance read.
+    await userEvent.type(input, "0.01");
+
+    await waitFor(() => {
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton).not.toHaveTextContent("INSUFFICIENT");
+      expect(unlockButton.getAttribute("disabled")).toBeFalsy();
+    });
+  });
+
+  it("disables UNLOCK when the receipt's chain differs from the selected token's", async () => {
+    // A20-3: the button did not gate on the receipt/wallet chain matching.
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+        cysFLR: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+      },
+      { cusdxOutput: BigInt(0), cyTokenOutput: BigInt(0) },
+    );
+
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.resolve(BigInt("10000000000000000")),
+    );
+
+    // Arbitrum receipt while the selected token is on Flare.
+    render(ReceiptModal, {
+      receipt: { ...mockReceipt, chainId: "42161" },
+      token: selectedToken,
+    });
+
+    const input = screen.getByTestId("redeem-input");
+    // Below both the receipt balance and the cyToken balance, so neither
+    // insufficiency branch can disable the button on this test's behalf.
+    await userEvent.type(input, "0.01");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("unlock-button")).toBeDisabled();
+    });
   });
 
   it("should call handleUnlockTransaction when unlock button is clicked", async () => {
