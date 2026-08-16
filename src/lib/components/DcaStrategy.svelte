@@ -35,6 +35,7 @@
   let networkTokens: Token[] = [];
   let lastSyncedNetworkKey: string | undefined;
   let lastSwitchedChainId: number | undefined;
+  let isSwitchingChain: boolean = false;
 
   // Keep selected cyToken aligned with available tokens and the store
   $: if ($allTokens.length > 0) {
@@ -78,13 +79,21 @@
     const config = $wagmiConfig;
     const targetChainId = selectedNetworkForCyToken.chain.id;
     if (config && targetChainId !== lastSwitchedChainId) {
-      switchNetwork(config, { chainId: targetChainId }).catch((error) =>
-        console.warn(
-          `Failed to switch wallet network to ${selectedNetworkForCyToken.key}:`,
-          error,
-        ),
-      );
-      lastSwitchedChainId = targetChainId;
+      isSwitchingChain = true;
+      switchNetwork(config, { chainId: targetChainId })
+        .then(() => {
+          lastSwitchedChainId = targetChainId;
+        })
+        .catch((error) => {
+          console.warn(
+            `Failed to switch wallet network to ${selectedNetworkForCyToken.key}:`,
+            error,
+          );
+          lastSwitchedChainId = undefined;
+        })
+        .finally(() => {
+          isSwitchingChain = false;
+        });
     }
   }
 
@@ -141,6 +150,7 @@
     !selectedAmount ||
     !selectedPeriod ||
     !selectedBaseline ||
+    isSwitchingChain ||
     (chooseOverrideDepositAmount && overrideDepositAmount == undefined) ||
     inputVaultIdError ||
     outputVaultIdError ||
@@ -157,6 +167,15 @@
 
   const handleDeploy = () => {
     if (!selectedToken || !selectedAmountToken) return;
+
+    if (validateSelectedAmount(selectedAmount?.toString())) return;
+    if (validatePeriod(selectedPeriod)) return;
+    if (validateBaseline(selectedBaseline)) return;
+    if (
+      chooseOverrideDepositAmount &&
+      validateOverrideDepositAmount(overrideDepositAmount?.toString())
+    )
+      return;
 
     // Ensure the active network matches the selected cyToken's network
     setActiveNetwork(selectedNetworkForCyToken.key);

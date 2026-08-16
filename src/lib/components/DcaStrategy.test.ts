@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/svelte";
+import type { Writable } from "svelte/store";
+import { get } from "svelte/store";
 import DcaStrategy from "./DcaStrategy.svelte";
 import transactionStore from "$lib/transactionStore";
+import { allTokens, selectedCyToken } from "$lib/stores";
 import { useDataFetcher } from "$lib/dataFetcher";
 import { Router } from "sushi/router";
+import { switchNetwork } from "@wagmi/core";
+import type { Config } from "@wagmi/core";
+import { wagmiConfig } from "svelte-wagmi";
+import { mockWeb3Config } from "$lib/mocks/mockWagmiConfig";
 
 // Mock ethers
 vi.mock("ethers", async (importOriginal) => {
@@ -79,10 +86,21 @@ vi.mock("$lib/stores", async () => {
     symbol: "TEST",
     name: "Test Token",
     decimals: 18,
+    chainId: 14,
     underlyingAddress: "0x1234560000000000000000000000000000000000",
     underlyingSymbol: "UNDERLYING",
     underlyingDecimals: 18,
     receiptAddress: "0xabcdef0000000000000000000000000000000000",
+  };
+
+  // A second cyToken on a second network, so the network-change reactive block
+  // can be driven from the cyToken select.
+  const mockCyToken2 = {
+    ...mockCyToken,
+    address: "0xdef4570000000000000000000000000000000000",
+    symbol: "TEST2",
+    name: "Test Token 2",
+    chainId: 999,
   };
 
   const MOCK_REWARDS_SUBGRAPH_URL = "https://mock-rewards-subgraph/gn";
@@ -101,12 +119,19 @@ vi.mock("$lib/stores", async () => {
     tokens: [mockCyToken],
   };
 
+  const mockNetworkConfig2 = {
+    ...mockNetworkConfig,
+    key: "test",
+    chain: { ...flare, id: 999, name: "Test Network" },
+    tokens: [mockCyToken2],
+  };
+
   return {
     tokens: writable([mockCyToken]),
-    allTokens: writable([mockCyToken]),
+    allTokens: writable([mockCyToken, mockCyToken2]),
     selectedCyToken: writable(mockCyToken),
     selectedNetwork: writable(mockNetworkConfig),
-    supportedNetworks: [mockNetworkConfig],
+    supportedNetworks: [mockNetworkConfig, mockNetworkConfig2],
     setActiveNetwork: vi.fn(),
   };
 });
@@ -140,12 +165,27 @@ describe("DcaStrategy Component", () => {
     });
   };
 
+  const mockWagmiConfigStore = wagmiConfig as unknown as Writable<
+    Config | undefined
+  >;
+
+  // Lets the reactive network block observe a settled switch outcome.
+  const flushMicrotasks = () =>
+    new Promise((resolve) => setTimeout(resolve, 0));
+
   beforeEach(() => {
     vi.clearAllMocks();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(useDataFetcher).mockReturnValue(mockDataFetcher as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as any);
+    // No wallet by default, so the network block never prompts a chain switch.
+    mockWagmiConfigStore.set(undefined);
+    vi.mocked(switchNetwork).mockReset();
+    vi.mocked(switchNetwork).mockResolvedValue(undefined as never);
+    // The component persists its cyToken selection back into the store, so
+    // reset it to the first token between tests.
+    selectedCyToken.set(get(allTokens)[0]);
   });
 
   it("should render the DCA form", () => {
@@ -210,6 +250,11 @@ describe("DcaStrategy Component", () => {
     // Change to "Sell"
     await fireEvent.change(buySelect, { target: { value: "Sell" } });
 
+    // Switching Buy/Sell swaps the amount token, and TradeAmountInput clears
+    // the bound amount whenever its token changes, so the form has to be
+    // re-entered before a second deploy is possible at all.
+    await fillRequiredFields();
+
     // Click Deploy again
     await fireEvent.click(deployButton);
 
@@ -217,6 +262,9 @@ describe("DcaStrategy Component", () => {
     const secondCallArgs = vi.mocked(transactionStore.handleDeployDca).mock
       .calls[1];
     expect(secondCallArgs[0].selectedBuyOrSell).toBe("Sell");
+    // A deploy must never be dispatched with an empty amount, so pin that the
+    // re-entered amount actually reached handleDeployDca.
+    expect(secondCallArgs[0].selectedAmount).toBeGreaterThan(0n);
   });
 
   it("should pass form values to handleDeployDca", async () => {
@@ -480,5 +528,161 @@ describe("DcaStrategy Component", () => {
 
     // TradePrice component should be rendered
     expect(screen.getByTestId("trade-price")).toBeInTheDocument();
+  });
+
+  // #322 — the wallet may still be on the previous chain while the switch it
+  // was asked for is unresolved, so Deploy must stay unavailable until the
+  // switch settles, however complete the rest of the form is.
+  it("keeps Deploy disabled while a wallet chain switch is in flight", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    let resolveSwitch: (() => void) | undefined;
+    vi.mocked(switchNetwork).mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveSwitch = resolve;
+      }) as never,
+    );
+
+    render(DcaStrategy);
+    await fillRequiredFields();
+
+    // The mount-time network sync asked the wallet to switch and is unresolved.
+    expect(switchNetwork).toHaveBeenCalledWith(mockWeb3Config, { chainId: 14 });
+
+    // Every other term of disableDeploy is satisfied — amount, period and
+    // baseline are all filled and none of the children flagged an error — so
+    // the in-flight switch is the only thing that may hold Deploy back.
+    const deployButton = screen.getByTestId("deploy-button");
+    expect(screen.queryByText("Amount is required")).not.toBeInTheDocument();
+    expect(screen.queryByText("Period is required")).not.toBeInTheDocument();
+    expect(screen.queryByText("Baseline is required")).not.toBeInTheDocument();
+    expect(deployButton).toBeDisabled();
+
+    // Once the wallet reports the switch is done, Deploy becomes available.
+    resolveSwitch!();
+    await flushMicrotasks();
+    expect(deployButton).not.toBeDisabled();
+  });
+
+  // #322 — a switch the wallet rejected leaves it on the old chain, so the
+  // component must not remember that chain as already switched to.
+  it("re-prompts the wallet for a chain whose earlier switch failed", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    vi.mocked(switchNetwork).mockRejectedValueOnce(new Error("user rejected"));
+
+    // The mount-time sync prompts for chain 14 and the user rejects it, so the
+    // wallet is still on whatever chain it was on.
+    render(DcaStrategy);
+    await flushMicrotasks();
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+
+    // The user disconnects the wallet and browses the other network's cyToken.
+    // With no config there is nothing to prompt, so this leg cannot stand in
+    // for the rejected switch.
+    mockWagmiConfigStore.set(undefined);
+    const cyTokenSelect = screen.getByTestId(
+      "cy-token-select",
+    ) as HTMLSelectElement;
+    cyTokenSelect.selectedIndex = 1; // Test Token 2, on chain 999
+    await fireEvent.change(cyTokenSelect);
+    await flushMicrotasks();
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+
+    // Reconnecting and coming back to the chain-14 cyToken must prompt again:
+    // the earlier attempt never moved the wallet.
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    cyTokenSelect.selectedIndex = 0; // Test Token, on chain 14
+    await fireEvent.change(cyTokenSelect);
+    await flushMicrotasks();
+
+    expect(switchNetwork).toHaveBeenCalledTimes(2);
+    expect(switchNetwork).toHaveBeenNthCalledWith(2, mockWeb3Config, {
+      chainId: 14,
+    });
+  });
+
+  // #322 — the complement of the test above: a switch that succeeded did move
+  // the wallet, so returning to that chain must not prompt again. Without this
+  // the retry test would also pass if the component simply prompted every time.
+  it("does not re-prompt the wallet for a chain whose switch succeeded", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+
+    // The mount-time sync prompts for chain 14 and the wallet accepts.
+    render(DcaStrategy);
+    await flushMicrotasks();
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+
+    // Same disconnect / browse / reconnect legs as the retry test.
+    mockWagmiConfigStore.set(undefined);
+    const cyTokenSelect = screen.getByTestId(
+      "cy-token-select",
+    ) as HTMLSelectElement;
+    cyTokenSelect.selectedIndex = 1; // Test Token 2, on chain 999
+    await fireEvent.change(cyTokenSelect);
+    await flushMicrotasks();
+
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    cyTokenSelect.selectedIndex = 0; // Test Token, on chain 14
+    await fireEvent.change(cyTokenSelect);
+    await flushMicrotasks();
+
+    // The wallet is already on chain 14, so no second prompt.
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+  });
+
+  // #325 — handleDeploy must validate its own inputs rather than trust the
+  // children's isError flags. Input only re-runs its validator on user input,
+  // so a value the parent clears leaves isError stale at false.
+  it("does not deploy an amount cleared without the child flagging an error", async () => {
+    render(DcaStrategy);
+    await fillRequiredFields();
+
+    // Switching Buy -> Sell swaps the amount token, which makes
+    // TradeAmountInput reset the bound amount without re-validating.
+    const buySelect = screen.getAllByRole("combobox")[0];
+    await fireEvent.change(buySelect, { target: { value: "Sell" } });
+
+    // The amount is gone but nothing was flagged, so disableDeploy's error
+    // terms are all false and handleDeploy is the only remaining gate.
+    expect(screen.getByTestId("amount-input")).toHaveValue("");
+    expect(screen.queryByText("Amount is required")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Amount must be greater than 0"),
+    ).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId("deploy-button"));
+
+    expect(transactionStore.handleDeployDca).not.toHaveBeenCalled();
+  });
+
+  // #325 — the custom deposit amount is subject to the same stale-flag hazard,
+  // and it is the value that decides how much is actually funded.
+  it("does not deploy a custom deposit cleared without the child flagging an error", async () => {
+    render(DcaStrategy);
+
+    await fireEvent.click(screen.getByText("Show advanced options"));
+    await fireEvent.click(screen.getByRole("checkbox"));
+    await fillRequiredFields();
+    await fireEvent.input(screen.getByTestId("deposit-amount-input"), {
+      target: { value: "50" },
+    });
+
+    // Switching Buy -> Sell swaps the amount token, so both TradeAmountInputs
+    // reset their bound values without re-validating.
+    const buySelect = screen.getAllByRole("combobox")[0];
+    await fireEvent.change(buySelect, { target: { value: "Sell" } });
+
+    // Re-enter only the trade amount, leaving the custom deposit empty and
+    // unflagged. The earlier validators now pass, so only the deposit
+    // pre-flight stands between this form and a deploy with no deposit.
+    await fillRequiredFields();
+    expect(screen.getByTestId("deposit-amount-input")).toHaveValue("");
+    expect(
+      screen.queryByText("Override deposit amount is required"),
+    ).not.toBeInTheDocument();
+
+    await fireEvent.click(screen.getByTestId("deploy-button"));
+
+    expect(transactionStore.handleDeployDca).not.toHaveBeenCalled();
   });
 });
