@@ -53,7 +53,7 @@ type BalanceData = {
 
 type StatsData = {
   lockPrice: bigint;
-  price: bigint;
+  price: bigint | null;
   supply: bigint;
   underlyingTvl: bigint;
   usdTvl: bigint;

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/svelte";
+import { render, screen, waitFor, within } from "@testing-library/svelte";
 import Footer from "./Footer.svelte";
 import { describe, it, vi, expect, beforeEach } from "vitest";
 
@@ -125,6 +125,69 @@ describe("Footer.svelte", () => {
     await waitFor(() => {
       expect(screen.queryByText("Total cysFLR supply")).not.toBeInTheDocument();
       expect(screen.queryByText("Total TVL")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should display an em-dash for price and market cap when the price is unavailable", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: null,
+          supply: BigInt(1e18),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
+    render(Footer);
+
+    await waitFor(() => {
+      const priceRow = screen
+        .getByText("Current cysFLR Price")
+        .closest("div") as HTMLElement;
+      expect(within(priceRow).getByText("—")).toBeInTheDocument();
+      expect(within(priceRow).queryByText(/\$/)).not.toBeInTheDocument();
+
+      const capRow = screen.getByTestId("market-cap-cysFLR") as HTMLElement;
+      expect(within(capRow).getByText("—")).toBeInTheDocument();
+      expect(within(capRow).queryByText(/\$/)).not.toBeInTheDocument();
+    });
+  });
+
+  it("should still display $ 0 for a genuine zero price", async () => {
+    render(Footer);
+
+    await waitFor(() => {
+      const priceRow = screen
+        .getByText("Current cysFLR Price")
+        .closest("div") as HTMLElement;
+      expect(within(priceRow).getByText("$ 0")).toBeInTheDocument();
+      expect(within(priceRow).queryByText("—")).not.toBeInTheDocument();
     });
   });
 
