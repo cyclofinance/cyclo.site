@@ -113,3 +113,51 @@ describe("NavButtons Component", () => {
     });
   });
 });
+
+describe("NavButtons accessibility", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("exposes the hamburger as a labelled button whose aria-expanded tracks the menu state", async () => {
+    render(NavButtons);
+    const hamburger = screen.getByTestId("nav-hamburger");
+    expect(hamburger.tagName).toBe("BUTTON");
+    expect(hamburger).toHaveAttribute("aria-label", "Open menu");
+    expect(hamburger).toHaveAttribute("aria-controls", "mobile-menu");
+    expect(hamburger).toHaveAttribute("aria-expanded", "false");
+
+    await userEvent.click(hamburger);
+    expect(hamburger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("marks the open mobile menu as a modal dialog", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAttribute("id", "mobile-menu");
+  });
+
+  it("gives the close button an accessible label", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    expect(screen.getByLabelText("Close menu")).toBeInTheDocument();
+  });
+
+  it("closes the mobile menu when Escape is pressed", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+    expect(screen.getByTestId("docs-button-mobile")).toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("docs-button-mobile"),
+      ).not.toBeInTheDocument();
+    });
+  });
+});
