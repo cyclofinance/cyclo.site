@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/svelte";
 import { tick } from "svelte";
 import Lock from "./Lock.svelte";
 import transactionStore from "$lib/transactionStore";
+import balancesStore from "$lib/balancesStore";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, beforeEach, afterEach, it, expect } from "vitest";
 import {
@@ -43,9 +44,20 @@ vi.mock("$lib/balancesStore", async () => {
       refreshSwapQuote: vi.fn(),
       refreshBalances: vi.fn(),
       refreshPrices: vi.fn(),
-      refreshDepositPreviewSwapValue: vi.fn(),
+      // The real one is async; it must resolve here too, or the component's
+      // in-flight tracking sees a non-promise.
+      refreshDepositPreviewSwapValue: vi.fn().mockResolvedValue(undefined),
     },
   };
+});
+
+// The quote mock is module-shared across every describe in this file, and one
+// test swaps in a never-settling promise to hold the in-flight state. Put the
+// resolved default back after each test so that override cannot leak.
+afterEach(() => {
+  vi.mocked(balancesStore.refreshDepositPreviewSwapValue).mockResolvedValue(
+    undefined,
+  );
 });
 
 vi.mock("$lib/transactionStore", async (importOriginal) => ({
@@ -99,7 +111,10 @@ describe("Lock Component", () => {
       },
       {
         cusdxOutput: BigInt(0),
-        cyTokenOutput: BigInt(0),
+        // Non-zero so the LOCK button isn't disabled by the
+        // missing-cyTokenOutput gate; tests that exercise that gate
+        // override this in their own mockSetSubscribeValue call.
+        cyTokenOutput: BigInt(1234000000000000000000n),
       },
     );
   });
@@ -415,7 +430,10 @@ describe("Lock Component", () => {
           signerUnderlyingBalance: fullPrecisionBalance,
         },
       },
-      { cusdxOutput: 0n, cyTokenOutput: 0n },
+      // Non-zero cyTokenOutput so the LOCK button isn't disabled by the
+      // missing-cyTokenOutput gate; this test is about MAX precision, not
+      // the price-freshness gate.
+      { cusdxOutput: 0n, cyTokenOutput: 1234000000000000000000n },
     );
 
     render(Lock);
@@ -442,6 +460,291 @@ describe("Lock Component", () => {
     // Truncation: signed amount must equal the full balance, not a Number()-
     // round-tripped subset that leaves dust behind.
     expect(callArgs.assets).toBe(fullPrecisionBalance);
+  });
+
+  it("should disable the lock button when lockPrice is missing", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 1234000000000000000000n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.5");
+
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton).toBeDisabled();
+    // A disabled button must say why it is disabled: a missing lockPrice is
+    // the stale-price case, not the quote case.
+    await waitFor(() => {
+      expect(lockButton.textContent?.trim()).toBe("STALE PRICE");
+    });
+  });
+
+  it("should disable the lock button when swap-quote cyTokenOutput is zero", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 0n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.5");
+
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton).toBeDisabled();
+    // The quote request has settled and came back with no route, which is a
+    // different message from one that is still loading.
+    await waitFor(() => {
+      expect(lockButton.textContent?.trim()).toBe("QUOTE UNAVAILABLE");
+    });
+  });
+
+  it("labels the lock button FETCHING QUOTE... while the quote is still in flight", async () => {
+    // A quote request that never settles: cyTokenOutput is zero exactly as in
+    // the test above, so only the in-flight state can tell the two apart.
+    vi.mocked(balancesStore.refreshDepositPreviewSwapValue).mockReturnValue(
+      new Promise<void>(() => {}),
+    );
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 0n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.5");
+
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton).toBeDisabled();
+    await waitFor(() => {
+      expect(lockButton.textContent?.trim()).toBe("FETCHING QUOTE...");
+    });
+  });
+
+  it("keeps FETCHING QUOTE... when only the first of two overlapping quotes settles", async () => {
+    // Quote requests overlap whenever the amount changes while one is still
+    // running. The first to settle must not report "no route" on behalf of the
+    // one still in flight.
+    let settleFirst: () => void = () => {};
+    const first = new Promise<void>((resolve) => {
+      settleFirst = resolve;
+    });
+    const second = new Promise<void>(() => {});
+    vi.mocked(balancesStore.refreshDepositPreviewSwapValue)
+      .mockReturnValueOnce(first)
+      .mockReturnValue(second);
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          // Comfortably above the typed amount, so the insufficient-funds
+          // branch cannot pre-empt the label under test.
+          signerBalance: 99000000000000000000n,
+          signerUnderlyingBalance: 99000000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 0n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    // Two characters, so the quote block fires twice and both are outstanding.
+    await userEvent.type(input, "12");
+
+    settleFirst();
+    // Drain the settled request's catch/finally hops deterministically. A
+    // waitFor here would pass on its first poll, before the reset runs, and so
+    // would hold whether or not outstanding requests are actually counted.
+    await first;
+    await Promise.resolve();
+    await Promise.resolve();
+    await tick();
+
+    const lockButton = screen.getByTestId("lock-button");
+    expect(lockButton.textContent?.trim()).toBe("FETCHING QUOTE...");
+  });
+
+  it("labels the lock button LOCK once price and quote are both live", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1000000000000000000n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput: 1234000000000000000000n },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.5");
+
+    const lockButton = screen.getByTestId("lock-button");
+    await waitFor(() => {
+      expect(lockButton).toBeEnabled();
+      expect(lockButton.textContent?.trim()).toBe("LOCK");
+    });
+  });
+
+  it("should pass minSharesOut as 99% of swap-quote cyTokenOutput to handleLockTransaction", async () => {
+    const cyTokenOutput = 1234000000000000000000n;
+    const expectedMinSharesOut = (cyTokenOutput * 99n) / 100n;
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput },
+    );
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.0005");
+
+    const lockButton = screen.getByTestId("lock-button");
+    await userEvent.click(lockButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    const acceptButton = screen.getByTestId("disclaimer-acknowledge-button");
+    await userEvent.click(acceptButton);
+
+    expect(initiateLockTransactionSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ minSharesOut: expectedMinSharesOut }),
+    );
   });
 
   it("should activate lock transaction when the disclaimer is accepted", async () => {
@@ -641,8 +944,9 @@ describe("Lock component with divergent share/underlying decimals", () => {
   it("parses typed input with the underlying's 6 decimals, not the share's 18", async () => {
     // 2.0 underlying (6 decimals). A 6-decimal parse of "1.5" (1_500_000n)
     // is affordable; an 18-decimal parse (1.5e18) would be a 10^12x
-    // over-deposit and read as insufficient funds.
-    setBalances(2_000_000n);
+    // over-deposit and read as insufficient funds. The non-zero quote is
+    // what makes the LOCK button submittable at all.
+    setBalances(2_000_000n, 1_500_000_000_000_000_000n);
     render(Lock);
 
     await userEvent.type(screen.getByTestId("lock-input"), "1.5");
@@ -678,7 +982,8 @@ describe("Lock component with divergent share/underlying decimals", () => {
   });
 
   it("round-trips the exact underlying balance through MAX fill and submit", async () => {
-    setBalances(1_234_567n);
+    // The non-zero quote is what makes the LOCK button submittable at all.
+    setBalances(1_234_567n, 1_234_567_000_000_000_000n);
     render(Lock);
 
     await userEvent.click(screen.getByTestId("set-val-to-max"));
