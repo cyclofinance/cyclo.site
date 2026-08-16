@@ -2,7 +2,6 @@
   import AccountSummary from "$lib/components/AccountSummary.svelte";
   import RewardsPlaceholder from "$lib/components/RewardsPlaceholder.svelte";
   import Leaderboard from "$lib/components/Leaderboard.svelte";
-  import RewardsInfo from "$lib/components/RewardsInfo.svelte";
   import StatsPanel from "$lib/components/StatsPanel.svelte";
   import Card from "$lib/components/Card.svelte";
   import { signerAddress, wagmiConfig } from "svelte-wagmi";
@@ -93,7 +92,6 @@
     {#key networkKey}
       {#if isFlare}
         <StatsPanel />
-        <RewardsInfo />
         {#if $signerAddress}
           <AccountSummary account={$signerAddress} />
         {:else}
