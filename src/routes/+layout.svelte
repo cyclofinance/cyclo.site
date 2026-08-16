@@ -39,7 +39,10 @@
   };
 
   const getPricesAndBalances = () => {
-    blockNumberStore.refresh($wagmiConfig);
+    // refresh rejects on RPC failure by contract; the store already records
+    // the failure in its own status, so the polling loop swallows the
+    // rejection rather than emitting an unhandled rejection every interval.
+    blockNumberStore.refresh($wagmiConfig).catch(() => {});
     balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
     balancesStore.refreshFooterStats($wagmiConfig);
     if ($signerAddress) {
