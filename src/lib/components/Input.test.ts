@@ -1,5 +1,7 @@
-import { render, screen, fireEvent } from "@testing-library/svelte";
+import { render, screen, fireEvent, act } from "@testing-library/svelte";
+import { writable, get } from "svelte/store";
 import Input from "./Input.svelte";
+import InputTest from "./InputTest.svelte";
 import { describe, it, expect, vi } from "vitest";
 
 describe("Input", () => {
@@ -94,6 +96,50 @@ describe("Input", () => {
           detail: { value: "00.5" },
         }),
       );
+    });
+  });
+
+  describe("external amount updates", () => {
+    it("sanitizes the initial amount through handleDecimalSeparator", () => {
+      render(Input, { amount: "1,5" });
+
+      const input = screen.getByPlaceholderText("0.0");
+      expect((input as HTMLInputElement).value).toBe("1.5");
+    });
+
+    it("routes programmatic bind:amount updates through handleDecimalSeparator", async () => {
+      const amountStore = writable("5");
+      const { component } = render(InputTest, { amount: "5", amountStore });
+
+      const input = screen.getByPlaceholderText("0.0");
+      expect((input as HTMLInputElement).value).toBe("5");
+
+      await act(() => component.$set({ amount: "1,5e10abc" }));
+
+      expect((input as HTMLInputElement).value).toBe("1.510");
+      expect(get(amountStore)).toBe("1.510");
+    });
+  });
+
+  describe("default validator", () => {
+    it("rejects a lone '.' set via bind:amount and leaves amount untouched", async () => {
+      const amountStore = writable("5");
+      const { component } = render(InputTest, { amount: "5", amountStore });
+
+      await act(() => component.$set({ amount: "." }));
+
+      expect(screen.getByText("Invalid amount")).toBeInTheDocument();
+      expect(get(amountStore)).toBe(".");
+    });
+
+    it("rejects an empty string set via bind:amount and leaves amount untouched", async () => {
+      const amountStore = writable("5");
+      const { component } = render(InputTest, { amount: "5", amountStore });
+
+      await act(() => component.$set({ amount: "" }));
+
+      expect(screen.getByText("Invalid amount")).toBeInTheDocument();
+      expect(get(amountStore)).toBe("");
     });
   });
 
