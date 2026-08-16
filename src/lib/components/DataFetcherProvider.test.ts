@@ -56,4 +56,16 @@ describe("DataFetcherProvider Component", () => {
       expect(screen.getByTestId("data-fetcher-available")).toBeInTheDocument();
     });
   });
+
+  it("should not render default slot when getAndStartDataFetcher rejects", async () => {
+    vi.mocked(getAndStartDataFetcher).mockRejectedValue(
+      new Error("Wagmi config not available"),
+    );
+
+    render(DataFetcherTest);
+
+    await vi.waitFor(() => {
+      expect(screen.queryByTestId("slot-content")).not.toBeInTheDocument();
+    });
+  });
 });
