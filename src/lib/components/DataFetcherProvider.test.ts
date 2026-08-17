@@ -198,6 +198,61 @@ describe("DataFetcherProvider Component", () => {
     consoleError.mockRestore();
   });
 
+  it("mounts without throwing and logs when the very first fetch throws", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const failure = new Error("Wagmi config not available");
+    vi.mocked(getAndStartDataFetcher).mockImplementation(() => {
+      throw failure;
+    });
+
+    // The mount-time fetch runs in the same path as a switch, so a throw there
+    // must not take the component's mount down with it.
+    expect(() => render(DataFetcherChainIdTest)).not.toThrow();
+
+    await vi.waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(String(flare.id)),
+        failure,
+      );
+    });
+    expect(screen.queryByTestId("fetcher-chain-id")).not.toBeInTheDocument();
+
+    consoleError.mockRestore();
+  });
+
+  it("recovers on a later switch to a network whose fetch succeeds", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const arbitrumFetcher = new DataFetcher(arbitrum.id);
+    vi.mocked(getAndStartDataFetcher).mockImplementation((chainId?: number) => {
+      if (chainId === arbitrum.id)
+        return arbitrumFetcher as unknown as ReturnType<
+          typeof getAndStartDataFetcher
+        >;
+      throw new Error("Wagmi config not available");
+    });
+
+    // Mount fails on Flare...
+    render(DataFetcherChainIdTest);
+    await vi.waitFor(() => expect(consoleError).toHaveBeenCalled());
+    expect(screen.queryByTestId("fetcher-chain-id")).not.toBeInTheDocument();
+
+    // ...and the subscription must have survived it, so the next switch still
+    // refetches rather than leaving the provider permanently empty.
+    activeNetworkKey.set("arbitrum");
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("fetcher-chain-id")).toHaveTextContent(
+        String(arbitrum.id),
+      );
+    });
+
+    consoleError.mockRestore();
+  });
+
   it("keeps the current fetcher when a superseded network's fetch fails late", async () => {
     const consoleError = vi
       .spyOn(console, "error")
