@@ -123,4 +123,118 @@ describe("DataFetcherProvider Component", () => {
       String(arbitrum.id),
     );
   });
+
+  it("logs and clears the fetcher when the fetch for the selected network throws synchronously", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const failure = new Error("Unsupported chainId: 42161");
+    const flareFetcher = new DataFetcher(flare.id);
+    // getAndStartDataFetcher is synchronous and throws (unsupported chain,
+    // missing wagmi config, no public client) rather than rejecting.
+    vi.mocked(getAndStartDataFetcher).mockImplementation((chainId?: number) => {
+      if (chainId === arbitrum.id) throw failure;
+      return flareFetcher as unknown as ReturnType<
+        typeof getAndStartDataFetcher
+      >;
+    });
+
+    render(DataFetcherChainIdTest);
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("fetcher-chain-id")).toHaveTextContent(
+        String(flare.id),
+      );
+    });
+
+    // The throw must not escape the subscriber into the code that switched
+    // the network, and must not surface as an unhandled rejection either.
+    expect(() => activeNetworkKey.set("arbitrum")).not.toThrow();
+
+    await vi.waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(String(arbitrum.id)),
+        failure,
+      );
+      // The failed network is the current selection, so the stale Flare
+      // fetcher is cleared rather than left to price against the wrong chain.
+      expect(screen.queryByTestId("fetcher-chain-id")).not.toBeInTheDocument();
+    });
+
+    consoleError.mockRestore();
+  });
+
+  it("clears the fetcher when the fetch for the selected network rejects", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const failure = new Error("RPC unavailable");
+    const flareFetcher = new DataFetcher(flare.id);
+    vi.mocked(getAndStartDataFetcher).mockImplementation(
+      (chainId?: number) =>
+        (chainId === arbitrum.id
+          ? Promise.reject(failure)
+          : flareFetcher) as unknown as ReturnType<
+          typeof getAndStartDataFetcher
+        >,
+    );
+
+    render(DataFetcherChainIdTest);
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("fetcher-chain-id")).toHaveTextContent(
+        String(flare.id),
+      );
+    });
+
+    activeNetworkKey.set("arbitrum");
+
+    await vi.waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(String(arbitrum.id)),
+        failure,
+      );
+      expect(screen.queryByTestId("fetcher-chain-id")).not.toBeInTheDocument();
+    });
+
+    consoleError.mockRestore();
+  });
+
+  it("keeps the current fetcher when a superseded network's fetch fails late", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const arbitrumFetcher = new DataFetcher(arbitrum.id);
+    const rejecters: Record<number, (error: Error) => void> = {};
+    const resolvers: Record<number, (fetcher: DataFetcher) => void> = {};
+    vi.mocked(getAndStartDataFetcher).mockImplementation(
+      (chainId?: number) =>
+        new Promise<DataFetcher>((resolve, reject) => {
+          resolvers[chainId ?? flare.id] = resolve;
+          rejecters[chainId ?? flare.id] = reject;
+        }) as unknown as ReturnType<typeof getAndStartDataFetcher>,
+    );
+
+    render(DataFetcherChainIdTest);
+
+    // Mount requests Flare; switch to Arbitrum before Flare settles.
+    await vi.waitFor(() => expect(rejecters[flare.id]).toBeDefined());
+    activeNetworkKey.set("arbitrum");
+    await vi.waitFor(() => expect(resolvers[arbitrum.id]).toBeDefined());
+
+    resolvers[arbitrum.id](arbitrumFetcher);
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("fetcher-chain-id")).toHaveTextContent(
+        String(arbitrum.id),
+      );
+    });
+
+    // The superseded Flare fetch fails late: it is logged, but clearing the
+    // store here would blank the fetcher the user's current network needs.
+    rejecters[flare.id](new Error("late Flare failure"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.getByTestId("fetcher-chain-id")).toHaveTextContent(
+      String(arbitrum.id),
+    );
+
+    consoleError.mockRestore();
+  });
 });

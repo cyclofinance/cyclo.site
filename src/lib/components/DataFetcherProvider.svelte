@@ -18,11 +18,29 @@
     return selectedNetwork.subscribe((network) => {
       const chainId = network.chain.id;
       requestedChainId = chainId;
-      Promise.resolve(getAndStartDataFetcher(chainId)).then((fetcher) => {
-        if (requestedChainId === chainId) {
-          dataFetcherStore.set(fetcher);
+      // The fetch runs inside an async IIFE so a SYNCHRONOUS throw from
+      // getAndStartDataFetcher (unsupported chain, missing wagmi config, no
+      // public client) becomes a rejection this try/catch owns, instead of
+      // escaping the subscriber and breaking the caller that switched the
+      // network. Rejections of an async implementation land here too.
+      void (async () => {
+        try {
+          const fetcher = await getAndStartDataFetcher(chainId);
+          if (requestedChainId === chainId) {
+            dataFetcherStore.set(fetcher);
+          }
+        } catch (error) {
+          console.error(
+            `Failed to start DataFetcher for chainId ${chainId}:`,
+            error,
+          );
+          // Only the CURRENT selection may clear the store: a superseded
+          // network's late failure must not wipe the fetcher in use.
+          if (requestedChainId === chainId) {
+            dataFetcherStore.set(undefined);
+          }
         }
-      });
+      })();
     });
   });
 
