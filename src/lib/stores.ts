@@ -32,7 +32,7 @@ const flareConfig: NetworkConfig = {
 	orderbookSubgraphUrl:
 		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn',
 	rewardsSubgraphUrl:
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2026-02-13-78a0/gn',
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-flare/2026-04-20-b4a8/gn',
 	tokens: [
 		{
 			name: 'cysFLR',
@@ -85,7 +85,7 @@ const arbitrumConfig: NetworkConfig = {
 	orderbookSubgraphUrl:
 		'https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn',
 	rewardsSubgraphUrl:
-		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2025-12-30-00a4/gn',
+		'https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2026-04-20-e5f8/gn',
 	tokens: [
 		{
 			name: 'cyWETH.pyth',

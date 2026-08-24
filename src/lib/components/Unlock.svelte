@@ -2,6 +2,8 @@
 	import { signerAddress, web3Modal, wagmiConfig } from 'svelte-wagmi';
 	import Card from '$lib/components/Card.svelte';
 	import { refreshReceiptsForToken } from '$lib/queries/refreshReceiptsForToken';
+	import { getReceiptLockDates, type LockDateMap } from '$lib/queries/getReceiptLockDates';
+	import { getUnderlyingUsdPrice, getCyTokenUsdPrice } from '$lib/queries/getPositionPrices';
 	import { formatUnits } from 'ethers';
 	import ReceiptsTable from '$lib/components/ReceiptsTable.svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -19,6 +21,13 @@
 
 	let loading = true;
 	let progressMessage = '';
+
+	// Position detail: lock dates from the explorer, prices from the vault oracle
+	// and the DEX. All best-effort — the receipts table renders without them.
+	let receiptsError: string | null = null;
+	let lockDates: LockDateMap = new Map();
+	let underlyingUsdNow: bigint | null = null;
+	let cyTokenUsdNow: bigint | null = null;
 
 	const setLoading = (_loading: boolean) => {
 		loading = _loading;
@@ -111,13 +120,46 @@
 			// (Optional) small UX message
 			progressMessage = `Fetching ${$selectedCyToken.name} receipts...`;
 
+			const wallet = $signerAddress;
+			const cyToken = $selectedCyToken;
+			const networkConfig = $selectedNetwork;
+			const signal = receiptsAbortController.signal;
+
+			// Reset so a stale token's numbers never render against a new token.
+			receiptsError = null;
+			lockDates = new Map();
+			underlyingUsdNow = null;
+			cyTokenUsdNow = null;
+
 			refreshReceiptsForToken($signerAddress, $selectedCyToken.name, setLoading, {
 				signal: receiptsAbortController.signal
 			})
+				.then((receipts) => {
+					if (signal.aborted || !receipts.length) return;
+					// Fire and forget: the table is already usable without these.
+					getReceiptLockDates(wallet, cyToken.receiptAddress, networkConfig, { signal })
+						.then((dates) => {
+							if (!signal.aborted) lockDates = dates;
+						})
+						.catch((e) => console.error('lock dates failed:', e));
+
+					getUnderlyingUsdPrice(cyToken)
+						.then((price) => {
+							if (!signal.aborted) underlyingUsdNow = price;
+						})
+						.catch((e) => console.error('underlying price failed:', e));
+
+					getCyTokenUsdPrice(cyToken)
+						.then((price) => {
+							if (!signal.aborted) cyTokenUsdNow = price;
+						})
+						.catch((e) => console.error('cyToken price failed:', e));
+				})
 				.catch((e) => {
 					// Abort should be silent
 					if (e instanceof DOMException && e.name === 'AbortError') return;
 					console.error('refreshReceiptsForToken failed:', e);
+					receiptsError = e instanceof Error ? e.message : String(e);
 				})
 				.finally(() => {
 					isRefreshing = false;
@@ -187,7 +229,21 @@
 		</div>
 	{:else if $myReceipts.length > 0}
 		<!-- NOTE: $myReceipts now contains ONLY selected token receipts -->
-		<ReceiptsTable token={$selectedCyToken} receipts={$myReceipts} />
+		<ReceiptsTable
+			token={$selectedCyToken}
+			receipts={$myReceipts}
+			{lockDates}
+			{underlyingUsdNow}
+			{cyTokenUsdNow}
+		/>
+	{:else if receiptsError}
+		<div
+			class="flex w-full flex-col items-center justify-center gap-1 text-center text-lg font-semibold text-red-400 md:text-xl"
+			data-testid="receipts-error"
+		>
+			<div>COULD NOT LOAD {$selectedCyToken.name} RECEIPTS</div>
+			<div class="text-sm font-normal text-gray-300">{receiptsError}</div>
+		</div>
 	{:else}
 		<div
 			class="flex w-full items-center justify-center text-center text-lg font-semibold text-white md:text-xl"

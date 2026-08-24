@@ -74,14 +74,22 @@ export const refreshReceiptsForToken = async (
 				})
 			});
 
+			// A dead subgraph returns a 404 JSON body with no `errors` array, which
+			// used to fall through as "zero receipts" — indistinguishable from a
+			// wallet that genuinely holds none. Fail loudly instead.
+			if (!response.ok) {
+				throw new Error(
+					`Rewards subgraph returned ${response.status}. The receipts list cannot be trusted.`
+				);
+			}
+
 			const { data, errors } = (await response.json()) as {
 				data?: AccountReceiptsQuery;
 				errors?: { message: string }[];
 			};
 
 			if (errors?.length) {
-				console.error('AccountReceipts query errors:', errors);
-				break;
+				throw new Error(`AccountReceipts query errors: ${errors.map((e) => e.message).join('; ')}`);
 			}
 
 			const receiptBalances = data?.account?.receiptBalances;
@@ -114,6 +122,10 @@ export const refreshReceiptsForToken = async (
 			return [];
 		}
 		console.error('refreshReceiptsForToken failed:', e);
+		// Clear rather than leaving the previous token's rows on screen, and
+		// re-throw so the caller can distinguish "broken" from "none".
+		myReceipts.set([]);
+		throw e;
 	} finally {
 		setLoading(false);
 	}
