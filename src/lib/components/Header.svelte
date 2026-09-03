@@ -5,7 +5,7 @@
 	import { base } from '$app/paths';
 </script>
 
-<div class="flex h-16 w-screen items-center justify-between bg-[#1C02B8] px-4">
+<div class="flex h-16 w-full items-center justify-between bg-[#1C02B8] px-4">
 	<a href={base + '/'} class="hidden sm:block">
 		<img src={logo} alt="Cyclo logo" class="h-8 cursor-pointer" />
 	</a>

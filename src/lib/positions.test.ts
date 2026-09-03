@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
 	buildTokenGroup,
+	cyTokenShortfall,
 	formatAmount,
 	formatUsd,
 	heroNetToClose,
@@ -70,7 +71,20 @@ describe('buildTokenGroup', () => {
 		expect(g.netToCloseUsd).toBe(38n * 10n ** 17n);
 		expect(g.rows[0].held).toBe(3);
 		expect(g.rows[0].receipt.totalsFlr).toBe(100n * ONE);
+		// 100 sFLR × $0.04 = $4 of collateral at today's oracle price
+		expect(g.collateralValueUsd).toBe(4n * ONE);
 		expect(g.hidden).toBe(false);
+	});
+
+	it('collateral value is unknown while the oracle price is unknown', () => {
+		const g = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted)],
+			lockDates: new Map(),
+			prices: { underlyingUsdNow: null, cyTokenUsdNow: 10n ** 17n, settled: true },
+			nowMs: 0
+		});
+		expect(g.collateralValueUsd).toBeNull();
 	});
 
 	it('is HIDDEN only once the price probe settled with no pool', () => {
@@ -115,6 +129,7 @@ describe('heroNetToClose / visibleGroups', () => {
 			count,
 			lockedUnderlying: 0n,
 			mintedCyToken: 0n,
+			collateralValueUsd: null,
 			netToCloseUsd: net,
 			hidden
 		}) as TokenGroup;
@@ -128,6 +143,14 @@ describe('heroNetToClose / visibleGroups', () => {
 		expect(heroNetToClose([group(10n), group(null)])).toBeNull();
 		expect(heroNetToClose([])).toBeNull();
 		expect(heroNetToClose([group(1n, 1, true)])).toBeNull();
+	});
+});
+
+describe('cyTokenShortfall', () => {
+	it('is what is still missing, never negative', () => {
+		expect(cyTokenShortfall(100n, 40n)).toBe(60n);
+		expect(cyTokenShortfall(100n, 100n)).toBe(0n);
+		expect(cyTokenShortfall(100n, 250n)).toBe(0n);
 	});
 });
 

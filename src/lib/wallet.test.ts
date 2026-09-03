@@ -5,7 +5,7 @@ const core = vi.hoisted(() => ({
 	connect: vi.fn(async () => undefined),
 	disconnect: vi.fn(async () => undefined),
 	switchChain: vi.fn(async () => undefined),
-	reconnect: vi.fn(),
+	reconnect: vi.fn(async () => undefined),
 	createConfig: vi.fn((opts: unknown) => ({ opts })),
 	http: vi.fn(() => 'transport')
 }));

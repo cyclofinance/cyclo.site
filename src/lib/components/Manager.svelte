@@ -22,6 +22,7 @@
 		formatAmount,
 		formatLockPrice,
 		formatUsd,
+		cyTokenShortfall,
 		heroNetToClose,
 		visibleGroups,
 		LOADING_PRICES,
@@ -195,88 +196,110 @@
 		{/if}
 
 		{#each shown as group (group.token.name)}
+			{@const wallet = $balancesStore.balances[group.token.name]?.signerBalance ?? 0n}
+			{@const short = cyTokenShortfall(group.mintedCyToken, wallet)}
 			<section class="border-4 border-white bg-primary" data-testid="group-{group.token.name}">
-				<button
-					class="flex w-full flex-col gap-2 p-4 text-left sm:flex-row sm:items-baseline sm:justify-between"
-					on:click={() => toggle(group.token.name)}
-					data-testid="group-toggle-{group.token.name}"
-				>
-					<span class="text-xl font-bold">
-						{group.token.underlyingSymbol}
-						<span class="text-base font-normal text-gray-300">
-							· {group.count} position{group.count === 1 ? '' : 's'}
-						</span>
-					</span>
-					<span class="flex flex-wrap gap-x-6 gap-y-1 text-sm sm:text-base">
-						<span>
-							<span class="text-gray-300">Locked</span>
-							{formatAmount(group.lockedUnderlying, group.token.decimals)}
-							{group.token.underlyingSymbol}
-						</span>
-						<span>
-							<span class="text-gray-300">{group.token.name} in wallet</span>
-							{formatAmount(
-								$balancesStore.balances[group.token.name]?.signerBalance ?? 0n,
-								group.token.decimals
-							)}
+				<!-- Sticks to the top while you scroll this token's rows, so the numbers
+				     that explain the rows are always in view. -->
+				<div class="sticky top-0 z-10 border-b-2 border-white bg-primary">
+					<button
+						class="flex w-full flex-col gap-3 p-4 text-left"
+						on:click={() => toggle(group.token.name)}
+						data-testid="group-toggle-{group.token.name}"
+					>
+						<span class="flex w-full items-baseline justify-between">
+							<span class="text-xl font-bold">
+								{group.token.underlyingSymbol}
+								<span class="text-base font-normal text-gray-300">
+									· {group.count} position{group.count === 1 ? '' : 's'}
+								</span>
+							</span>
+							<span class="text-gray-300">{expanded[group.token.name] ? '▴' : '▾'}</span>
 						</span>
 						<span
-							class="font-bold {group.netToCloseUsd === null
-								? 'text-gray-400'
-								: group.netToCloseUsd < 0n
-									? 'text-red-400'
-									: 'text-green-400'}"
-							data-testid="group-net-{group.token.name}"
+							class="grid w-full grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4 sm:text-base"
+							data-testid="group-summary-{group.token.name}"
 						>
-							{formatUsd(group.netToCloseUsd)}
+							<span class="flex flex-col">
+								<span class="text-xs text-gray-300">{group.token.name} in wallet</span>
+								<span>{formatAmount(wallet, group.token.decimals)}</span>
+							</span>
+							<span class="flex flex-col">
+								<span class="text-xs text-gray-300">{group.token.name} to unlock all</span>
+								<span>
+									{formatAmount(group.mintedCyToken, group.token.decimals)}
+									{#if short > 0n}
+										<span class="text-gray-300" data-testid="group-short-{group.token.name}">
+											· short {formatAmount(short, group.token.decimals)}
+										</span>
+									{/if}
+								</span>
+							</span>
+							<span class="flex flex-col">
+								<span class="text-xs text-gray-300">{group.token.underlyingSymbol} locked</span>
+								<span>
+									{formatAmount(group.lockedUnderlying, group.token.decimals)}
+									<span class="text-gray-300">
+										· worth {formatUsd(group.collateralValueUsd).replace('+', '')}
+									</span>
+								</span>
+							</span>
+							<span class="flex flex-col">
+								<span class="text-xs text-gray-300">Net to close</span>
+								<span
+									class="font-bold {group.netToCloseUsd === null
+										? 'text-gray-400'
+										: group.netToCloseUsd < 0n
+											? 'text-red-400'
+											: 'text-green-400'}"
+									data-testid="group-net-{group.token.name}"
+								>
+									{formatUsd(group.netToCloseUsd)}
+								</span>
+							</span>
 						</span>
-						<span class="text-gray-300">{expanded[group.token.name] ? '▴' : '▾'}</span>
-					</span>
-				</button>
+					</button>
+					{#if expanded[group.token.name]}
+						<div
+							class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-4 border-t border-white/30 px-4 py-2 text-xs text-gray-300 sm:text-sm"
+						>
+							<span>Locked</span>
+							<span>Price at lock</span>
+							<span>Held</span>
+							<span>Net to close</span>
+							<span class="sr-only">Unlock</span>
+						</div>
+					{/if}
+				</div>
 
 				{#if expanded[group.token.name]}
-					<div class="w-full overflow-x-auto border-t-2 border-white">
-						<table class="w-full text-sm sm:text-base" data-testid="rows-{group.token.name}">
-							<thead class="text-left text-gray-300">
-								<tr class="[&>th]:px-4 [&>th]:py-2 [&>th]:font-normal">
-									<th>Locked</th>
-									<th>Price at lock</th>
-									<th>Held</th>
-									<th>Net to close</th>
-									<th><span class="sr-only">Unlock</span></th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each group.rows as row, i (row.receipt.tokenId)}
-									<tr
-										class="border-t border-white/20 [&>td]:px-4 [&>td]:py-2"
-										data-testid="row-{group.token.name}-{i}"
-									>
-										<td>{formatAmount(row.underlyingAmount, group.token.decimals)}</td>
-										<td>${formatLockPrice(row.lockPriceUsd)}</td>
-										<td>{row.held === null ? '—' : `${row.held}d`}</td>
-										<td
-											class="font-bold {row.netToCloseUsd === null
-												? 'text-gray-400'
-												: row.netToCloseUsd < 0n
-													? 'text-red-400'
-													: 'text-green-400'}"
-										>
-											{formatUsd(row.netToCloseUsd)}
-										</td>
-										<td class="text-right">
-											<button
-												class="border-2 border-white px-3 py-1 font-bold hover:bg-blue-700"
-												on:click={() => (selected = { row, token: group.token })}
-												data-testid="unlock-{group.token.name}-{i}"
-											>
-												Unlock
-											</button>
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
+					<div data-testid="rows-{group.token.name}">
+						{#each group.rows as row, i (row.receipt.tokenId)}
+							<div
+								class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-4 border-t border-white/20 px-4 py-2 text-sm sm:text-base"
+								data-testid="row-{group.token.name}-{i}"
+							>
+								<span>{formatAmount(row.underlyingAmount, group.token.decimals)}</span>
+								<span>${formatLockPrice(row.lockPriceUsd)}</span>
+								<span>{row.held === null ? '—' : `${row.held}d`}</span>
+								<span
+									class="font-bold {row.netToCloseUsd === null
+										? 'text-gray-400'
+										: row.netToCloseUsd < 0n
+											? 'text-red-400'
+											: 'text-green-400'}"
+								>
+									{formatUsd(row.netToCloseUsd)}
+								</span>
+								<button
+									class="border-2 border-white px-3 py-1 font-bold hover:bg-blue-700"
+									on:click={() => (selected = { row, token: group.token })}
+									data-testid="unlock-{group.token.name}-{i}"
+								>
+									Unlock
+								</button>
+							</div>
+						{/each}
 					</div>
 				{/if}
 			</section>

@@ -26,6 +26,8 @@ export type TokenGroup = {
 	count: number;
 	lockedUnderlying: bigint;
 	mintedCyToken: bigint;
+	/** USD value of all locked collateral at the oracle price now. Null = unknown. */
+	collateralValueUsd: bigint | null;
 	netToCloseUsd: bigint | null;
 	/**
 	 * True when we KNOW there is no market for the cyToken (price probe
@@ -100,16 +102,25 @@ export const buildTokenGroup = ({
 		});
 
 	const sorted = sortBestToCloseFirst(rows);
+	const lockedUnderlying = sorted.reduce((a, r) => a + r.underlyingAmount, 0n);
 	return {
 		token,
 		rows: sorted,
 		count: sorted.length,
-		lockedUnderlying: sorted.reduce((a, r) => a + r.underlyingAmount, 0n),
+		lockedUnderlying,
 		mintedCyToken: sorted.reduce((a, r) => a + r.receipt.balance, 0n),
+		collateralValueUsd:
+			prices.underlyingUsdNow === null
+				? null
+				: (lockedUnderlying * prices.underlyingUsdNow) / 10n ** BigInt(token.decimals),
 		netToCloseUsd: sumOrNull(sorted.map((r) => r.netToCloseUsd)),
 		hidden: prices.settled && prices.cyTokenUsdNow === null
 	};
 };
+
+/** cyTokens still to acquire before EVERY position in the group can be unlocked. */
+export const cyTokenShortfall = (mintedCyToken: bigint, walletBalance: bigint): bigint =>
+	mintedCyToken > walletBalance ? mintedCyToken - walletBalance : 0n;
 
 /** Groups the page shows: not hidden, and holding at least one position. */
 export const visibleGroups = (groups: TokenGroup[]): TokenGroup[] =>
