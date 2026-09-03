@@ -49,6 +49,8 @@ export const initWallet = async (): Promise<void> => {
 	wagmiConfig.set(config);
 	web3Modal.set(createConnectShim(config));
 	wagmiLoaded.set(true);
-	reconnect(config);
+	reconnect(config).catch(() => {
+		// No extension in this browser: nothing to reconnect to.
+	});
 	await init();
 };

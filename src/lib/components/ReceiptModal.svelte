@@ -12,7 +12,6 @@
 	import mobileBurnDia from '$lib/images/mobile-burn.svg';
 	import Input from './Input.svelte';
 	import Button from './Button.svelte';
-	import { selectedCyToken } from '$lib/stores';
 	import { erc20PriceOracleReceiptVaultAbi } from '$lib/contracts/erc20PriceOracleReceiptVaultAbi';
 
 	export let receipt: Receipt;
@@ -54,7 +53,7 @@
 			const _sFlrToReceive = await readContract($wagmiConfig, {
 				abi: erc20PriceOracleReceiptVaultAbi,
 				functionName: 'previewRedeem',
-				address: $selectedCyToken.address,
+				address: token.address,
 				args: [amountToRedeem, receipt.tokenId]
 			});
 			sFlrToReceive = _sFlrToReceive as bigint;
@@ -220,7 +219,7 @@
 				signerAddress: $signerAddress,
 				config: $wagmiConfig,
 				selectedToken: token,
-				erc1155Address: $selectedCyToken.receiptAddress,
+				erc1155Address: token.receiptAddress,
 				tokenId: receipt.tokenId,
 				assets: amountToRedeem
 			})}

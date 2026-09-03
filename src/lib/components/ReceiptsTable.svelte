@@ -101,7 +101,7 @@
 		value === null ? 'text-gray-400' : value > 0n ? 'text-green-400' : value < 0n ? 'text-red-400' : '';
 </script>
 
-<Card size="lg">
+<Card size="lg" customClass="!max-w-none w-full">
 	<div class="w-full overflow-x-auto">
 		<Table divClass="w-full" data-testid="receipts-table">
 			<TableHead
