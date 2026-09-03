@@ -27,12 +27,11 @@ const transfer = (over: Record<string, unknown> = {}) => ({
 });
 
 const mockFetchOnce = (body: unknown, ok = true, status = 200) =>
-	vi.stubGlobal(
-		'fetch',
-		vi.fn().mockResolvedValue({ ok, status, json: async () => body })
-	);
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok, status, json: async () => body }));
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+	vi.unstubAllGlobals();
+});
 
 describe('getReceiptLockDates', () => {
 	it('maps a mint to its tokenId lock date', async () => {

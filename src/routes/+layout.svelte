@@ -1,12 +1,11 @@
 <script lang="ts">
 	import '../app.css';
-	import { defaultConfig, signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
-	import { injected, walletConnect } from '@wagmi/connectors';
+	import { signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
 	import Header from '$lib/components/Header.svelte';
-	import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
 	import { browser } from '$app/environment';
 	import { PUBLIC_LAUNCHED } from '$env/static/public';
-	import { setActiveNetworkByChainId, supportedNetworks } from '$lib/stores';
+	import { setActiveNetworkByChainId } from '$lib/stores';
+	import { initWallet as bootWallet } from '$lib/wallet';
 	import { selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
@@ -17,17 +16,10 @@
 	let intervalId: ReturnType<typeof setInterval>;
 	let lastChainId: number | null = null;
 	const isBrowser = typeof window !== 'undefined';
+	// Browser-extension wallet only (Trezor via Rabby). No Reown modal, no
+	// WalletConnect relay -- see src/lib/wallet.ts.
 	const initWallet = async () => {
-		// Get all chains from supported networks
-		const chains = supportedNetworks.map((network) => network.chain);
-		const erckit = defaultConfig({
-			autoConnect: true,
-			appName: 'cyclo',
-			walletConnectProjectId: PUBLIC_WALLETCONNECT_ID,
-			chains: chains,
-			connectors: [injected(), walletConnect({ projectId: PUBLIC_WALLETCONNECT_ID })]
-		});
-		await erckit.init();
+		await bootWallet();
 		startGettingPricesAndBalances();
 	};
 
