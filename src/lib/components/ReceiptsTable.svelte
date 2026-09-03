@@ -86,6 +86,13 @@
 		})
 		.sort((a, b) => a.lockPrice - b.lockPrice);
 
+	$: totalLocked = mappedReceipts.reduce((acc, r) => acc + r.totalsFlr, 0n);
+	$: totalToUnlock = mappedReceipts.reduce((acc, r) => acc + BigInt(r.balance || 0), 0n);
+	const formatAmount = (value: bigint): string =>
+		Number(formatUnits(value, token.decimals)).toLocaleString('en-US', {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 5
+		});
 	$: totalCollateralPnl = sumOrNull(mappedReceipts.map((r) => r.collateralPnlUsd));
 	$: totalCyTokenPnl = sumOrNull(mappedReceipts.map((r) => r.cyTokenPnlUsd));
 	$: totalNetToClose = sumOrNull(mappedReceipts.map((r) => r.netToCloseUsd));
@@ -105,12 +112,14 @@
 	<div class="w-full overflow-x-auto">
 		<Table divClass="w-full" data-testid="receipts-table">
 			<TableHead
-				class="bg-opacity-0 bg-none p-1 text-white md:p-4 [&_th]:px-2 [&_th]:md:px-6"
+				class="bg-opacity-0 bg-none p-1 text-white md:p-4 [&_th]:whitespace-nowrap [&_th]:px-2 [&_th]:md:px-6"
 				data-testid="headers"
 			>
-				<TableHeadCell>Total {token.underlyingSymbol} Locked</TableHeadCell>
-				<TableHeadCell>Total {token.name} minted</TableHeadCell>
-				<TableHeadCell>{token.name} per locked {token.underlyingSymbol}</TableHeadCell>
+				<TableHeadCell>{token.underlyingSymbol} locked</TableHeadCell>
+				<TableHeadCell title="{token.name} you must return to unlock this position"
+					>{token.name} to unlock</TableHeadCell
+				>
+				<TableHeadCell title="{token.name} minted per locked {token.underlyingSymbol}">Lock price</TableHeadCell>
 				{#if showHeld}
 					<TableHeadCell>Held</TableHeadCell>
 				{/if}
@@ -175,23 +184,29 @@
 						</TableBodyCell>
 					</TableBodyRow>
 				{/each}
-				{#if showPnl && mappedReceipts.length > 1}
+				{#if mappedReceipts.length > 0}
 					<TableBodyRow class="border-t-2 border-white bg-opacity-0" data-testid="totals-row">
+						<TableBodyCell class="font-bold" data-testid="total-locked-sum">
+							{formatAmount(totalLocked)}
+						</TableBodyCell>
+						<TableBodyCell class="font-bold" data-testid="total-to-unlock">
+							{formatAmount(totalToUnlock)}
+						</TableBodyCell>
 						<TableBodyCell class="font-bold">Total</TableBodyCell>
-						<TableBodyCell />
-						<TableBodyCell />
 						{#if showHeld}
 							<TableBodyCell />
 						{/if}
-						<TableBodyCell class="font-bold {pnlClass(totalCollateralPnl)}" data-testid="total-collateral-pnl">
-							{formatUsd(totalCollateralPnl)}
-						</TableBodyCell>
-						<TableBodyCell class="font-bold {pnlClass(totalCyTokenPnl)}" data-testid="total-cytoken-pnl">
-							{formatUsd(totalCyTokenPnl)}
-						</TableBodyCell>
-						<TableBodyCell class="font-bold {pnlClass(totalNetToClose)}" data-testid="total-net-to-close">
-							{formatUsd(totalNetToClose)}
-						</TableBodyCell>
+						{#if showPnl}
+							<TableBodyCell class="font-bold {pnlClass(totalCollateralPnl)}" data-testid="total-collateral-pnl">
+								{formatUsd(totalCollateralPnl)}
+							</TableBodyCell>
+							<TableBodyCell class="font-bold {pnlClass(totalCyTokenPnl)}" data-testid="total-cytoken-pnl">
+								{formatUsd(totalCyTokenPnl)}
+							</TableBodyCell>
+							<TableBodyCell class="font-bold {pnlClass(totalNetToClose)}" data-testid="total-net-to-close">
+								{formatUsd(totalNetToClose)}
+							</TableBodyCell>
+						{/if}
 						<TableBodyCell />
 					</TableBodyRow>
 				{/if}

@@ -180,7 +180,8 @@
 		CONNECT WALLET TO VIEW RECEIPTS
 	</Button>
 {:else}
-	<Card size="lg">
+	<div class="flex w-full max-w-5xl flex-col items-stretch gap-6" data-testid="unlock-column">
+	<Card size="lg" customClass="!max-w-none w-full">
 		<div
 			class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row sm:text-xl md:text-xl"
 		>
@@ -205,7 +206,7 @@
 			</div>
 		</div>
 	</Card>
-	<Card size="lg">
+	<Card size="lg" customClass="!max-w-none w-full">
 		<div
 			class="flex w-full flex-col justify-between text-lg font-semibold text-white sm:flex-row sm:text-xl"
 		>
@@ -251,4 +252,5 @@
 			NO {$selectedCyToken.name} RECEIPTS FOUND...
 		</div>
 	{/if}
+	</div>
 {/if}
