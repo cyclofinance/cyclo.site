@@ -3,6 +3,7 @@
 	import { signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
 	import Header from '$lib/components/Header.svelte';
 	import { browser } from '$app/environment';
+	import { env } from '$env/dynamic/public';
 	import { setActiveNetworkByChainId } from '$lib/stores';
 	import { initWallet as bootWallet } from '$lib/wallet';
 	import { selectedCyToken } from '$lib/stores';
@@ -11,6 +12,12 @@
 	import { onDestroy } from 'svelte';
 	import type { Hex } from 'viem';
 	import DataFetcherProvider from '$lib/components/DataFetcherProvider.svelte';
+
+	// Build-time look: PUBLIC_THEME=dtp gives the operator's private theme.
+	if (typeof document !== 'undefined') {
+		document.documentElement.dataset.theme = env.PUBLIC_THEME || 'cyclo';
+		if (env.PUBLIC_THEME === 'dtp') document.title = 'Cyclo positions';
+	}
 
 	let intervalId: ReturnType<typeof setInterval>;
 	let lastChainId: number | null = null;
@@ -61,7 +68,7 @@
 	<DataFetcherProvider>
 		<div class="flex min-h-screen flex-col">
 			<Header />
-			<main class="flex-grow bg-[#1C02B8]">
+			<main class="flex-grow bg-page">
 				<slot />
 			</main>
 		</div>

@@ -63,7 +63,7 @@
 </script>
 
 <section
-	class="flex w-full flex-col gap-4 border-4 border-white bg-primary p-4 text-white"
+	class="flex w-full flex-col gap-4 border-4 border-line bg-primary p-4 text-ink"
 	data-testid="mint-panel"
 >
 	<div class="flex items-center justify-between">
@@ -89,14 +89,14 @@
 			on:input={(e) => parse(e.detail.value)}
 			on:setValueToMax={setMax}
 		/>
-		<p class="text-right text-xs text-gray-300" data-testid="mint-balance">
+		<p class="text-right text-xs text-dim" data-testid="mint-balance">
 			{formatAmount(balance, token.decimals)}
 			{token.underlyingSymbol} in wallet
 		</p>
 	</div>
 
 	<div class="flex items-baseline justify-between text-lg">
-		<span class="text-gray-300">You receive</span>
+		<span class="text-dim">You receive</span>
 		<span class="font-bold" data-testid="mint-preview">
 			{assets > 0n ? formatAmount(preview, token.decimals) : '0'}
 			{token.name}
@@ -105,7 +105,7 @@
 
 	<Button
 		dataTestId="mint-button"
-		customClass="w-full bg-white text-primary text-lg"
+		customClass="w-full bg-ink text-page text-lg"
 		disabled={assets === 0n || insufficient}
 		on:click={lock}
 	>

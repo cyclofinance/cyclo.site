@@ -16,7 +16,7 @@
 
 {#if options.length > 0}
 	<select
-		class="rounded border border-white bg-transparent px-2 py-1"
+		class="rounded border border-line bg-transparent px-2 py-1"
 		bind:value={selected}
 		data-testid={dataTestId}
 	>

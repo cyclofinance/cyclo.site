@@ -155,7 +155,7 @@
 	onDestroy(() => abort?.abort());
 </script>
 
-<div class="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-4 text-white sm:p-6">
+<div class="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 p-4 text-ink sm:p-6">
 	{#if !$signerAddress}
 		<div class="flex flex-col items-center gap-4 py-24">
 			<Button on:click={() => $web3Modal.open()} dataTestId="connect" customClass="text-xl">
@@ -170,14 +170,14 @@
 		</div>
 	{:else}
 		<!-- The one number this page exists for. -->
-		<div class="flex flex-col gap-1 border-4 border-white bg-primary p-4" data-testid="hero">
-			<span class="text-sm text-gray-300">Net to close all positions</span>
+		<div class="flex flex-col gap-1 border-4 border-line bg-primary p-4" data-testid="hero">
+			<span class="text-sm text-dim">Net to close all positions</span>
 			<span
 				class="text-4xl font-bold sm:text-5xl {hero === null
-					? 'text-gray-400'
+					? 'text-dim'
 					: hero < 0n
-						? 'text-red-400'
-						: 'text-green-400'}"
+						? 'text-loss'
+						: 'text-gain'}"
 				data-testid="hero-net-to-close"
 			>
 				{formatUsd(hero)}
@@ -187,21 +187,21 @@
 		{#if loading}
 			<p class="text-center text-lg" data-testid="loading">Loading positions…</p>
 		{:else if error}
-			<div class="border-4 border-red-400 p-4 text-red-300" data-testid="error">
+			<div class="border-4 border-loss p-4 text-loss" data-testid="error">
 				<p class="font-bold">Could not load positions.</p>
 				<p class="text-sm">{error}</p>
 			</div>
 		{:else if shown.length === 0 && hiddenWithPositions.length === 0}
-			<p class="text-center text-lg text-gray-300" data-testid="empty">No lock positions.</p>
+			<p class="text-center text-lg text-dim" data-testid="empty">No lock positions.</p>
 		{/if}
 
 		{#each shown as group (group.token.name)}
 			{@const wallet = $balancesStore.balances[group.token.name]?.signerBalance ?? 0n}
 			{@const short = cyTokenShortfall(group.mintedCyToken, wallet)}
-			<section class="border-4 border-white bg-primary" data-testid="group-{group.token.name}">
+			<section class="border-4 border-line bg-primary" data-testid="group-{group.token.name}">
 				<!-- Sticks to the top while you scroll this token's rows, so the numbers
 				     that explain the rows are always in view. -->
-				<div class="sticky top-0 z-10 border-b-2 border-white bg-primary">
+				<div class="sticky top-0 z-10 border-b-2 border-line bg-primary">
 					<button
 						class="flex w-full flex-col gap-3 p-4 text-left"
 						on:click={() => toggle(group.token.name)}
@@ -210,48 +210,48 @@
 						<span class="flex w-full items-baseline justify-between">
 							<span class="text-xl font-bold">
 								{group.token.underlyingSymbol}
-								<span class="text-base font-normal text-gray-300">
+								<span class="text-base font-normal text-dim">
 									· {group.count} position{group.count === 1 ? '' : 's'}
 								</span>
 							</span>
-							<span class="text-gray-300">{expanded[group.token.name] ? '▴' : '▾'}</span>
+							<span class="text-dim">{expanded[group.token.name] ? '▴' : '▾'}</span>
 						</span>
 						<span
 							class="grid w-full grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4 sm:text-base"
 							data-testid="group-summary-{group.token.name}"
 						>
 							<span class="flex flex-col">
-								<span class="text-xs text-gray-300">{group.token.name} in wallet</span>
+								<span class="text-xs text-dim">{group.token.name} in wallet</span>
 								<span>{formatAmount(wallet, group.token.decimals)}</span>
 							</span>
 							<span class="flex flex-col">
-								<span class="text-xs text-gray-300">{group.token.name} to unlock all</span>
+								<span class="text-xs text-dim">{group.token.name} to unlock all</span>
 								<span>
 									{formatAmount(group.mintedCyToken, group.token.decimals)}
 									{#if short > 0n}
-										<span class="text-gray-300" data-testid="group-short-{group.token.name}">
+										<span class="text-dim" data-testid="group-short-{group.token.name}">
 											· short {formatAmount(short, group.token.decimals)}
 										</span>
 									{/if}
 								</span>
 							</span>
 							<span class="flex flex-col">
-								<span class="text-xs text-gray-300">{group.token.underlyingSymbol} locked</span>
+								<span class="text-xs text-dim">{group.token.underlyingSymbol} locked</span>
 								<span>
 									{formatAmount(group.lockedUnderlying, group.token.decimals)}
-									<span class="text-gray-300">
+									<span class="text-dim">
 										· worth {formatUsd(group.collateralValueUsd).replace('+', '')}
 									</span>
 								</span>
 							</span>
 							<span class="flex flex-col">
-								<span class="text-xs text-gray-300">Net to close</span>
+								<span class="text-xs text-dim">Net to close</span>
 								<span
 									class="font-bold {group.netToCloseUsd === null
-										? 'text-gray-400'
+										? 'text-dim'
 										: group.netToCloseUsd < 0n
-											? 'text-red-400'
-											: 'text-green-400'}"
+											? 'text-loss'
+											: 'text-gain'}"
 									data-testid="group-net-{group.token.name}"
 								>
 									{formatUsd(group.netToCloseUsd)}
@@ -261,7 +261,7 @@
 					</button>
 					{#if expanded[group.token.name]}
 						<div
-							class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-4 border-t border-white/30 px-4 py-2 text-xs text-gray-300 sm:text-sm"
+							class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-4 border-t border-line/60 px-4 py-2 text-xs text-dim sm:text-sm"
 						>
 							<span>Locked</span>
 							<span>Price at lock</span>
@@ -276,7 +276,7 @@
 					<div data-testid="rows-{group.token.name}">
 						{#each group.rows as row, i (row.receipt.tokenId)}
 							<div
-								class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-4 border-t border-white/20 px-4 py-2 text-sm sm:text-base"
+								class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-4 border-t border-line/40 px-4 py-2 text-sm sm:text-base"
 								data-testid="row-{group.token.name}-{i}"
 							>
 								<span>{formatAmount(row.underlyingAmount, group.token.decimals)}</span>
@@ -284,15 +284,15 @@
 								<span>{row.held === null ? '—' : `${row.held}d`}</span>
 								<span
 									class="font-bold {row.netToCloseUsd === null
-										? 'text-gray-400'
+										? 'text-dim'
 										: row.netToCloseUsd < 0n
-											? 'text-red-400'
-											: 'text-green-400'}"
+											? 'text-loss'
+											: 'text-gain'}"
 								>
 									{formatUsd(row.netToCloseUsd)}
 								</span>
 								<button
-									class="border-2 border-white px-3 py-1 font-bold hover:bg-blue-700"
+									class="border-2 border-line px-3 py-1 font-bold hover:brightness-125"
 									on:click={() => (selected = { row, token: group.token })}
 									data-testid="unlock-{group.token.name}-{i}"
 								>
@@ -306,7 +306,7 @@
 		{/each}
 
 		{#each hiddenWithPositions as group (group.token.name)}
-			<p class="text-sm text-gray-400" data-testid="hidden-{group.token.name}">
+			<p class="text-sm text-dim" data-testid="hidden-{group.token.name}">
 				{group.token.name}: {group.count} position{group.count === 1 ? '' : 's'} hidden — no market for
 				{group.token.name} yet.
 			</p>

@@ -51,10 +51,10 @@
 
 <div class="flex w-full flex-col gap-2">
 	<div
-		class="flex h-full w-full items-center justify-end rounded-sm border border-white text-lg font-semibold text-primary outline-none md:text-2xl"
+		class="flex h-full w-full items-center justify-end rounded-sm border border-line text-lg font-semibold text-primary outline-none md:text-2xl"
 	>
 		<input
-			class="mr-2 w-full min-w-0 border-none bg-primary p-0 text-right text-base text-white outline-none [appearance:textfield] focus:ring-0 sm:text-lg md:text-2xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+			class="mr-2 w-full min-w-0 border-none bg-primary p-0 text-right text-base text-ink outline-none [appearance:textfield] focus:ring-0 sm:text-lg md:text-2xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 			{...$$restProps}
 			on:input={handleInput}
 			min={0}
@@ -67,7 +67,7 @@
 		{#if unit}
 			<span
 				data-testid="unit"
-				class="h-full content-center self-center bg-primary pr-2 text-right text-base text-white sm:text-lg md:text-2xl"
+				class="h-full content-center self-center bg-primary pr-2 text-right text-base text-ink sm:text-lg md:text-2xl"
 			>
 				{unit}</span
 			>

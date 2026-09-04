@@ -23,19 +23,19 @@
 		<div class="flex flex-col items-center justify-center gap-2 p-4">
 			{#if $transactionStore.status === TransactionStatus.ERROR}
 				<div
-					class="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-red-400 bg-red-100 dark:bg-red-900"
+					class="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-loss bg-red-100 dark:bg-red-900"
 					data-testid="error-icon"
 				>
 					<h1 class="text-lg md:text-2xl">❌</h1>
 				</div>
 				<p
-					class="w-full whitespace-pre-wrap break-words text-center text-lg font-semibold text-gray-900 dark:text-white"
+					class="w-full whitespace-pre-wrap break-words text-center text-lg font-semibold text-gray-900 dark:text-ink"
 					data-testid="error-status"
 				>
 					{$transactionStore.status}
 				</p>
 				<p
-					class="w-full whitespace-pre-wrap break-words text-center font-normal text-gray-900 dark:text-white"
+					class="w-full whitespace-pre-wrap break-words text-center font-normal text-gray-900 dark:text-ink"
 					data-testid="error-message"
 				>
 					{$transactionStore.error}
@@ -64,14 +64,14 @@
 				</div>
 				<div class="flex flex-col gap-4 text-center">
 					<p
-						class="w-full whitespace-pre-wrap break-words text-center text-lg font-semibold text-gray-900 dark:text-white"
+						class="w-full whitespace-pre-wrap break-words text-center text-lg font-semibold text-gray-900 dark:text-ink"
 						data-testid="success-status"
 					>
 						{$transactionStore.status}
 					</p>
 					{#if $transactionStore.message}
 						<p
-							class="w-full break-words text-center text-sm font-normal text-gray-900 dark:text-white"
+							class="w-full break-words text-center text-sm font-normal text-gray-900 dark:text-ink"
 							data-testid="success-message"
 						>
 							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -102,7 +102,7 @@
 					<Spinner color="blue" size={10} />
 				</div>
 				<p
-					class="w-full whitespace-pre-wrap break-words text-center text-lg font-semibold text-gray-900 dark:text-white"
+					class="w-full whitespace-pre-wrap break-words text-center text-lg font-semibold text-gray-900 dark:text-ink"
 					data-testid="pending-message"
 				>
 					{$transactionStore.message || $transactionStore.status}

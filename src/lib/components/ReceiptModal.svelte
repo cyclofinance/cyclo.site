@@ -99,7 +99,7 @@
 	class="flex h-fit w-full flex-col items-center justify-center gap-4 overflow-y-scroll p-0 text-sm sm:gap-6 sm:p-6 sm:text-base"
 	data-testId="receipt-modal"
 >
-	<div class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row">
+	<div class="flex w-full flex-col justify-between font-semibold text-ink sm:flex-row">
 		<span>TOTAL {token.underlyingSymbol} LOCKED</span>
 		<div class="flex flex-row gap-4">
 			{#key readableBalance}{#if readableBalance}
@@ -109,7 +109,7 @@
 				{/if}{/key}
 		</div>
 	</div>
-	<div class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row">
+	<div class="flex w-full flex-col justify-between font-semibold text-ink sm:flex-row">
 		<span>TOTAL {receipt.token} MINTED</span>
 		<div class="flex flex-row gap-4">
 			{#key readableBalance}{#if readableBalance}
@@ -118,7 +118,7 @@
 		</div>
 	</div>
 
-	<div class="flex w-full flex-col justify-between font-semibold text-white sm:flex-row">
+	<div class="flex w-full flex-col justify-between font-semibold text-ink sm:flex-row">
 		<span>{receipt.token} PER LOCKED {token.underlyingSymbol}</span>
 		<div class="flex flex-row gap-4">
 			<span data-testid="lock-up-price">{Number(formatEther(tokenId))}</span>
@@ -126,7 +126,7 @@
 	</div>
 
 	<div
-		class="flex w-full flex-col items-start justify-between font-semibold text-white sm:flex-row"
+		class="flex w-full flex-col items-start justify-between font-semibold text-ink sm:flex-row"
 	>
 		<span>REDEEM AMOUNT</span>
 		<div class="flex flex-col">
@@ -170,7 +170,7 @@
 		</div>
 	</div>
 	<!-- Burn diagram for desktop -->
-	<div class="hidden w-full flex-col items-center justify-center font-semibold text-white sm:flex">
+	<div class="hidden w-full flex-col items-center justify-center font-semibold text-ink sm:flex">
 		<div class="flex w-full flex-row justify-center gap-12 text-right">
 			<span class="w-1/2 text-center"
 				>{!readableAmountToRedeem ? 0 : readableAmountToRedeem} RECEIPTS</span
@@ -190,7 +190,7 @@
 	</div>
 	<!-- Burn diagram for mobile -->
 	<div
-		class="flex w-full flex-col items-center justify-center text-sm font-semibold text-white sm:hidden sm:text-xl"
+		class="flex w-full flex-col items-center justify-center text-sm font-semibold text-ink sm:hidden sm:text-xl"
 	>
 		<div class="flex w-full flex-col items-center justify-center gap-1 text-right">
 			<span class="w-full text-center"
@@ -212,7 +212,7 @@
 
 	<Button
 		dataTestId="unlock-button"
-		customClass="w-full bg-white text-primary"
+		customClass="w-full bg-ink text-page"
 		disabled={buttonStatus !== ButtonStatus.READY || amountToRedeem === BigInt(0)}
 		on:click={() =>
 			transactionStore.handleUnlockTransaction({

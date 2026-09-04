@@ -10,7 +10,13 @@ export default {
 	theme: {
 		extend: {
 			colors: {
-				primary: '#1E26E8'
+				primary: 'var(--c-primary)',
+				page: 'var(--c-page)',
+				line: 'var(--c-line)',
+				ink: 'var(--c-ink)',
+				dim: 'var(--c-dim)',
+				gain: 'var(--c-gain)',
+				loss: 'var(--c-loss)'
 			}
 		}
 	},
