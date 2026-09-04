@@ -240,7 +240,7 @@
 							<span class="text-dim">{expanded[group.token.name] ? '▴' : '▾'}</span>
 						</span>
 						<span
-							class="grid w-full grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-5 sm:text-base"
+							class="grid w-full grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-6"
 							data-testid="group-summary-{group.token.name}"
 						>
 							<span class="flex flex-col">
@@ -259,29 +259,30 @@
 								</span>
 							</span>
 							<span class="flex flex-col">
-								<span class="text-xs text-dim">{group.token.underlyingSymbol} locked</span>
-								<span>
-									{formatAmount(group.lockedUnderlying, group.token.decimals)}
-									<span class="text-dim">
-										· worth {formatUsd(group.collateralValueUsd).replace('+', '')}
-									</span>
+								<span class="text-xs text-dim">{group.token.underlyingSymbol} price now</span>
+								<span data-testid="group-price-{group.token.name}">
+									{group.rows[0]?.underlyingUsdNow == null
+										? '—'
+										: `$${formatLockPrice(group.rows[0].underlyingUsdNow)}`}
 								</span>
 							</span>
 							<span class="flex flex-col">
-								<span class="text-xs text-dim">Payoff vs at lock</span>
-								<span
-									class={group.payoffSavedUsd === null
-										? 'text-dim'
-										: group.payoffSavedUsd < 0n
-											? 'text-loss'
-											: 'text-gain'}
-									data-testid="group-payoff-{group.token.name}"
-								>
+								<span class="text-xs text-dim">{group.token.underlyingSymbol} locked</span>
+								<span>
+									{formatAmount(group.lockedUnderlying, group.token.decimals)}
+									<span class="text-dim"
+										>· worth {formatUsd(group.collateralValueUsd).replace('+', '')}</span
+									>
+								</span>
+							</span>
+							<span class="flex flex-col">
+								<span class="text-xs text-dim">Less than at lock</span>
+								<span data-testid="group-payoff-{group.token.name}">
 									{group.payoffSavedUsd === null
 										? '—'
 										: group.payoffSavedUsd >= 0n
-											? `${formatUsd(group.payoffSavedUsd).replace('+', '')} cheaper`
-											: `${formatUsd(-group.payoffSavedUsd)} dearer`.replace('+', '')}
+											? formatUsd(group.payoffSavedUsd).replace('+', '')
+											: `−${formatUsd(-group.payoffSavedUsd).replace('+', '')} more`}
 								</span>
 							</span>
 							<span class="flex flex-col">
@@ -314,7 +315,7 @@
 
 				{#if expanded[group.token.name] && cards}
 					<div
-						class="grid grid-cols-1 gap-3 p-3 md:grid-cols-2 xl:grid-cols-3"
+						class="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3"
 						data-testid="cards-{group.token.name}"
 					>
 						{#each group.rows as row (row.receipt.tokenId)}
