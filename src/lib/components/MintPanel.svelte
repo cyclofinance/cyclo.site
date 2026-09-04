@@ -63,7 +63,7 @@
 </script>
 
 <section
-	class="flex w-full flex-col gap-4 border-4 border-line bg-primary p-4 text-ink"
+	class="flex w-full flex-col gap-4 border-frame border-line bg-primary p-4 text-ink"
 	data-testid="mint-panel"
 >
 	<div class="flex items-center justify-between">

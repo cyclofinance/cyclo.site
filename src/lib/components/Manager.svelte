@@ -30,9 +30,13 @@
 		type TokenGroup,
 		type TokenPrices
 	} from '$lib/positions';
+	import { env } from '$env/dynamic/public';
 	import Button from './Button.svelte';
 	import ReceiptModal from './ReceiptModal.svelte';
 	import MintPanel from './MintPanel.svelte';
+	import PositionCard from './PositionCard.svelte';
+
+	const cards = env.PUBLIC_THEME === 'apex';
 
 	// This manager is Flare-only: that is where the positions are, and it is the
 	// only network whose explorer gives us lock dates.
@@ -170,7 +174,7 @@
 		</div>
 	{:else}
 		<!-- The one number this page exists for. -->
-		<div class="flex flex-col gap-1 border-4 border-line bg-primary p-4" data-testid="hero">
+		<div class="flex flex-col gap-1 border-frame border-line bg-primary p-4" data-testid="hero">
 			<span class="text-sm text-dim">Net to close all positions</span>
 			<span
 				class="text-4xl font-bold sm:text-5xl {hero === null
@@ -187,7 +191,7 @@
 		{#if loading}
 			<p class="text-center text-lg" data-testid="loading">Loading positions…</p>
 		{:else if error}
-			<div class="border-4 border-loss p-4 text-loss" data-testid="error">
+			<div class="border-frame border-loss p-4 text-loss" data-testid="error">
 				<p class="font-bold">Could not load positions.</p>
 				<p class="text-sm">{error}</p>
 			</div>
@@ -198,7 +202,7 @@
 		{#each shown as group (group.token.name)}
 			{@const wallet = $balancesStore.balances[group.token.name]?.signerBalance ?? 0n}
 			{@const short = cyTokenShortfall(group.mintedCyToken, wallet)}
-			<section class="border-4 border-line bg-primary" data-testid="group-{group.token.name}">
+			<section class="border-frame border-line bg-primary" data-testid="group-{group.token.name}">
 				<!-- Sticks to the top while you scroll this token's rows, so the numbers
 				     that explain the rows are always in view. -->
 				<div class="sticky top-0 z-10 border-b-2 border-line bg-primary">
@@ -259,9 +263,9 @@
 							</span>
 						</span>
 					</button>
-					{#if expanded[group.token.name]}
+					{#if expanded[group.token.name] && !cards}
 						<div
-							class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-4 border-t border-line/60 px-4 py-2 text-xs text-dim sm:text-sm"
+							class="border-line/60 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-4 border-t px-4 py-2 text-xs text-dim sm:text-sm"
 						>
 							<span>Locked</span>
 							<span>Price at lock</span>
@@ -272,11 +276,24 @@
 					{/if}
 				</div>
 
-				{#if expanded[group.token.name]}
+				{#if expanded[group.token.name] && cards}
+					<div
+						class="grid grid-cols-1 gap-3 p-3 md:grid-cols-2 xl:grid-cols-3"
+						data-testid="cards-{group.token.name}"
+					>
+						{#each group.rows as row (row.receipt.tokenId)}
+							<PositionCard
+								{row}
+								token={group.token}
+								onUnlock={() => (selected = { row, token: group.token })}
+							/>
+						{/each}
+					</div>
+				{:else if expanded[group.token.name]}
 					<div data-testid="rows-{group.token.name}">
 						{#each group.rows as row, i (row.receipt.tokenId)}
 							<div
-								class="grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-4 border-t border-line/40 px-4 py-2 text-sm sm:text-base"
+								class="border-line/40 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-4 border-t px-4 py-2 text-sm sm:text-base"
 								data-testid="row-{group.token.name}-{i}"
 							>
 								<span>{formatAmount(row.underlyingAmount, group.token.decimals)}</span>
@@ -292,7 +309,7 @@
 									{formatUsd(row.netToCloseUsd)}
 								</span>
 								<button
-									class="border-2 border-line px-3 py-1 font-bold hover:brightness-125"
+									class="border-frame border-line px-3 py-1 font-bold hover:brightness-125"
 									on:click={() => (selected = { row, token: group.token })}
 									data-testid="unlock-{group.token.name}-{i}"
 								>
@@ -323,7 +340,7 @@
 		outsideclose={true}
 		dismissable={true}
 		on:close={() => (selected = null)}
-		defaultClass="bg-primary border-4 rounded-none inset h-fit"
+		defaultClass="bg-primary border-frame rounded-card inset h-fit"
 		open={true}
 	>
 		<ReceiptModal receipt={selected.row.receipt} token={selected.token} />

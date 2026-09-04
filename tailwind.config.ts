@@ -16,7 +16,14 @@ export default {
 				ink: 'var(--c-ink)',
 				dim: 'var(--c-dim)',
 				gain: 'var(--c-gain)',
-				loss: 'var(--c-loss)'
+				loss: 'var(--c-loss)',
+				accent: 'var(--c-accent)'
+			},
+			borderWidth: {
+				frame: 'var(--c-frame)'
+			},
+			borderRadius: {
+				card: 'var(--c-radius)'
 			}
 		}
 	},

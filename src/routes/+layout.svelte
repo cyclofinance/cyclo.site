@@ -13,10 +13,10 @@
 	import type { Hex } from 'viem';
 	import DataFetcherProvider from '$lib/components/DataFetcherProvider.svelte';
 
-	// Build-time look: PUBLIC_THEME=dtp gives the operator's private theme.
+	// Build-time look: PUBLIC_THEME=apex gives the operator's private theme.
 	if (typeof document !== 'undefined') {
 		document.documentElement.dataset.theme = env.PUBLIC_THEME || 'cyclo';
-		if (env.PUBLIC_THEME === 'dtp') document.title = 'Cyclo positions';
+		if (env.PUBLIC_THEME === 'apex') document.title = 'Cyclo positions';
 	}
 
 	let intervalId: ReturnType<typeof setInterval>;

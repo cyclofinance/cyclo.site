@@ -5,7 +5,7 @@
  */
 import { formatUnits } from 'viem';
 import type { CyToken, Receipt } from '$lib/types';
-import { computePositionMetrics, daysHeld, sumOrNull } from '$lib/positionMath';
+import { computePositionMetrics, daysHeld, sumOrNull, ONE_18 } from '$lib/positionMath';
 import type { LockDateMap } from '$lib/queries/getReceiptLockDates';
 
 export type PositionRow = {
@@ -18,6 +18,20 @@ export type PositionRow = {
 	collateralPnlUsd: bigint | null;
 	cyTokenPnlUsd: bigint | null;
 	netToCloseUsd: bigint | null;
+	/** Oracle price of the collateral now, 18 dec. Null = unknown. */
+	underlyingUsdNow: bigint | null;
+	/** Collateral value now = A × Pnow. Null = unknown. */
+	collateralValueUsd: bigint | null;
+	/** What the minted cyTokens cost to buy back now = M × Cnow. Null = no market. */
+	cyTokenRepayUsd: bigint | null;
+	/** Value at lock = A × Plock = M at $1 nominal. Always known. 18 dec. */
+	costBasisUsd: bigint;
+	/** Net to close as a fraction of cost basis (0.05 = +5%). Null = unknown. */
+	pnlPct: number | null;
+	/** Collateral price move since lock (0.10 = +10%). Null = unknown. */
+	pricePct: number | null;
+	/** How far below $1 the cyToken trades (0.9 = 90% below). Null = no market. */
+	cyDiscountPct: number | null;
 };
 
 export type TokenGroup = {
@@ -90,6 +104,14 @@ export const buildTokenGroup = ({
 				underlyingUsdNow: prices.underlyingUsdNow,
 				cyTokenUsdNow: prices.cyTokenUsdNow
 			});
+			const scale = 10n ** BigInt(token.decimals);
+			const costBasisUsd = (receipt.balance * ONE_18) / scale;
+			const collateralValueUsd =
+				prices.underlyingUsdNow === null
+					? null
+					: (metrics.underlyingAmount * prices.underlyingUsdNow) / scale;
+			const cyTokenRepayUsd =
+				prices.cyTokenUsdNow === null ? null : (receipt.balance * prices.cyTokenUsdNow) / scale;
 			return {
 				receipt: { ...receipt, totalsFlr: metrics.underlyingAmount },
 				underlyingAmount: metrics.underlyingAmount,
@@ -97,7 +119,18 @@ export const buildTokenGroup = ({
 				held: daysHeld(lockDates.get(receipt.tokenId), nowMs),
 				collateralPnlUsd: metrics.collateralPnlUsd,
 				cyTokenPnlUsd: metrics.cyTokenPnlUsd,
-				netToCloseUsd: metrics.netToCloseUsd
+				netToCloseUsd: metrics.netToCloseUsd,
+				underlyingUsdNow: prices.underlyingUsdNow,
+				collateralValueUsd,
+				cyTokenRepayUsd,
+				costBasisUsd,
+				pnlPct: ratio(metrics.netToCloseUsd, costBasisUsd),
+				pricePct:
+					prices.underlyingUsdNow === null
+						? null
+						: ratio(prices.underlyingUsdNow - metrics.lockPriceUsd, metrics.lockPriceUsd),
+				cyDiscountPct:
+					prices.cyTokenUsdNow === null ? null : ratio(ONE_18 - prices.cyTokenUsdNow, ONE_18)
 			};
 		});
 
@@ -116,6 +149,21 @@ export const buildTokenGroup = ({
 		netToCloseUsd: sumOrNull(sorted.map((r) => r.netToCloseUsd)),
 		hidden: prices.settled && prices.cyTokenUsdNow === null
 	};
+};
+
+/** a / b as a JS number, null when either side is unknown or b is zero. */
+export const ratio = (a: bigint | null, b: bigint | null): number | null => {
+	if (a === null || b === null || b === 0n) return null;
+	// 6 decimal places of precision is plenty for a percentage display.
+	return Number((a * 1_000_000n) / b) / 1_000_000;
+};
+
+/** Signed percent, one decimal. Unknown renders as a dash. */
+export const formatPct = (fraction: number | null): string => {
+	if (fraction === null || !Number.isFinite(fraction)) return '—';
+	const pct = fraction * 100;
+	const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
+	return `${sign}${Math.abs(pct).toFixed(1)}%`;
 };
 
 /** cyTokens still to acquire before EVERY position in the group can be unlocked. */

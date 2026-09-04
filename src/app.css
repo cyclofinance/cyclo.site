@@ -1,6 +1,5 @@
 /* app.css */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300..700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -17,17 +16,30 @@
 	--c-dim: #d1d5db;
 	--c-gain: #4ade80;
 	--c-loss: #f87171;
+	--c-accent: #ffffff;
+	--c-frame: 4px;
+	--c-radius: 0px;
 	--c-font: 'JetBrains Mono', monospace;
 }
-html[data-theme='dtp'] {
-	--c-primary: #131626;
-	--c-page: #0b1220;
+/* Apex look — same tokens as apex-trading-platform/apps/web/tailwind.config.js */
+html[data-theme='apex'] {
+	--c-primary: #151a25;
+	--c-page: #0b0e14;
 	--c-line: #1e293b;
-	--c-ink: #e7eef7;
-	--c-dim: #9aa7b8;
-	--c-gain: #22d3ee;
-	--c-loss: #fb7185;
-	--c-font: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--c-ink: #ffffff;
+	--c-dim: #94a3b8;
+	--c-gain: #27f795;
+	--c-loss: #ef4444;
+	--c-accent: #3b82f6;
+	--c-frame: 1px;
+	--c-radius: 12px;
+	--c-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+html[data-theme='apex'] .outset,
+html[data-theme='apex'] .inset,
+html[data-theme='apex'] .border-outset,
+html[data-theme='apex'] button {
+	border-style: solid;
 }
 
 body {
@@ -42,7 +54,7 @@ body {
 }
 
 .tab {
-	@apply flex h-full w-32 items-center justify-center gap-2 self-start border-4 border-line bg-primary px-4 py-2 font-bold text-ink;
+	@apply flex h-full w-32 items-center justify-center gap-2 self-start border-frame border-line bg-primary px-4 py-2 font-bold text-ink;
 	border-style: outset;
 }
 
@@ -61,6 +73,6 @@ body {
 }
 
 .card {
-	@apply border-outset flex  flex-col items-center gap-6 rounded-none border-4 border-line bg-primary p-4 shadow-md;
+	@apply border-outset flex  flex-col items-center gap-6 rounded-card border-frame border-line bg-primary p-4 shadow-md;
 	border-style: outset;
 }

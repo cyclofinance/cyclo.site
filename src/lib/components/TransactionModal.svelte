@@ -13,7 +13,7 @@
 
 <Modal
 	size="sm"
-	defaultClass="rounded-none border-4 inset"
+	defaultClass="rounded-card border-frame inset"
 	class="bg-opacity-90 backdrop-blur-sm"
 	open={$transactionStore.status !== TransactionStatus.IDLE}
 	on:close={() => handleClose()}
@@ -23,7 +23,7 @@
 		<div class="flex flex-col items-center justify-center gap-2 p-4">
 			{#if $transactionStore.status === TransactionStatus.ERROR}
 				<div
-					class="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-loss bg-red-100 dark:bg-red-900"
+					class="mb-4 flex h-16 w-16 items-center justify-center rounded-full border-frame border-loss bg-red-100 dark:bg-red-900"
 					data-testid="error-icon"
 				>
 					<h1 class="text-lg md:text-2xl">❌</h1>

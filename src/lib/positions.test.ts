@@ -3,6 +3,8 @@ import {
 	buildTokenGroup,
 	cyTokenShortfall,
 	formatAmount,
+	formatPct,
+	ratio,
 	formatUsd,
 	heroNetToClose,
 	sortBestToCloseFirst,
@@ -36,7 +38,14 @@ const row = (net: bigint | null, lockPrice = ONE): PositionRow => ({
 	held: null,
 	collateralPnlUsd: null,
 	cyTokenPnlUsd: null,
-	netToCloseUsd: net
+	netToCloseUsd: net,
+	underlyingUsdNow: null,
+	collateralValueUsd: null,
+	cyTokenRepayUsd: null,
+	costBasisUsd: ONE,
+	pnlPct: null,
+	pricePct: null,
+	cyDiscountPct: null
 });
 
 describe('sortBestToCloseFirst', () => {
@@ -74,6 +83,31 @@ describe('buildTokenGroup', () => {
 		// 100 sFLR × $0.04 = $4 of collateral at today's oracle price
 		expect(g.collateralValueUsd).toBe(4n * ONE);
 		expect(g.hidden).toBe(false);
+
+		const r = g.rows[0];
+		expect(r.collateralValueUsd).toBe(4n * ONE); // A × Pnow
+		expect(r.cyTokenRepayUsd).toBe(2n * 10n ** 17n); // 2 cysFLR × $0.10
+		expect(r.costBasisUsd).toBe(2n * ONE); // M at $1 nominal = A × Plock
+		expect(r.pnlPct).toBeCloseTo(1.9, 6); // 3.8 / 2
+		expect(r.pricePct).toBeCloseTo(1.0, 6); // 0.02 → 0.04
+		expect(r.cyDiscountPct).toBeCloseTo(0.9, 6); // $0.10 is 90% below $1
+	});
+
+	it('card metrics stay unknown when prices are unknown, cost basis never does', () => {
+		const g = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted)],
+			lockDates: new Map(),
+			prices: LOADING_PRICES,
+			nowMs: 0
+		});
+		const r = g.rows[0];
+		expect(r.collateralValueUsd).toBeNull();
+		expect(r.cyTokenRepayUsd).toBeNull();
+		expect(r.pnlPct).toBeNull();
+		expect(r.pricePct).toBeNull();
+		expect(r.cyDiscountPct).toBeNull();
+		expect(r.costBasisUsd).toBe(2n * ONE);
 	});
 
 	it('collateral value is unknown while the oracle price is unknown', () => {
@@ -151,6 +185,21 @@ describe('cyTokenShortfall', () => {
 		expect(cyTokenShortfall(100n, 40n)).toBe(60n);
 		expect(cyTokenShortfall(100n, 100n)).toBe(0n);
 		expect(cyTokenShortfall(100n, 250n)).toBe(0n);
+	});
+});
+
+describe('ratio / formatPct', () => {
+	it('ratio is null on unknowns and zero denominators', () => {
+		expect(ratio(null, 1n)).toBeNull();
+		expect(ratio(1n, null)).toBeNull();
+		expect(ratio(1n, 0n)).toBeNull();
+		expect(ratio(-5n, 10n)).toBeCloseTo(-0.5, 6);
+	});
+	it('formatPct signs and rounds to one decimal, dash on unknown', () => {
+		expect(formatPct(null)).toBe('—');
+		expect(formatPct(0.05)).toBe('+5.0%');
+		expect(formatPct(-0.123)).toBe('−12.3%');
+		expect(formatPct(0)).toBe('0.0%');
 	});
 });
 

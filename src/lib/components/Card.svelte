@@ -7,7 +7,7 @@
 <Card
 	{size}
 	data-testid="card"
-	class={'border-outset flex flex-col items-center gap-6 rounded-none border-4 border-line bg-primary p-4 text-ink shadow-md' +
+	class={'border-outset flex flex-col items-center gap-6 rounded-card border-frame border-line bg-primary p-4 text-ink shadow-md' +
 		' ' +
 		customClass}
 >
