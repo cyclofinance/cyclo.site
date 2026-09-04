@@ -21,6 +21,8 @@
 	$: tone =
 		row.netToCloseUsd === null ? 'text-dim' : row.netToCloseUsd < 0n ? 'text-loss' : 'text-gain';
 	$: priceTone = row.pricePct === null ? 'text-dim' : row.pricePct < 0 ? 'text-loss' : 'text-gain';
+	$: payoffTone =
+		row.payoffSavedUsd === null ? 'text-dim' : row.payoffSavedUsd < 0n ? 'text-loss' : 'text-gain';
 </script>
 
 <article
@@ -69,7 +71,7 @@
 
 	<div class="grid grid-cols-2 gap-4 text-sm">
 		<div>
-			<div class="text-xs text-dim">Collateral locked</div>
+			<div class="text-xs text-dim">Value in it</div>
 			<div class="text-lg font-semibold">{formatUsd(row.collateralValueUsd).replace('+', '')}</div>
 			<div class="text-xs text-dim">
 				{formatAmount(row.underlyingAmount, token.decimals)}
@@ -77,7 +79,7 @@
 			</div>
 		</div>
 		<div>
-			<div class="text-xs text-dim">{token.name} to buy back</div>
+			<div class="text-xs text-dim">Payoff today</div>
 			<div class="text-lg font-semibold">{formatUsd(row.cyTokenRepayUsd).replace('+', '')}</div>
 			<div class="text-xs text-dim">
 				{formatAmount(row.receipt.balance, token.decimals)}
@@ -88,6 +90,32 @@
 					>
 				{/if}
 			</div>
+		</div>
+	</div>
+
+	<!-- The loan got cheaper: what the cyToken was worth when this was minted vs now. -->
+	<div class="bg-page/60 flex flex-col gap-1 rounded-card p-3 text-sm" data-testid="card-payoff">
+		<div class="flex items-center justify-between">
+			<span class="text-dim">{token.name} at lock → now</span>
+			<span class="font-semibold">
+				{row.cyTokenUsdAtLock === null ? '—' : `$${formatLockPrice(row.cyTokenUsdAtLock)}`}
+				<span class="text-dim">→</span>
+				{row.cyTokenUsdNow === null ? '—' : `$${formatLockPrice(row.cyTokenUsdNow)}`}
+			</span>
+		</div>
+		<div class="flex items-center justify-between">
+			<span class="text-dim">Pay it off for</span>
+			<span class="font-bold {payoffTone}" data-testid="card-payoff-saved">
+				{#if row.payoffSavedUsd === null}
+					—
+				{:else if row.payoffSavedUsd >= 0n}
+					{formatUsd(row.payoffSavedUsd).replace('+', '')} less
+					<span class="text-sm">({formatPct(row.payoffDiscountPct).replace('+', '')} cheaper)</span>
+				{:else}
+					{formatUsd(-row.payoffSavedUsd).replace('+', '')} more
+					<span class="text-sm">({formatPct(row.payoffDiscountPct).replace('−', '')} dearer)</span>
+				{/if}
+			</span>
 		</div>
 	</div>
 

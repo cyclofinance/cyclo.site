@@ -45,7 +45,11 @@ const row = (net: bigint | null, lockPrice = ONE): PositionRow => ({
 	costBasisUsd: ONE,
 	pnlPct: null,
 	pricePct: null,
-	cyDiscountPct: null
+	cyDiscountPct: null,
+	cyTokenUsdNow: null,
+	cyTokenUsdAtLock: null,
+	payoffSavedUsd: null,
+	payoffDiscountPct: null
 });
 
 describe('sortBestToCloseFirst', () => {
@@ -91,6 +95,39 @@ describe('buildTokenGroup', () => {
 		expect(r.pnlPct).toBeCloseTo(1.9, 6); // 3.8 / 2
 		expect(r.pricePct).toBeCloseTo(1.0, 6); // 0.02 → 0.04
 		expect(r.cyDiscountPct).toBeCloseTo(0.9, 6); // $0.10 is 90% below $1
+	});
+
+	it('payoff vs at-lock: cyToken was $0.68 at lock, $0.10 now → 2 tokens pay off $1.16 less (85.3%)', () => {
+		const g = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted)],
+			lockDates: new Map(),
+			prices,
+			nowMs: 0,
+			cyTokenAtLock: new Map([[lockPrice.toString(), 68n * 10n ** 16n]])
+		});
+		const r = g.rows[0];
+		expect(r.cyTokenUsdAtLock).toBe(68n * 10n ** 16n);
+		expect(r.payoffSavedUsd).toBe(116n * 10n ** 16n); // 2 × (0.68 − 0.10)
+		expect(r.payoffDiscountPct).toBeCloseTo(0.852941, 5); // 0.58 / 0.68
+		expect(g.payoffSavedUsd).toBe(116n * 10n ** 16n);
+	});
+
+	it('payoff vs at-lock is unknown without an at-lock price, and the group sum goes unknown with it', () => {
+		const g = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted), receipt(lockPrice + 1n, minted)],
+			lockDates: new Map(),
+			prices,
+			nowMs: 0,
+			cyTokenAtLock: new Map([[lockPrice.toString(), 68n * 10n ** 16n]])
+		});
+		const known = g.rows.find((r) => r.receipt.tokenId === lockPrice.toString())!;
+		const unknown = g.rows.find((r) => r.receipt.tokenId !== lockPrice.toString())!;
+		expect(known.payoffSavedUsd).not.toBeNull();
+		expect(unknown.payoffSavedUsd).toBeNull();
+		expect(unknown.payoffDiscountPct).toBeNull();
+		expect(g.payoffSavedUsd).toBeNull();
 	});
 
 	it('card metrics stay unknown when prices are unknown, cost basis never does', () => {
@@ -165,6 +202,7 @@ describe('heroNetToClose / visibleGroups', () => {
 			mintedCyToken: 0n,
 			collateralValueUsd: null,
 			netToCloseUsd: net,
+			payoffSavedUsd: null,
 			hidden
 		}) as TokenGroup;
 

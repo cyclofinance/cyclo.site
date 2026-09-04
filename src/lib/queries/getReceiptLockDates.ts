@@ -8,7 +8,7 @@ import { isFlareNetwork } from '$lib/stores';
  * balance/id/owner/receipt/receiptAddress/tokenId only), so the mint event is
  * the only source for "when was this locked". A mint is a transfer from 0x0.
  *
- * SECURITY: every field on this response except the four read below is
+ * SECURITY: every field on this response except the five read below is
  * attacker-controlled. `total.token_instance.metadata` in particular carries a
  * `name`/`description`/`image` written by whoever deployed the token, and
  * wallets on this chain receive airdropped ERC-1155s whose metadata is a
@@ -22,6 +22,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 type TokenTransfer = {
 	from?: { hash?: string };
 	timestamp?: string;
+	block_number?: number | string;
 	total?: { token_id?: string };
 	token?: { address_hash?: string };
 };
@@ -29,13 +30,33 @@ type TokenTransfer = {
 /** tokenId (decimal string) -> epoch ms of the earliest mint we saw for it. */
 export type LockDateMap = Map<string, number>;
 
+export type LockInfo = {
+	/** Epoch ms of the earliest mint of this tokenId. */
+	lockedAtMs: number;
+	/** Block of that mint — lets us ask the chain what things cost back then. Null if the feed omitted it. */
+	blockNumber: number | null;
+};
+/** tokenId (decimal string) -> when and at which block the position was opened. */
+export type LockInfoMap = Map<string, LockInfo>;
+
+/** Lock dates only — thin wrapper kept for existing callers. */
 export const getReceiptLockDates = async (
 	walletAddress: string,
 	receiptAddress: string,
 	networkConfig: NetworkConfig,
 	options?: { signal?: AbortSignal }
 ): Promise<LockDateMap> => {
-	const lockDates: LockDateMap = new Map();
+	const info = await getReceiptLockInfo(walletAddress, receiptAddress, networkConfig, options);
+	return new Map([...info].map(([id, v]) => [id, v.lockedAtMs]));
+};
+
+export const getReceiptLockInfo = async (
+	walletAddress: string,
+	receiptAddress: string,
+	networkConfig: NetworkConfig,
+	options?: { signal?: AbortSignal }
+): Promise<LockInfoMap> => {
+	const lockDates: LockInfoMap = new Map();
 	if (!walletAddress || !receiptAddress) return lockDates;
 
 	// Blockscout-only. Arbitrum's explorerApiUrl points at Etherscan v2, which
@@ -73,11 +94,15 @@ export const getReceiptLockDates = async (
 
 				const ms = Date.parse(timestamp);
 				if (Number.isNaN(ms)) continue;
+				const rawBlock = Number(item.block_number);
+				const blockNumber = Number.isInteger(rawBlock) && rawBlock > 0 ? rawBlock : null;
 
 				// A tokenId can be minted more than once (same lock price, later
 				// deposit). The earliest mint is when the position was opened.
 				const existing = lockDates.get(tokenId);
-				if (existing === undefined || ms < existing) lockDates.set(tokenId, ms);
+				if (existing === undefined || ms < existing.lockedAtMs) {
+					lockDates.set(tokenId, { lockedAtMs: ms, blockNumber });
+				}
 			}
 
 			const next = body.next_page_params;

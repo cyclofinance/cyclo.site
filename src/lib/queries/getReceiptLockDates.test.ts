@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { getReceiptLockDates } from './getReceiptLockDates';
+import { getReceiptLockDates, getReceiptLockInfo } from './getReceiptLockDates';
 import type { NetworkConfig } from '$lib/stores';
 import { flare, arbitrum } from '@wagmi/core/chains';
 
@@ -97,5 +97,28 @@ describe('getReceiptLockDates', () => {
 		mockFetchOnce({}, false, 503);
 		const dates = await getReceiptLockDates(WALLET, RECEIPT, flareNetwork);
 		expect(dates.size).toBe(0);
+	});
+});
+
+describe('getReceiptLockInfo', () => {
+	it('carries the mint block through, and keeps the EARLIEST mint per tokenId', async () => {
+		mockFetchOnce({
+			items: [
+				transfer({ timestamp: '2026-01-20T06:32:56.000000Z', block_number: 54138410 }),
+				transfer({ timestamp: '2025-12-03T22:51:34.000000Z', block_number: 51000000 })
+			],
+			next_page_params: null
+		});
+		const info = await getReceiptLockInfo(WALLET, RECEIPT, flareNetwork);
+		expect(info.get('23677170395729291')).toEqual({
+			lockedAtMs: Date.parse('2025-12-03T22:51:34.000000Z'),
+			blockNumber: 51000000
+		});
+	});
+
+	it('records a null block when the feed omits it, rather than inventing one', async () => {
+		mockFetchOnce({ items: [transfer()], next_page_params: null });
+		const info = await getReceiptLockInfo(WALLET, RECEIPT, flareNetwork);
+		expect(info.get('23677170395729291')?.blockNumber).toBeNull();
 	});
 });

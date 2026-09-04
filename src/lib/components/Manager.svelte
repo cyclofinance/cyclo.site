@@ -15,7 +15,8 @@
 	import transactionStore, { TransactionStatus } from '$lib/transactionStore';
 	import type { CyToken, Receipt } from '$lib/types';
 	import { fetchAllReceipts } from '$lib/queries/fetchAllReceipts';
-	import { getReceiptLockDates, type LockDateMap } from '$lib/queries/getReceiptLockDates';
+	import { getReceiptLockInfo, type LockInfoMap } from '$lib/queries/getReceiptLockDates';
+	import { getCyTokenUsdAtBlocks } from '$lib/queries/cyTokenPriceAtLock';
 	import { getUnderlyingUsdPrice, getCyTokenUsdPrice } from '$lib/queries/getPositionPrices';
 	import {
 		buildTokenGroup,
@@ -46,7 +47,8 @@
 	let loading = false;
 	let error: string | null = null;
 	let receipts: Receipt[] = [];
-	let lockDates: Record<string, LockDateMap> = {};
+	let lockInfo: Record<string, LockInfoMap> = {};
+	let cyAtLock: Record<string, Map<string, bigint | null>> = {};
 	let prices: Record<string, TokenPrices> = {};
 	let loadedFor: string | null = null;
 	let abort: AbortController | null = null;
@@ -80,7 +82,8 @@
 		loading = true;
 		error = null;
 		receipts = [];
-		lockDates = {};
+		lockInfo = {};
+		cyAtLock = {};
 		prices = Object.fromEntries(tokens.map((t) => [t.name, LOADING_PRICES]));
 
 		try {
@@ -99,11 +102,24 @@
 		for (const token of tokens) {
 			const held = receipts.filter((r) => r.token === token.name);
 			if (held.length > 0) {
-				getReceiptLockDates(wallet, token.receiptAddress, flare, { signal })
-					.then((m) => {
-						if (!signal.aborted) lockDates = { ...lockDates, [token.name]: m };
+				getReceiptLockInfo(wallet, token.receiptAddress, flare, { signal })
+					.then(async (info) => {
+						if (signal.aborted) return;
+						lockInfo = { ...lockInfo, [token.name]: info };
+						// What the cyToken was worth at each lock block — one quote per
+						// distinct block, cached for good once known.
+						const blocks = [...info.values()]
+							.map((v) => v.blockNumber)
+							.filter((b): b is number => b !== null);
+						const byBlock = await getCyTokenUsdAtBlocks(token, blocks, { signal });
+						if (signal.aborted) return;
+						const byTokenId = new Map<string, bigint | null>();
+						for (const [id, v] of info) {
+							byTokenId.set(id, v.blockNumber === null ? null : byBlock.get(v.blockNumber) ?? null);
+						}
+						cyAtLock = { ...cyAtLock, [token.name]: byTokenId };
 					})
-					.catch((e) => console.error(`lock dates (${token.name}) failed:`, e));
+					.catch((e) => console.error(`lock info (${token.name}) failed:`, e));
 			}
 			Promise.all([getUnderlyingUsdPrice(token), getCyTokenUsdPrice(token)]).then(
 				([underlyingUsdNow, cyTokenUsdNow]) => {
@@ -140,9 +156,12 @@
 		buildTokenGroup({
 			token,
 			receipts: receipts.filter((r) => r.token === token.name),
-			lockDates: lockDates[token.name] ?? new Map(),
+			lockDates: new Map(
+				[...(lockInfo[token.name] ?? new Map())].map(([id, v]) => [id, v.lockedAtMs])
+			),
 			prices: prices[token.name] ?? LOADING_PRICES,
-			nowMs
+			nowMs,
+			cyTokenAtLock: cyAtLock[token.name]
 		})
 	);
 	$: shown = visibleGroups(groups);
@@ -221,7 +240,7 @@
 							<span class="text-dim">{expanded[group.token.name] ? '▴' : '▾'}</span>
 						</span>
 						<span
-							class="grid w-full grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4 sm:text-base"
+							class="grid w-full grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-5 sm:text-base"
 							data-testid="group-summary-{group.token.name}"
 						>
 							<span class="flex flex-col">
@@ -246,6 +265,23 @@
 									<span class="text-dim">
 										· worth {formatUsd(group.collateralValueUsd).replace('+', '')}
 									</span>
+								</span>
+							</span>
+							<span class="flex flex-col">
+								<span class="text-xs text-dim">Payoff vs at lock</span>
+								<span
+									class={group.payoffSavedUsd === null
+										? 'text-dim'
+										: group.payoffSavedUsd < 0n
+											? 'text-loss'
+											: 'text-gain'}
+									data-testid="group-payoff-{group.token.name}"
+								>
+									{group.payoffSavedUsd === null
+										? '—'
+										: group.payoffSavedUsd >= 0n
+											? `${formatUsd(group.payoffSavedUsd).replace('+', '')} cheaper`
+											: `${formatUsd(-group.payoffSavedUsd)} dearer`.replace('+', '')}
 								</span>
 							</span>
 							<span class="flex flex-col">

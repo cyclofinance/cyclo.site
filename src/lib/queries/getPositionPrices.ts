@@ -80,7 +80,8 @@ const quote = async (
 	tokenIn: Hex,
 	tokenOut: Hex,
 	amountIn: bigint,
-	fee: number
+	fee: number,
+	blockNumber?: bigint
 ): Promise<bigint | null> => {
 	try {
 		const { result } = await simulateContract(config, {
@@ -88,7 +89,8 @@ const quote = async (
 			abi: quoterAbi,
 			functionName: 'quoteExactInputSingle',
 			args: [{ tokenIn, tokenOut, amountIn, fee, sqrtPriceLimitX96: 0n }],
-			account: ZERO_ACCOUNT
+			account: ZERO_ACCOUNT,
+			...(blockNumber === undefined ? {} : { blockNumber })
 		});
 		return (result as readonly bigint[])[0];
 	} catch {
@@ -100,9 +102,12 @@ const bestQuote = async (
 	config: ReturnType<typeof buildConfig>,
 	tokenIn: Hex,
 	tokenOut: Hex,
-	amountIn: bigint
+	amountIn: bigint,
+	blockNumber?: bigint
 ): Promise<bigint | null> => {
-	const results = await Promise.all(FEE_TIERS.map((fee) => quote(config, tokenIn, tokenOut, amountIn, fee)));
+	const results = await Promise.all(
+		FEE_TIERS.map((fee) => quote(config, tokenIn, tokenOut, amountIn, fee, blockNumber))
+	);
 	const valid = results.filter((r): r is bigint => r !== null && r > 0n);
 	return valid.length ? valid.reduce((a, b) => (b > a ? b : a)) : null;
 };
@@ -117,7 +122,21 @@ const bestQuote = async (
  * pool at any fee tier, so its market leg is genuinely unavailable rather than
  * zero, and callers must render it as unknown.
  */
-export const getCyTokenUsdPrice = async (token: CyToken): Promise<bigint | null> => {
+export const getCyTokenUsdPrice = async (token: CyToken): Promise<bigint | null> =>
+	cyTokenUsdPrice(token);
+
+/**
+ * The same market price, but as it stood at a past block — what the cyToken
+ * was worth when the position was locked. The Flare public RPC serves archive
+ * state (probed 2026-09-03: a call 1.5M blocks back answered), so this is one
+ * quoter simulation per fee tier pinned to `blockNumber`.
+ */
+export const getCyTokenUsdPriceAt = async (
+	token: CyToken,
+	blockNumber: number
+): Promise<bigint | null> => cyTokenUsdPrice(token, BigInt(blockNumber));
+
+const cyTokenUsdPrice = async (token: CyToken, blockNumber?: bigint): Promise<bigint | null> => {
 	try {
 		const config = buildConfig();
 		const usdc = get(usdcAddress);
@@ -125,19 +144,22 @@ export const getCyTokenUsdPrice = async (token: CyToken): Promise<bigint | null>
 		const oneToken = 10n ** BigInt(token.decimals);
 
 		// Stablecoin legs are 6-decimal on Flare; scale to 18 before returning.
-		const direct = await bestQuote(config, token.address, usdc, oneToken);
+		const direct = await bestQuote(config, token.address, usdc, oneToken, blockNumber);
 		if (direct !== null) return direct * 10n ** 12n;
 
-		const viaCusdx = await bestQuote(config, token.address, cusdx, oneToken);
+		const viaCusdx = await bestQuote(config, token.address, cusdx, oneToken, blockNumber);
 		if (viaCusdx === null) return null;
 
 		// cUSDX is itself a cyToken and trades slightly off peg; convert properly.
-		const cusdxInUsdc = await bestQuote(config, cusdx, usdc, 10n ** 6n);
+		const cusdxInUsdc = await bestQuote(config, cusdx, usdc, 10n ** 6n, blockNumber);
 		if (cusdxInUsdc === null) return null;
 
 		return (viaCusdx * cusdxInUsdc * 10n ** 12n) / 10n ** 6n;
 	} catch (e) {
-		console.error(`getCyTokenUsdPrice(${token.name}) failed:`, e);
+		console.error(
+			`getCyTokenUsdPrice(${token.name}${blockNumber ? ` @${blockNumber}` : ''}) failed:`,
+			e
+		);
 		return null;
 	}
 };

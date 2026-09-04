@@ -32,6 +32,14 @@ export type PositionRow = {
 	pricePct: number | null;
 	/** How far below $1 the cyToken trades (0.9 = 90% below). Null = no market. */
 	cyDiscountPct: number | null;
+	/** cyToken market price now, 18 dec. Null = no market. */
+	cyTokenUsdNow: bigint | null;
+	/** cyToken market price when this position was locked, 18 dec. Null = unknown. */
+	cyTokenUsdAtLock: bigint | null;
+	/** What the payoff costs LESS today than at lock = M × (Clock − Cnow). Negative = costs more. Null = unknown. */
+	payoffSavedUsd: bigint | null;
+	/** Same, as a fraction of the at-lock payoff (0.6 = 60% cheaper). Null = unknown. */
+	payoffDiscountPct: number | null;
 };
 
 export type TokenGroup = {
@@ -43,6 +51,8 @@ export type TokenGroup = {
 	/** USD value of all locked collateral at the oracle price now. Null = unknown. */
 	collateralValueUsd: bigint | null;
 	netToCloseUsd: bigint | null;
+	/** Sum of payoffSavedUsd over the group. Null if any row is unknown. */
+	payoffSavedUsd: bigint | null;
 	/**
 	 * True when we KNOW there is no market for the cyToken (price probe
 	 * finished and found no pool). Hidden groups are not shown as positions
@@ -86,13 +96,16 @@ export const buildTokenGroup = ({
 	receipts,
 	lockDates,
 	prices,
-	nowMs
+	nowMs,
+	cyTokenAtLock = new Map()
 }: {
 	token: CyToken;
 	receipts: Receipt[];
 	lockDates: LockDateMap;
 	prices: TokenPrices;
 	nowMs: number;
+	/** tokenId -> cyToken USD price at that position's lock block (null = unknown). */
+	cyTokenAtLock?: Map<string, bigint | null>;
 }): TokenGroup => {
 	const rows = receipts
 		.filter((r) => r.balance > 0n && BigInt(r.tokenId) > 0n)
@@ -112,6 +125,11 @@ export const buildTokenGroup = ({
 					: (metrics.underlyingAmount * prices.underlyingUsdNow) / scale;
 			const cyTokenRepayUsd =
 				prices.cyTokenUsdNow === null ? null : (receipt.balance * prices.cyTokenUsdNow) / scale;
+			const cyTokenUsdAtLock = cyTokenAtLock.get(receipt.tokenId) ?? null;
+			const payoffSavedUsd =
+				cyTokenUsdAtLock === null || prices.cyTokenUsdNow === null
+					? null
+					: (receipt.balance * (cyTokenUsdAtLock - prices.cyTokenUsdNow)) / scale;
 			return {
 				receipt: { ...receipt, totalsFlr: metrics.underlyingAmount },
 				underlyingAmount: metrics.underlyingAmount,
@@ -130,7 +148,14 @@ export const buildTokenGroup = ({
 						? null
 						: ratio(prices.underlyingUsdNow - metrics.lockPriceUsd, metrics.lockPriceUsd),
 				cyDiscountPct:
-					prices.cyTokenUsdNow === null ? null : ratio(ONE_18 - prices.cyTokenUsdNow, ONE_18)
+					prices.cyTokenUsdNow === null ? null : ratio(ONE_18 - prices.cyTokenUsdNow, ONE_18),
+				cyTokenUsdNow: prices.cyTokenUsdNow,
+				cyTokenUsdAtLock,
+				payoffSavedUsd,
+				payoffDiscountPct:
+					cyTokenUsdAtLock === null || prices.cyTokenUsdNow === null
+						? null
+						: ratio(cyTokenUsdAtLock - prices.cyTokenUsdNow, cyTokenUsdAtLock)
 			};
 		});
 
@@ -147,6 +172,7 @@ export const buildTokenGroup = ({
 				? null
 				: (lockedUnderlying * prices.underlyingUsdNow) / 10n ** BigInt(token.decimals),
 		netToCloseUsd: sumOrNull(sorted.map((r) => r.netToCloseUsd)),
+		payoffSavedUsd: sumOrNull(sorted.map((r) => r.payoffSavedUsd)),
 		hidden: prices.settled && prices.cyTokenUsdNow === null
 	};
 };
