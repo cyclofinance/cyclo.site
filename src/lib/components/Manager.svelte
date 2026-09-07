@@ -110,7 +110,7 @@
 	];
 	// One grid for the column headers AND the rows, so they can never drift
 	// apart: the Unlock column is a fixed width, not "whatever the button needs".
-	const ROW_GRID = 'grid-cols-[1fr_1fr_0.7fr_1.3fr_6.5rem]';
+	const ROW_GRID = 'grid-cols-[1fr_1fr_0.7fr_1fr_0.8fr_6.5rem]';
 	const arrow = (key: SortKey, s: SortSpec) => (s.key !== key ? '' : s.dir === 'asc' ? '▲' : '▼');
 
 	// ONE product on screen at a time, chosen from the dropdown. Remembered per
@@ -419,7 +419,7 @@
 							class="border-line/60 grid {ROW_GRID} items-center gap-x-6 border-t px-5 py-3 text-xs text-dim sm:px-6 sm:text-sm"
 							data-testid="columns-{group.token.name}"
 						>
-							{#each columns.slice(0, 3) as col (col.key)}
+							{#each columns as col (col.key)}
 								<button
 									class="flex items-center gap-1 text-left hover:text-ink {sort.key === col.key
 										? 'text-ink'
@@ -432,31 +432,6 @@
 									<span class="text-[0.7em]">{arrow(col.key, sort)}</span>
 								</button>
 							{/each}
-							<span class="flex items-center gap-3">
-								<button
-									class="flex items-center gap-1 hover:text-ink {sort.key === 'net'
-										? 'text-ink'
-										: ''}"
-									on:click|stopPropagation={() => sortBy('net')}
-									aria-pressed={sort.key === 'net'}
-									data-testid="sort-net"
-								>
-									Net to close
-									<span class="text-[0.7em]">{arrow('net', sort)}</span>
-								</button>
-								<span class="text-dim">·</span>
-								<button
-									class="flex items-center gap-1 hover:text-ink {sort.key === 'pct'
-										? 'text-ink'
-										: ''}"
-									on:click|stopPropagation={() => sortBy('pct')}
-									aria-pressed={sort.key === 'pct'}
-									data-testid="sort-pct"
-								>
-									% up
-									<span class="text-[0.7em]">{arrow('pct', sort)}</span>
-								</button>
-							</span>
 							<span class="sr-only">Unlock</span>
 						</div>
 					{:else if expanded[group.token.name]}
@@ -497,6 +472,12 @@
 				{:else if expanded[group.token.name]}
 					<div data-testid="rows-{group.token.name}">
 						{#each sortRows(group.rows, sort) as row, i (row.receipt.tokenId)}
+							{@const tone =
+								row.netToCloseUsd === null
+									? 'text-dim'
+									: row.netToCloseUsd < 0n
+										? 'text-loss'
+										: 'text-gain'}
 							<div
 								class="border-line/40 grid {ROW_GRID} items-center gap-x-6 border-t px-5 py-4 text-base sm:px-6 sm:text-lg"
 								data-testid="row-{group.token.name}-{i}"
@@ -504,18 +485,8 @@
 								<span>{formatAmount(row.underlyingAmount, group.token.decimals)}</span>
 								<span>${formatLockPrice(row.lockPriceUsd)}</span>
 								<span>{row.held === null ? '—' : `${row.held}d`}</span>
-								<span
-									class="flex items-baseline gap-3 font-bold {row.netToCloseUsd === null
-										? 'text-dim'
-										: row.netToCloseUsd < 0n
-											? 'text-loss'
-											: 'text-gain'}"
-								>
-									{formatUsd(row.netToCloseUsd)}
-									<span class="text-sm font-normal opacity-80" data-testid="row-pct">
-										{formatPct(row.pnlPct)}
-									</span>
-								</span>
+								<span class="font-bold {tone}">{formatUsd(row.netToCloseUsd)}</span>
+								<span class="font-bold {tone}" data-testid="row-pct">{formatPct(row.pnlPct)}</span>
 								<button
 									class="w-full border-frame border-line py-1.5 text-base font-bold hover:brightness-125"
 									on:click={() => (selected = { row, token: group.token })}
