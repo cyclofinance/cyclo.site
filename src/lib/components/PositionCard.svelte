@@ -36,7 +36,9 @@
 			<div class="text-2xl font-bold {tone}" data-testid="card-net">
 				{formatUsd(row.netToCloseUsd)}
 			</div>
-			<div class="text-xs text-dim">Net to close</div>
+			<div class="text-xs text-dim">
+				Net to close · <span class={tone} data-testid="card-pct">{formatPct(row.pnlPct)}</span>
+			</div>
 		</div>
 	</header>
 

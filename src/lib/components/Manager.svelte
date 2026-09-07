@@ -22,9 +22,8 @@
 		buildTokenGroup,
 		formatAmount,
 		formatLockPrice,
+		formatPct,
 		formatUsd,
-		heroNetToClose,
-		visibleGroups,
 		sortRows,
 		nextSort,
 		DEFAULT_SORT,
@@ -106,9 +105,36 @@
 		{ key: 'locked', label: 'Locked' },
 		{ key: 'lockPrice', label: 'Price at lock' },
 		{ key: 'held', label: 'Held' },
-		{ key: 'net', label: 'Net to close' }
+		{ key: 'net', label: 'Net to close' },
+		{ key: 'pct', label: '% up' }
 	];
+	// One grid for the column headers AND the rows, so they can never drift
+	// apart: the Unlock column is a fixed width, not "whatever the button needs".
+	const ROW_GRID = 'grid-cols-[1fr_1fr_0.7fr_1.3fr_6.5rem]';
 	const arrow = (key: SortKey, s: SortSpec) => (s.key !== key ? '' : s.dir === 'asc' ? '▲' : '▼');
+
+	// ONE product on screen at a time, chosen from the dropdown. Remembered per
+	// browser; on a fresh browser we open on whichever product holds the most
+	// positions.
+	const PRODUCT_KEY = 'cyclo-manager.product';
+	const readProduct = (): string | null => {
+		try {
+			return localStorage.getItem(PRODUCT_KEY);
+		} catch {
+			return null;
+		}
+	};
+	let selectedName: string = readProduct() ?? tokens[0].name;
+	let autoPicked = readProduct() !== null;
+	const pickProduct = (name: string) => {
+		selectedName = name;
+		autoPicked = true;
+		try {
+			localStorage.setItem(PRODUCT_KEY, name);
+		} catch {
+			/* private mode etc. */
+		}
+	};
 
 	const load = async (wallet: string) => {
 		abort?.abort();
@@ -126,6 +152,14 @@
 			const all = await fetchAllReceipts(wallet, flare, { signal });
 			if (signal.aborted) return;
 			receipts = all;
+			if (!autoPicked) {
+				const counts = tokens.map(
+					(t) => [t.name, all.filter((r) => r.token === t.name).length] as const
+				);
+				const busiest = counts.reduce((a, b) => (b[1] > a[1] ? b : a));
+				if (busiest[1] > 0) selectedName = busiest[0];
+				autoPicked = true;
+			}
 		} catch (e) {
 			if (e instanceof DOMException && e.name === 'AbortError') return;
 			error = e instanceof Error ? e.message : String(e);
@@ -200,13 +234,14 @@
 			cyTokenAtLock: cyAtLock[token.name]
 		})
 	);
-	$: shown = visibleGroups(groups);
-	$: hiddenWithPositions = groups.filter((g) => g.hidden && g.count > 0);
-	$: hero = heroNetToClose(groups);
-	$: mintable = groups.filter((g) => !g.hidden).map((g) => g.token);
+	$: current = groups.find((g) => g.token.name === selectedName) ?? groups[0];
+	$: shown = current && !current.hidden && current.count > 0 ? [current] : [];
+	$: hiddenWithPositions = current && current.hidden && current.count > 0 ? [current] : [];
+	$: hero = current?.netToCloseUsd ?? null;
+	$: mintable = current && !current.hidden ? [current.token] : [];
 	$: for (const g of shown) {
 		if (!(g.token.name in expanded)) {
-			expanded = { ...expanded, [g.token.name]: readExpanded(g.token.name, g.count <= 25) };
+			expanded = { ...expanded, [g.token.name]: readExpanded(g.token.name, true) };
 		}
 	}
 	$: onFlare = $chainId === flare.chain.id;
@@ -228,19 +263,49 @@
 			</Button>
 		</div>
 	{:else}
-		<!-- The one number this page exists for. -->
-		<div class="flex flex-col gap-1 border-frame border-line bg-primary p-4" data-testid="hero">
-			<span class="text-sm text-dim">Net to close all positions</span>
-			<span
-				class="text-4xl font-bold sm:text-5xl {hero === null
-					? 'text-dim'
-					: hero < 0n
-						? 'text-loss'
-						: 'text-gain'}"
-				data-testid="hero-net-to-close"
+		<!-- Which product. One at a time, never blended. -->
+		<label class="flex items-center gap-3 text-sm text-dim">
+			Product
+			<select
+				class="border-frame border-line bg-primary px-4 py-2 text-lg font-bold text-ink"
+				value={selectedName}
+				on:change={(e) => pickProduct(e.currentTarget.value)}
+				data-testid="product-select"
 			>
-				{formatUsd(hero)}
-			</span>
+				{#each groups as g (g.token.name)}
+					<option value={g.token.name}>
+						{g.token.underlyingSymbol} · {g.count} position{g.count === 1 ? '' : 's'}
+					</option>
+				{/each}
+			</select>
+		</label>
+
+		<!-- Top row: the one number this page exists for, and the way to add to it. -->
+		<div
+			class="grid gap-6 {mintable.length > 0 ? 'lg:grid-cols-[1fr_1.4fr]' : ''}"
+			data-testid="top-row"
+		>
+			<div
+				class="flex flex-col justify-center gap-1 border-frame border-line bg-primary p-5 sm:p-6"
+				data-testid="hero"
+			>
+				<span class="text-sm text-dim">
+					Net to close all {current?.token.underlyingSymbol ?? ''} positions
+				</span>
+				<span
+					class="text-4xl font-bold sm:text-5xl {hero === null
+						? 'text-dim'
+						: hero < 0n
+							? 'text-loss'
+							: 'text-gain'}"
+					data-testid="hero-net-to-close"
+				>
+					{formatUsd(hero)}
+				</span>
+			</div>
+			{#if mintable.length > 0}
+				<MintPanel tokens={mintable} />
+			{/if}
 		</div>
 
 		{#if loading}
@@ -251,7 +316,9 @@
 				<p class="text-sm">{error}</p>
 			</div>
 		{:else if shown.length === 0 && hiddenWithPositions.length === 0}
-			<p class="text-center text-lg text-dim" data-testid="empty">No lock positions.</p>
+			<p class="text-center text-lg text-dim" data-testid="empty">
+				No {current?.token.underlyingSymbol ?? ''} lock positions.
+			</p>
 		{/if}
 
 		{#each shown as group (group.token.name)}
@@ -349,10 +416,10 @@
 					</button>
 					{#if expanded[group.token.name] && !cards}
 						<div
-							class="border-line/60 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-6 border-t px-5 py-3 text-xs text-dim sm:px-6 sm:text-sm"
+							class="border-line/60 grid {ROW_GRID} items-center gap-x-6 border-t px-5 py-3 text-xs text-dim sm:px-6 sm:text-sm"
 							data-testid="columns-{group.token.name}"
 						>
-							{#each columns as col (col.key)}
+							{#each columns.slice(0, 3) as col (col.key)}
 								<button
 									class="flex items-center gap-1 text-left hover:text-ink {sort.key === col.key
 										? 'text-ink'
@@ -365,6 +432,31 @@
 									<span class="text-[0.7em]">{arrow(col.key, sort)}</span>
 								</button>
 							{/each}
+							<span class="flex items-center gap-3">
+								<button
+									class="flex items-center gap-1 hover:text-ink {sort.key === 'net'
+										? 'text-ink'
+										: ''}"
+									on:click|stopPropagation={() => sortBy('net')}
+									aria-pressed={sort.key === 'net'}
+									data-testid="sort-net"
+								>
+									Net to close
+									<span class="text-[0.7em]">{arrow('net', sort)}</span>
+								</button>
+								<span class="text-dim">·</span>
+								<button
+									class="flex items-center gap-1 hover:text-ink {sort.key === 'pct'
+										? 'text-ink'
+										: ''}"
+									on:click|stopPropagation={() => sortBy('pct')}
+									aria-pressed={sort.key === 'pct'}
+									data-testid="sort-pct"
+								>
+									% up
+									<span class="text-[0.7em]">{arrow('pct', sort)}</span>
+								</button>
+							</span>
 							<span class="sr-only">Unlock</span>
 						</div>
 					{:else if expanded[group.token.name]}
@@ -406,23 +498,26 @@
 					<div data-testid="rows-{group.token.name}">
 						{#each sortRows(group.rows, sort) as row, i (row.receipt.tokenId)}
 							<div
-								class="border-line/40 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-6 border-t px-5 py-4 text-base sm:px-6 sm:text-lg"
+								class="border-line/40 grid {ROW_GRID} items-center gap-x-6 border-t px-5 py-4 text-base sm:px-6 sm:text-lg"
 								data-testid="row-{group.token.name}-{i}"
 							>
 								<span>{formatAmount(row.underlyingAmount, group.token.decimals)}</span>
 								<span>${formatLockPrice(row.lockPriceUsd)}</span>
 								<span>{row.held === null ? '—' : `${row.held}d`}</span>
 								<span
-									class="font-bold {row.netToCloseUsd === null
+									class="flex items-baseline gap-3 font-bold {row.netToCloseUsd === null
 										? 'text-dim'
 										: row.netToCloseUsd < 0n
 											? 'text-loss'
 											: 'text-gain'}"
 								>
 									{formatUsd(row.netToCloseUsd)}
+									<span class="text-sm font-normal opacity-80" data-testid="row-pct">
+										{formatPct(row.pnlPct)}
+									</span>
 								</span>
 								<button
-									class="border-frame border-line px-4 py-1.5 text-base font-bold hover:brightness-125"
+									class="w-full border-frame border-line py-1.5 text-base font-bold hover:brightness-125"
 									on:click={() => (selected = { row, token: group.token })}
 									data-testid="unlock-{group.token.name}-{i}"
 								>
@@ -441,10 +536,6 @@
 				{group.token.name} yet.
 			</p>
 		{/each}
-
-		{#if mintable.length > 0}
-			<MintPanel tokens={mintable} />
-		{/if}
 	{/if}
 </div>
 

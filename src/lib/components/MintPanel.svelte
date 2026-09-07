@@ -19,6 +19,13 @@
 	export let tokens: CyToken[];
 
 	let token: CyToken = tokens[0];
+	// The parent decides which products are lockable (one at a time on the
+	// manager page). When that list changes, follow it and start the amount over.
+	$: if (!tokens.some((t) => t.name === token?.name)) {
+		token = tokens[0];
+		amountText = '';
+		assets = 0n;
+	}
 	let amountText = '';
 	let assets = 0n;
 	let lastPricedToken: string | null = null;

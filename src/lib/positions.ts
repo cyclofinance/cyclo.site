@@ -187,7 +187,7 @@ export const buildTokenGroup = ({
 };
 
 /** The columns a reader can order the rows by. */
-export type SortKey = 'locked' | 'lockPrice' | 'held' | 'net';
+export type SortKey = 'locked' | 'lockPrice' | 'held' | 'net' | 'pct';
 export type SortDir = 'asc' | 'desc';
 export type SortSpec = { key: SortKey; dir: SortDir };
 
@@ -199,7 +199,8 @@ export const NATURAL_DIR: Record<SortKey, SortDir> = {
 	locked: 'desc',
 	lockPrice: 'asc',
 	held: 'desc',
-	net: 'desc'
+	net: 'desc',
+	pct: 'desc'
 };
 
 /** Click the column you are already on and it flips; click another and it starts natural. */
@@ -218,6 +219,10 @@ const sortValue = (row: PositionRow, key: SortKey): bigint | null => {
 			return row.held === null ? null : BigInt(row.held);
 		case 'net':
 			return row.netToCloseUsd;
+		case 'pct':
+			// Net to close as a share of what was locked — a $44 win on $500 beats
+			// a $200 win on $3,000. Six decimals is plenty to order by.
+			return row.pnlPct === null ? null : BigInt(Math.round(row.pnlPct * 1_000_000));
 	}
 };
 

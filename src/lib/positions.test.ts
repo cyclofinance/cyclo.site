@@ -248,6 +248,18 @@ describe('sortRows / nextSort', () => {
 		expect(sortRows(rows(), { key: 'held', dir: 'desc' }).map((r) => r.held)).toEqual([9, 5, null]);
 		expect(sortRows(rows(), { key: 'held', dir: 'asc' }).map((r) => r.held)).toEqual([5, 9, null]);
 	});
+	it('orders by percent up independently of dollars: a small position up more ranks first', () => {
+		const big = { ...row(200n, ONE), pnlPct: 0.05 }; // +$200 on a big lock, +5%
+		const small = { ...row(44n, ONE), pnlPct: 0.4 }; // +$44 on a small lock, +40%
+		const unknown = { ...row(500n, ONE), pnlPct: null };
+		expect(
+			sortRows([big, small, unknown], { key: 'pct', dir: 'desc' }).map((r) => r.pnlPct)
+		).toEqual([0.4, 0.05, null]);
+		expect(
+			sortRows([big, small, unknown], { key: 'pct', dir: 'asc' }).map((r) => r.pnlPct)
+		).toEqual([0.05, 0.4, null]);
+		expect(nextSort(DEFAULT_SORT, 'pct')).toEqual({ key: 'pct', dir: 'desc' });
+	});
 	it('unknown net-to-close stays at the bottom even ascending', () => {
 		expect(nets(sortRows(rows(), { key: 'net', dir: 'asc' }))).toEqual([5n, 50n, null]);
 	});
