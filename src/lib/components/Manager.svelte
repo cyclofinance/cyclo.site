@@ -237,7 +237,6 @@
 	$: current = groups.find((g) => g.token.name === selectedName) ?? groups[0];
 	$: shown = current && !current.hidden && current.count > 0 ? [current] : [];
 	$: hiddenWithPositions = current && current.hidden && current.count > 0 ? [current] : [];
-	$: hero = current?.netToCloseUsd ?? null;
 	$: mintable = current && !current.hidden ? [current.token] : [];
 	$: for (const g of shown) {
 		if (!(g.token.name in expanded)) {
@@ -280,33 +279,9 @@
 			</select>
 		</label>
 
-		<!-- Top row: the one number this page exists for, and the way to add to it. -->
-		<div
-			class="grid gap-6 {mintable.length > 0 ? 'lg:grid-cols-[1fr_1.4fr]' : ''}"
-			data-testid="top-row"
-		>
-			<div
-				class="flex flex-col justify-center gap-1 border-frame border-line bg-primary p-5 sm:p-6"
-				data-testid="hero"
-			>
-				<span class="text-sm text-dim">
-					Net to close all {current?.token.underlyingSymbol ?? ''} positions
-				</span>
-				<span
-					class="text-4xl font-bold sm:text-5xl {hero === null
-						? 'text-dim'
-						: hero < 0n
-							? 'text-loss'
-							: 'text-gain'}"
-					data-testid="hero-net-to-close"
-				>
-					{formatUsd(hero)}
-				</span>
-			</div>
-			{#if mintable.length > 0}
-				<MintPanel tokens={mintable} />
-			{/if}
-		</div>
+		{#if mintable.length > 0}
+			<MintPanel tokens={mintable} />
+		{/if}
 
 		{#if loading}
 			<p class="text-center text-lg" data-testid="loading">Loading positions…</p>
@@ -397,19 +372,6 @@
 										: group.payoffSavedUsd >= 0n
 											? formatUsd(group.payoffSavedUsd).replace('+', '')
 											: `−${formatUsd(-group.payoffSavedUsd).replace('+', '')} more`}
-								</span>
-							</span>
-							<span class="flex flex-col gap-1">
-								<span class="text-xs text-dim">Net to close</span>
-								<span
-									class="text-base font-bold sm:text-lg {group.netToCloseUsd === null
-										? 'text-dim'
-										: group.netToCloseUsd < 0n
-											? 'text-loss'
-											: 'text-gain'}"
-									data-testid="group-net-{group.token.name}"
-								>
-									{formatUsd(group.netToCloseUsd)}
 								</span>
 							</span>
 						</span>
