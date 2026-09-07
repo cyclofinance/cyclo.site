@@ -37,7 +37,11 @@
 				{formatUsd(row.netToCloseUsd)}
 			</div>
 			<div class="text-xs text-dim">
-				Net to close · <span class={tone} data-testid="card-pct">{formatPct(row.pnlPct)}</span>
+				Net to close · price since lock
+				<span
+					class={row.pricePct === null ? 'text-dim' : row.pricePct < 0 ? 'text-loss' : 'text-gain'}
+					data-testid="card-pct">{formatPct(row.pricePct)}</span
+				>
 			</div>
 		</div>
 	</header>

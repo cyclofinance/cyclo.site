@@ -220,9 +220,10 @@ const sortValue = (row: PositionRow, key: SortKey): bigint | null => {
 		case 'net':
 			return row.netToCloseUsd;
 		case 'pct':
-			// Net to close as a share of what was locked — a $44 win on $500 beats
-			// a $200 win on $3,000. Six decimals is plenty to order by.
-			return row.pnlPct === null ? null : BigInt(Math.round(row.pnlPct * 1_000_000));
+			// The collateral's price move since lock. NOT net-to-close over cost
+			// basis: that ratio is dominated by 1 − cyToken price (the nominal
+			// discount) and reads ~+80% on a position locked minutes ago.
+			return row.pricePct === null ? null : BigInt(Math.round(row.pricePct * 1_000_000));
 	}
 };
 

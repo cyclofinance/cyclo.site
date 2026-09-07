@@ -153,6 +153,21 @@ describe('buildTokenGroup', () => {
 		expect(r.costBasisUsd).toBe(2n * ONE);
 	});
 
+	it("REGRESSION: a position locked at today's price is 0% up even when the cyToken trades at $0.10", () => {
+		// The nominal discount (1 − Cnow = 90% here) must never leak into "% up".
+		const g = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted)],
+			lockDates: new Map(),
+			prices: { ...prices, underlyingUsdNow: lockPrice },
+			nowMs: 0
+		});
+		expect(g.rows[0].pricePct).toBe(0);
+		expect(g.rows[0].cyDiscountPct).toBeCloseTo(0.9, 6);
+		// and net-to-close is still the close value, which is NOT a gain
+		expect(g.rows[0].netToCloseUsd).toBe(2n * ONE - 2n * 10n ** 17n);
+	});
+
 	it('cash to unlock all is unknown while there is no cyToken market', () => {
 		const g = buildTokenGroup({
 			token,
@@ -248,16 +263,17 @@ describe('sortRows / nextSort', () => {
 		expect(sortRows(rows(), { key: 'held', dir: 'desc' }).map((r) => r.held)).toEqual([9, 5, null]);
 		expect(sortRows(rows(), { key: 'held', dir: 'asc' }).map((r) => r.held)).toEqual([5, 9, null]);
 	});
-	it('orders by percent up independently of dollars: a small position up more ranks first', () => {
-		const big = { ...row(200n, ONE), pnlPct: 0.05 }; // +$200 on a big lock, +5%
-		const small = { ...row(44n, ONE), pnlPct: 0.4 }; // +$44 on a small lock, +40%
-		const unknown = { ...row(500n, ONE), pnlPct: null };
+	it('orders by the collateral price move since lock, not by net-to-close over cost basis', () => {
+		const flat = { ...row(200n, ONE), pricePct: 0.0, pnlPct: 0.79 }; // big nominal discount, price flat
+		const up = { ...row(44n, ONE), pricePct: 0.043, pnlPct: 0.84 }; // price +4.3%
+		const down = { ...row(53n, ONE), pricePct: -0.0035, pnlPct: 0.79 }; // locked today, price −0.35%
+		const unknown = { ...row(500n, ONE), pricePct: null, pnlPct: 0.9 };
 		expect(
-			sortRows([big, small, unknown], { key: 'pct', dir: 'desc' }).map((r) => r.pnlPct)
-		).toEqual([0.4, 0.05, null]);
+			sortRows([flat, down, up, unknown], { key: 'pct', dir: 'desc' }).map((r) => r.pricePct)
+		).toEqual([0.043, 0, -0.0035, null]);
 		expect(
-			sortRows([big, small, unknown], { key: 'pct', dir: 'asc' }).map((r) => r.pnlPct)
-		).toEqual([0.05, 0.4, null]);
+			sortRows([flat, down, up, unknown], { key: 'pct', dir: 'asc' }).map((r) => r.pricePct)
+		).toEqual([-0.0035, 0, 0.043, null]);
 		expect(nextSort(DEFAULT_SORT, 'pct')).toEqual({ key: 'pct', dir: 'desc' });
 	});
 	it('unknown net-to-close stays at the bottom even ascending', () => {
