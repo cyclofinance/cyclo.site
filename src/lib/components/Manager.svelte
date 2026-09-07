@@ -23,12 +23,15 @@
 		formatAmount,
 		formatLockPrice,
 		formatUsd,
-		cyTokenShortfall,
 		heroNetToClose,
 		visibleGroups,
+		sortRows,
+		nextSort,
+		DEFAULT_SORT,
 		LOADING_PRICES,
 		type PositionRow,
-		type TokenGroup,
+		type SortKey,
+		type SortSpec,
 		type TokenPrices
 	} from '$lib/positions';
 	import { env } from '$env/dynamic/public';
@@ -73,6 +76,39 @@
 			/* private mode etc. — expansion just does not persist */
 		}
 	};
+
+	// Column order, one choice for the whole page, remembered per browser.
+	const SORT_KEY = 'cyclo-manager.sort';
+	const readSort = (): SortSpec => {
+		try {
+			const v = JSON.parse(localStorage.getItem(SORT_KEY) ?? 'null');
+			if (
+				v &&
+				['locked', 'lockPrice', 'held', 'net'].includes(v.key) &&
+				['asc', 'desc'].includes(v.dir)
+			)
+				return v;
+		} catch {
+			/* fall through */
+		}
+		return DEFAULT_SORT;
+	};
+	let sort: SortSpec = readSort();
+	const sortBy = (key: SortKey) => {
+		sort = nextSort(sort, key);
+		try {
+			localStorage.setItem(SORT_KEY, JSON.stringify(sort));
+		} catch {
+			/* private mode etc. */
+		}
+	};
+	const columns: { key: SortKey; label: string }[] = [
+		{ key: 'locked', label: 'Locked' },
+		{ key: 'lockPrice', label: 'Price at lock' },
+		{ key: 'held', label: 'Held' },
+		{ key: 'net', label: 'Net to close' }
+	];
+	const arrow = (key: SortKey, s: SortSpec) => (s.key !== key ? '' : s.dir === 'asc' ? '▲' : '▼');
 
 	const load = async (wallet: string) => {
 		abort?.abort();
@@ -220,13 +256,12 @@
 
 		{#each shown as group (group.token.name)}
 			{@const wallet = $balancesStore.balances[group.token.name]?.signerBalance ?? 0n}
-			{@const short = cyTokenShortfall(group.mintedCyToken, wallet)}
 			<section class="border-frame border-line bg-primary" data-testid="group-{group.token.name}">
 				<!-- Sticks to the top while you scroll this token's rows, so the numbers
 				     that explain the rows are always in view. -->
 				<div class="sticky top-0 z-10 border-b-2 border-line bg-primary">
 					<button
-						class="flex w-full flex-col gap-3 p-4 text-left"
+						class="flex w-full flex-col gap-5 p-5 text-left sm:p-6"
 						on:click={() => toggle(group.token.name)}
 						data-testid="group-toggle-{group.token.name}"
 					>
@@ -240,44 +275,56 @@
 							<span class="text-dim">{expanded[group.token.name] ? '▴' : '▾'}</span>
 						</span>
 						<span
-							class="grid w-full grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:grid-cols-6"
+							class="grid w-full grid-cols-2 gap-x-8 gap-y-5 sm:grid-cols-4"
 							data-testid="group-summary-{group.token.name}"
 						>
-							<span class="flex flex-col">
+							<span class="flex flex-col gap-1">
 								<span class="text-xs text-dim">{group.token.name} in wallet</span>
-								<span>{formatAmount(wallet, group.token.decimals)}</span>
+								<span class="text-base sm:text-lg"
+									>{formatAmount(wallet, group.token.decimals)}</span
+								>
 							</span>
-							<span class="flex flex-col">
+							<span class="flex flex-col gap-1">
 								<span class="text-xs text-dim">{group.token.name} to unlock all</span>
-								<span>
+								<span class="text-base sm:text-lg">
 									{formatAmount(group.mintedCyToken, group.token.decimals)}
-									{#if short > 0n}
-										<span class="text-dim" data-testid="group-short-{group.token.name}">
-											· short {formatAmount(short, group.token.decimals)}
-										</span>
-									{/if}
 								</span>
 							</span>
-							<span class="flex flex-col">
+							<span class="flex flex-col gap-1">
+								<span class="text-xs text-dim">{group.token.name} price now</span>
+								<span class="text-base sm:text-lg" data-testid="group-cyprice-{group.token.name}">
+									{group.cyTokenUsdNow === null ? '—' : `$${formatLockPrice(group.cyTokenUsdNow)}`}
+								</span>
+							</span>
+							<span class="flex flex-col gap-1">
+								<span class="text-xs text-dim">Cash to unlock all</span>
+								<span
+									class="text-base sm:text-lg"
+									data-testid="group-unlock-cash-{group.token.name}"
+								>
+									{formatUsd(group.cyTokenRepayUsd).replace('+', '')}
+								</span>
+							</span>
+							<span class="flex flex-col gap-1">
 								<span class="text-xs text-dim">{group.token.underlyingSymbol} price now</span>
-								<span data-testid="group-price-{group.token.name}">
+								<span class="text-base sm:text-lg" data-testid="group-price-{group.token.name}">
 									{group.rows[0]?.underlyingUsdNow == null
 										? '—'
 										: `$${formatLockPrice(group.rows[0].underlyingUsdNow)}`}
 								</span>
 							</span>
-							<span class="flex flex-col">
+							<span class="flex flex-col gap-1">
 								<span class="text-xs text-dim">{group.token.underlyingSymbol} locked</span>
-								<span>
+								<span class="text-base sm:text-lg">
 									{formatAmount(group.lockedUnderlying, group.token.decimals)}
-									<span class="text-dim"
+									<span class="text-sm text-dim"
 										>· worth {formatUsd(group.collateralValueUsd).replace('+', '')}</span
 									>
 								</span>
 							</span>
-							<span class="flex flex-col">
+							<span class="flex flex-col gap-1">
 								<span class="text-xs text-dim">Less than at lock</span>
-								<span data-testid="group-payoff-{group.token.name}">
+								<span class="text-base sm:text-lg" data-testid="group-payoff-{group.token.name}">
 									{group.payoffSavedUsd === null
 										? '—'
 										: group.payoffSavedUsd >= 0n
@@ -285,10 +332,10 @@
 											: `−${formatUsd(-group.payoffSavedUsd).replace('+', '')} more`}
 								</span>
 							</span>
-							<span class="flex flex-col">
+							<span class="flex flex-col gap-1">
 								<span class="text-xs text-dim">Net to close</span>
 								<span
-									class="font-bold {group.netToCloseUsd === null
+									class="text-base font-bold sm:text-lg {group.netToCloseUsd === null
 										? 'text-dim'
 										: group.netToCloseUsd < 0n
 											? 'text-loss'
@@ -302,13 +349,42 @@
 					</button>
 					{#if expanded[group.token.name] && !cards}
 						<div
-							class="border-line/60 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-4 border-t px-4 py-2 text-xs text-dim sm:text-sm"
+							class="border-line/60 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] gap-x-6 border-t px-5 py-3 text-xs text-dim sm:px-6 sm:text-sm"
+							data-testid="columns-{group.token.name}"
 						>
-							<span>Locked</span>
-							<span>Price at lock</span>
-							<span>Held</span>
-							<span>Net to close</span>
+							{#each columns as col (col.key)}
+								<button
+									class="flex items-center gap-1 text-left hover:text-ink {sort.key === col.key
+										? 'text-ink'
+										: ''}"
+									on:click|stopPropagation={() => sortBy(col.key)}
+									aria-pressed={sort.key === col.key}
+									data-testid="sort-{col.key}"
+								>
+									{col.label}
+									<span class="text-[0.7em]">{arrow(col.key, sort)}</span>
+								</button>
+							{/each}
 							<span class="sr-only">Unlock</span>
+						</div>
+					{:else if expanded[group.token.name]}
+						<div
+							class="border-line/60 flex flex-wrap items-center gap-x-4 gap-y-2 border-t px-5 py-3 text-xs text-dim sm:px-6 sm:text-sm"
+							data-testid="columns-{group.token.name}"
+						>
+							<span>Sort by</span>
+							{#each columns as col (col.key)}
+								<button
+									class="flex items-center gap-1 hover:text-ink {sort.key === col.key
+										? 'text-ink'
+										: ''}"
+									on:click|stopPropagation={() => sortBy(col.key)}
+									data-testid="sort-{col.key}"
+								>
+									{col.label}
+									<span class="text-[0.7em]">{arrow(col.key, sort)}</span>
+								</button>
+							{/each}
 						</div>
 					{/if}
 				</div>
@@ -318,7 +394,7 @@
 						class="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3"
 						data-testid="cards-{group.token.name}"
 					>
-						{#each group.rows as row (row.receipt.tokenId)}
+						{#each sortRows(group.rows, sort) as row (row.receipt.tokenId)}
 							<PositionCard
 								{row}
 								token={group.token}
@@ -328,9 +404,9 @@
 					</div>
 				{:else if expanded[group.token.name]}
 					<div data-testid="rows-{group.token.name}">
-						{#each group.rows as row, i (row.receipt.tokenId)}
+						{#each sortRows(group.rows, sort) as row, i (row.receipt.tokenId)}
 							<div
-								class="border-line/40 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-4 border-t px-4 py-2 text-sm sm:text-base"
+								class="border-line/40 grid grid-cols-[1.2fr_1.2fr_0.7fr_1fr_auto] items-center gap-x-6 border-t px-5 py-4 text-base sm:px-6 sm:text-lg"
 								data-testid="row-{group.token.name}-{i}"
 							>
 								<span>{formatAmount(row.underlyingAmount, group.token.decimals)}</span>
@@ -346,7 +422,7 @@
 									{formatUsd(row.netToCloseUsd)}
 								</span>
 								<button
-									class="border-frame border-line px-3 py-1 font-bold hover:brightness-125"
+									class="border-frame border-line px-4 py-1.5 text-base font-bold hover:brightness-125"
 									on:click={() => (selected = { row, token: group.token })}
 									data-testid="unlock-{group.token.name}-{i}"
 								>

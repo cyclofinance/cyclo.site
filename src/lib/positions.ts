@@ -53,6 +53,13 @@ export type TokenGroup = {
 	netToCloseUsd: bigint | null;
 	/** Sum of payoffSavedUsd over the group. Null if any row is unknown. */
 	payoffSavedUsd: bigint | null;
+	/** cyToken market price now, 18 dec. Null = no market (or still probing). */
+	cyTokenUsdNow: bigint | null;
+	/**
+	 * Cash to buy back EVERY cyToken this group minted at the market price now
+	 * = M × Cnow over the group. What "unlock all" costs in dollars. Null = no market.
+	 */
+	cyTokenRepayUsd: bigint | null;
 	/**
 	 * True when we KNOW there is no market for the cyToken (price probe
 	 * finished and found no pool). Hidden groups are not shown as positions
@@ -173,9 +180,64 @@ export const buildTokenGroup = ({
 				: (lockedUnderlying * prices.underlyingUsdNow) / 10n ** BigInt(token.decimals),
 		netToCloseUsd: sumOrNull(sorted.map((r) => r.netToCloseUsd)),
 		payoffSavedUsd: sumOrNull(sorted.map((r) => r.payoffSavedUsd)),
+		cyTokenUsdNow: prices.cyTokenUsdNow,
+		cyTokenRepayUsd: sumOrNull(sorted.map((r) => r.cyTokenRepayUsd)),
 		hidden: prices.settled && prices.cyTokenUsdNow === null
 	};
 };
+
+/** The columns a reader can order the rows by. */
+export type SortKey = 'locked' | 'lockPrice' | 'held' | 'net';
+export type SortDir = 'asc' | 'desc';
+export type SortSpec = { key: SortKey; dir: SortDir };
+
+/** The order the page opens in: best to close first. */
+export const DEFAULT_SORT: SortSpec = { key: 'net', dir: 'desc' };
+
+/** The direction a column starts in when first clicked — what a reader most likely wants. */
+export const NATURAL_DIR: Record<SortKey, SortDir> = {
+	locked: 'desc',
+	lockPrice: 'asc',
+	held: 'desc',
+	net: 'desc'
+};
+
+/** Click the column you are already on and it flips; click another and it starts natural. */
+export const nextSort = (current: SortSpec, key: SortKey): SortSpec =>
+	current.key === key
+		? { key, dir: current.dir === 'asc' ? 'desc' : 'asc' }
+		: { key, dir: NATURAL_DIR[key] };
+
+const sortValue = (row: PositionRow, key: SortKey): bigint | null => {
+	switch (key) {
+		case 'locked':
+			return row.underlyingAmount;
+		case 'lockPrice':
+			return row.lockPriceUsd;
+		case 'held':
+			return row.held === null ? null : BigInt(row.held);
+		case 'net':
+			return row.netToCloseUsd;
+	}
+};
+
+/**
+ * Order rows by one column. Unknowns (`—`) always sink to the bottom whatever
+ * the direction, and ties fall back to the lowest lock price so the order is
+ * stable and never depends on fetch timing.
+ */
+export const sortRows = (rows: PositionRow[], spec: SortSpec): PositionRow[] =>
+	[...rows].sort((a, b) => {
+		const av = sortValue(a, spec.key);
+		const bv = sortValue(b, spec.key);
+		if (av === null && bv !== null) return 1;
+		if (bv === null && av !== null) return -1;
+		if (av !== null && bv !== null && av !== bv) {
+			const less = av < bv ? -1 : 1;
+			return spec.dir === 'asc' ? less : -less;
+		}
+		return a.lockPriceUsd < b.lockPriceUsd ? -1 : a.lockPriceUsd > b.lockPriceUsd ? 1 : 0;
+	});
 
 /** a / b as a JS number, null when either side is unknown or b is zero. */
 export const ratio = (a: bigint | null, b: bigint | null): number | null => {

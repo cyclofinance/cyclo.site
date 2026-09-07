@@ -8,6 +8,9 @@ import {
 	formatUsd,
 	heroNetToClose,
 	sortBestToCloseFirst,
+	sortRows,
+	nextSort,
+	DEFAULT_SORT,
 	visibleGroups,
 	LOADING_PRICES,
 	type PositionRow,
@@ -87,6 +90,9 @@ describe('buildTokenGroup', () => {
 		// 100 sFLR × $0.04 = $4 of collateral at today's oracle price
 		expect(g.collateralValueUsd).toBe(4n * ONE);
 		expect(g.hidden).toBe(false);
+		// Cash to unlock all = every minted cyToken bought back at market: 2 × $0.10
+		expect(g.cyTokenUsdNow).toBe(10n ** 17n);
+		expect(g.cyTokenRepayUsd).toBe(2n * 10n ** 17n);
 
 		const r = g.rows[0];
 		expect(r.collateralValueUsd).toBe(4n * ONE); // A × Pnow
@@ -147,6 +153,18 @@ describe('buildTokenGroup', () => {
 		expect(r.costBasisUsd).toBe(2n * ONE);
 	});
 
+	it('cash to unlock all is unknown while there is no cyToken market', () => {
+		const g = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted)],
+			lockDates: new Map(),
+			prices: { ...prices, cyTokenUsdNow: null, settled: false },
+			nowMs: 0
+		});
+		expect(g.cyTokenUsdNow).toBeNull();
+		expect(g.cyTokenRepayUsd).toBeNull();
+	});
+
 	it('collateral value is unknown while the oracle price is unknown', () => {
 		const g = buildTokenGroup({
 			token,
@@ -192,6 +210,61 @@ describe('buildTokenGroup', () => {
 	});
 });
 
+describe('sortRows / nextSort', () => {
+	const rows = () => {
+		const a = { ...row(50n, 3n * ONE), underlyingAmount: 10n, held: 5 };
+		const b = { ...row(5n, 1n * ONE), underlyingAmount: 30n, held: null };
+		const c = { ...row(null, 2n * ONE), underlyingAmount: 20n, held: 9 };
+		return [a, b, c];
+	};
+	const nets = (r: PositionRow[]) => r.map((x) => x.netToCloseUsd);
+
+	it('default order is best to close first, unknowns last', () => {
+		expect(nets(sortRows(rows(), DEFAULT_SORT))).toEqual([50n, 5n, null]);
+	});
+	it('orders by locked amount both ways', () => {
+		expect(sortRows(rows(), { key: 'locked', dir: 'desc' }).map((r) => r.underlyingAmount)).toEqual(
+			[30n, 20n, 10n]
+		);
+		expect(sortRows(rows(), { key: 'locked', dir: 'asc' }).map((r) => r.underlyingAmount)).toEqual([
+			10n,
+			20n,
+			30n
+		]);
+	});
+	it('orders by lock price', () => {
+		expect(sortRows(rows(), { key: 'lockPrice', dir: 'asc' }).map((r) => r.lockPriceUsd)).toEqual([
+			ONE,
+			2n * ONE,
+			3n * ONE
+		]);
+		expect(sortRows(rows(), { key: 'lockPrice', dir: 'desc' }).map((r) => r.lockPriceUsd)).toEqual([
+			3n * ONE,
+			2n * ONE,
+			ONE
+		]);
+	});
+	it('orders by days held with unknown held at the bottom in BOTH directions', () => {
+		expect(sortRows(rows(), { key: 'held', dir: 'desc' }).map((r) => r.held)).toEqual([9, 5, null]);
+		expect(sortRows(rows(), { key: 'held', dir: 'asc' }).map((r) => r.held)).toEqual([5, 9, null]);
+	});
+	it('unknown net-to-close stays at the bottom even ascending', () => {
+		expect(nets(sortRows(rows(), { key: 'net', dir: 'asc' }))).toEqual([5n, 50n, null]);
+	});
+	it('does not mutate its input', () => {
+		const input = rows();
+		const before = nets(input);
+		sortRows(input, { key: 'locked', dir: 'asc' });
+		expect(nets(input)).toEqual(before);
+	});
+	it('nextSort flips the same column and starts a new column in its natural direction', () => {
+		expect(nextSort(DEFAULT_SORT, 'net')).toEqual({ key: 'net', dir: 'asc' });
+		expect(nextSort(DEFAULT_SORT, 'lockPrice')).toEqual({ key: 'lockPrice', dir: 'asc' });
+		expect(nextSort(DEFAULT_SORT, 'held')).toEqual({ key: 'held', dir: 'desc' });
+		expect(nextSort({ key: 'held', dir: 'desc' }, 'held')).toEqual({ key: 'held', dir: 'asc' });
+	});
+});
+
 describe('heroNetToClose / visibleGroups', () => {
 	const group = (net: bigint | null, count = 1, hidden = false): TokenGroup =>
 		({
@@ -203,6 +276,8 @@ describe('heroNetToClose / visibleGroups', () => {
 			collateralValueUsd: null,
 			netToCloseUsd: net,
 			payoffSavedUsd: null,
+			cyTokenUsdNow: null,
+			cyTokenRepayUsd: null,
 			hidden
 		}) as TokenGroup;
 
