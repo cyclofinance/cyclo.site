@@ -13,3 +13,6 @@ src/generated-graphql.ts
 # Claude Code local config
 .claude/
 CLAUDE.md
+
+# private preview server lives in the deploy bundles, not here
+server.js

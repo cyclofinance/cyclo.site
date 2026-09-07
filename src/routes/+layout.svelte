@@ -1,11 +1,14 @@
 <script lang="ts">
 	import '../app.css';
-	import { signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
+	import { defaultConfig, signerAddress, wagmiConfig, chainId } from 'svelte-wagmi';
+	import { injected, walletConnect } from '@wagmi/connectors';
 	import Header from '$lib/components/Header.svelte';
+	import { PUBLIC_WALLETCONNECT_ID } from '$env/static/public';
 	import { browser } from '$app/environment';
+	import { PUBLIC_LAUNCHED } from '$env/static/public';
+	import { setActiveNetworkByChainId, supportedNetworks } from '$lib/stores';
 	import { env } from '$env/dynamic/public';
-	import { setActiveNetworkByChainId } from '$lib/stores';
-	import { initWallet as bootWallet } from '$lib/wallet';
+	import { initWallet as initInjectedOnly } from '$lib/wallet';
 	import { selectedCyToken } from '$lib/stores';
 	import balancesStore from '$lib/balancesStore';
 	import blockNumberStore from '$lib/blockNumberStore';
@@ -13,19 +16,33 @@
 	import type { Hex } from 'viem';
 	import DataFetcherProvider from '$lib/components/DataFetcherProvider.svelte';
 
-	// Build-time look: PUBLIC_THEME=apex gives the operator's private theme.
+	let intervalId: ReturnType<typeof setInterval>;
+	let lastChainId: number | null = null;
+	const isBrowser = typeof window !== 'undefined';
+	// Build-time look: PUBLIC_THEME=apex is a private theme; default is Cyclo's own.
 	if (typeof document !== 'undefined') {
 		document.documentElement.dataset.theme = env.PUBLIC_THEME || 'cyclo';
 		if (env.PUBLIC_THEME === 'apex') document.title = 'Cyclo positions';
 	}
 
-	let intervalId: ReturnType<typeof setInterval>;
-	let lastChainId: number | null = null;
-	const isBrowser = typeof window !== 'undefined';
-	// Browser-extension wallet only (Trezor via Rabby). No Reown modal, no
-	// WalletConnect relay -- see src/lib/wallet.ts.
 	const initWallet = async () => {
-		await bootWallet();
+		// PUBLIC_WALLET=injected: browser-extension wallet only, no WalletConnect
+		// relay (private single-user build). Default keeps Cyclo's full setup.
+		if (env.PUBLIC_WALLET === 'injected') {
+			await initInjectedOnly();
+			startGettingPricesAndBalances();
+			return;
+		}
+		// Get all chains from supported networks
+		const chains = supportedNetworks.map((network) => network.chain);
+		const erckit = defaultConfig({
+			autoConnect: true,
+			appName: 'cyclo',
+			walletConnectProjectId: PUBLIC_WALLETCONNECT_ID,
+			chains: chains,
+			connectors: [injected(), walletConnect({ projectId: PUBLIC_WALLETCONNECT_ID })]
+		});
+		await erckit.init();
 		startGettingPricesAndBalances();
 	};
 
@@ -67,7 +84,10 @@
 {#if $wagmiConfig}
 	<DataFetcherProvider>
 		<div class="flex min-h-screen flex-col">
-			<Header />
+			<Header
+				launched={PUBLIC_LAUNCHED === 'true'}
+				managerOnly={env.PUBLIC_MANAGER_HOME === 'true'}
+			/>
 			<main class="flex-grow bg-page">
 				<slot />
 			</main>
