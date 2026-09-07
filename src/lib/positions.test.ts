@@ -42,6 +42,7 @@ const row = (net: bigint | null, lockPrice = ONE): PositionRow => ({
 	collateralPnlUsd: null,
 	cyTokenPnlUsd: null,
 	netToCloseUsd: net,
+	closeValueUsd: null,
 	underlyingUsdNow: null,
 	collateralValueUsd: null,
 	cyTokenRepayUsd: null,
@@ -78,13 +79,17 @@ describe('buildTokenGroup', () => {
 			receipts: [receipt(lockPrice, minted)],
 			lockDates: new Map([[lockPrice.toString(), 0]]),
 			prices,
-			nowMs: 3 * 86_400_000
+			nowMs: 3 * 86_400_000,
+			cyTokenAtLock: new Map([[lockPrice.toString(), 68n * 10n ** 16n]]) // cyToken was $0.68 at mint
 		});
 		expect(g.count).toBe(1);
 		expect(g.lockedUnderlying).toBe(100n * ONE);
 		expect(g.mintedCyToken).toBe(minted);
-		// 100 × 0.04 − 2 × 0.10 = 4 − 0.2 = 3.8
-		expect(g.netToCloseUsd).toBe(38n * 10n ** 17n);
+		// NET TO CLOSE = collateral leg 100 × (0.04 − 0.02) = 2.00
+		//              + cyToken leg   2 × (0.68 − 0.10)   = 1.16  → 3.16
+		expect(g.netToCloseUsd).toBe(316n * 10n ** 16n);
+		// close VALUE (not a gain): 100 × 0.04 − 2 × 0.10 = 3.8
+		expect(g.rows[0].closeValueUsd).toBe(38n * 10n ** 17n);
 		expect(g.rows[0].held).toBe(3);
 		expect(g.rows[0].receipt.totalsFlr).toBe(100n * ONE);
 		// 100 sFLR × $0.04 = $4 of collateral at today's oracle price
@@ -98,7 +103,7 @@ describe('buildTokenGroup', () => {
 		expect(r.collateralValueUsd).toBe(4n * ONE); // A × Pnow
 		expect(r.cyTokenRepayUsd).toBe(2n * 10n ** 17n); // 2 cysFLR × $0.10
 		expect(r.costBasisUsd).toBe(2n * ONE); // M at $1 nominal = A × Plock
-		expect(r.pnlPct).toBeCloseTo(1.9, 6); // 3.8 / 2
+		expect(r.pnlPct).toBeCloseTo(1.58, 6); // 3.16 / 2.00 locked
 		expect(r.pricePct).toBeCloseTo(1.0, 6); // 0.02 → 0.04
 		expect(r.cyDiscountPct).toBeCloseTo(0.9, 6); // $0.10 is 90% below $1
 	});
@@ -117,6 +122,7 @@ describe('buildTokenGroup', () => {
 		expect(r.payoffSavedUsd).toBe(116n * 10n ** 16n); // 2 × (0.68 − 0.10)
 		expect(r.payoffDiscountPct).toBeCloseTo(0.852941, 5); // 0.58 / 0.68
 		expect(g.payoffSavedUsd).toBe(116n * 10n ** 16n);
+		expect(g.netToCloseUsd).toBe(316n * 10n ** 16n);
 	});
 
 	it('payoff vs at-lock is unknown without an at-lock price, and the group sum goes unknown with it', () => {
@@ -134,6 +140,11 @@ describe('buildTokenGroup', () => {
 		expect(unknown.payoffSavedUsd).toBeNull();
 		expect(unknown.payoffDiscountPct).toBeNull();
 		expect(g.payoffSavedUsd).toBeNull();
+		// no at-lock cyToken price ⇒ net to close is UNKNOWN, never a plausible number
+		expect(known.netToCloseUsd).not.toBeNull();
+		expect(unknown.netToCloseUsd).toBeNull();
+		expect(unknown.pnlPct).toBeNull();
+		expect(g.netToCloseUsd).toBeNull();
 	});
 
 	it('card metrics stay unknown when prices are unknown, cost basis never does', () => {
@@ -153,19 +164,44 @@ describe('buildTokenGroup', () => {
 		expect(r.costBasisUsd).toBe(2n * ONE);
 	});
 
-	it("REGRESSION: a position locked at today's price is 0% up even when the cyToken trades at $0.10", () => {
-		// The nominal discount (1 − Cnow = 90% here) must never leak into "% up".
+	it('REGRESSION: a position locked just now is $0 / 0% — the nominal discount never counts as money', () => {
+		// Price unchanged since lock, cyToken worth the same now as at mint ($0.10):
+		// nothing has moved, so closing yields exactly what you started with.
 		const g = buildTokenGroup({
 			token,
 			receipts: [receipt(lockPrice, minted)],
 			lockDates: new Map(),
 			prices: { ...prices, underlyingUsdNow: lockPrice },
-			nowMs: 0
+			nowMs: 0,
+			cyTokenAtLock: new Map([[lockPrice.toString(), 10n ** 17n]])
 		});
-		expect(g.rows[0].pricePct).toBe(0);
-		expect(g.rows[0].cyDiscountPct).toBeCloseTo(0.9, 6);
-		// and net-to-close is still the close value, which is NOT a gain
-		expect(g.rows[0].netToCloseUsd).toBe(2n * ONE - 2n * 10n ** 17n);
+		expect(g.rows[0].netToCloseUsd).toBe(0n);
+		expect(g.rows[0].pnlPct).toBe(0);
+		expect(g.rows[0].cyDiscountPct).toBeCloseTo(0.9, 6); // the 90% discount exists, and is NOT a gain
+		expect(g.rows[0].closeValueUsd).toBe(2n * ONE - 2n * 10n ** 17n); // close value still 1.8
+	});
+
+	it('the two legs move net to close independently: price flat, cyToken fell 0.68 → 0.10 = +$1.16', () => {
+		const g = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted)],
+			lockDates: new Map(),
+			prices: { ...prices, underlyingUsdNow: lockPrice },
+			nowMs: 0,
+			cyTokenAtLock: new Map([[lockPrice.toString(), 68n * 10n ** 16n]])
+		});
+		expect(g.rows[0].netToCloseUsd).toBe(116n * 10n ** 16n);
+		expect(g.rows[0].pnlPct).toBeCloseTo(0.58, 6); // 1.16 / 2.00 locked
+		// price fell 0.02 → 0.015 (−$0.50 on 100) while the cyToken fell the same: 1.16 − 0.50 = +0.66
+		const h = buildTokenGroup({
+			token,
+			receipts: [receipt(lockPrice, minted)],
+			lockDates: new Map(),
+			prices: { ...prices, underlyingUsdNow: 15n * 10n ** 15n },
+			nowMs: 0,
+			cyTokenAtLock: new Map([[lockPrice.toString(), 68n * 10n ** 16n]])
+		});
+		expect(h.rows[0].netToCloseUsd).toBe(66n * 10n ** 16n);
 	});
 
 	it('cash to unlock all is unknown while there is no cyToken market', () => {
@@ -263,17 +299,16 @@ describe('sortRows / nextSort', () => {
 		expect(sortRows(rows(), { key: 'held', dir: 'desc' }).map((r) => r.held)).toEqual([9, 5, null]);
 		expect(sortRows(rows(), { key: 'held', dir: 'asc' }).map((r) => r.held)).toEqual([5, 9, null]);
 	});
-	it('orders by the collateral price move since lock, not by net-to-close over cost basis', () => {
-		const flat = { ...row(200n, ONE), pricePct: 0.0, pnlPct: 0.79 }; // big nominal discount, price flat
-		const up = { ...row(44n, ONE), pricePct: 0.043, pnlPct: 0.84 }; // price +4.3%
-		const down = { ...row(53n, ONE), pricePct: -0.0035, pnlPct: 0.79 }; // locked today, price −0.35%
-		const unknown = { ...row(500n, ONE), pricePct: null, pnlPct: 0.9 };
+	it('orders by net-to-close percent independently of dollars: a small position up more ranks first', () => {
+		const big = { ...row(200n, ONE), pnlPct: 0.05 }; // +$200 on a big lock, +5%
+		const small = { ...row(44n, ONE), pnlPct: 0.4 }; // +$44 on a small lock, +40%
+		const unknown = { ...row(500n, ONE), pnlPct: null };
 		expect(
-			sortRows([flat, down, up, unknown], { key: 'pct', dir: 'desc' }).map((r) => r.pricePct)
-		).toEqual([0.043, 0, -0.0035, null]);
+			sortRows([big, small, unknown], { key: 'pct', dir: 'desc' }).map((r) => r.pnlPct)
+		).toEqual([0.4, 0.05, null]);
 		expect(
-			sortRows([flat, down, up, unknown], { key: 'pct', dir: 'asc' }).map((r) => r.pricePct)
-		).toEqual([-0.0035, 0, 0.043, null]);
+			sortRows([big, small, unknown], { key: 'pct', dir: 'asc' }).map((r) => r.pnlPct)
+		).toEqual([0.05, 0.4, null]);
 		expect(nextSort(DEFAULT_SORT, 'pct')).toEqual({ key: 'pct', dir: 'desc' });
 	});
 	it('unknown net-to-close stays at the bottom even ascending', () => {

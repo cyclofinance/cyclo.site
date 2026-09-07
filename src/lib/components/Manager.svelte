@@ -106,7 +106,7 @@
 		{ key: 'lockPrice', label: 'Price at lock' },
 		{ key: 'held', label: 'Held' },
 		{ key: 'net', label: 'Net to close' },
-		{ key: 'pct', label: 'Price since lock' }
+		{ key: 'pct', label: 'Net %' }
 	];
 	// One grid for the column headers AND the rows, so they can never drift
 	// apart: the Unlock column is a fixed width, not "whatever the button needs".
@@ -486,14 +486,7 @@
 								<span>${formatLockPrice(row.lockPriceUsd)}</span>
 								<span>{row.held === null ? '—' : `${row.held}d`}</span>
 								<span class="font-bold {tone}">{formatUsd(row.netToCloseUsd)}</span>
-								<span
-									class="font-bold {row.pricePct === null
-										? 'text-dim'
-										: row.pricePct < 0
-											? 'text-loss'
-											: 'text-gain'}"
-									data-testid="row-pct">{formatPct(row.pricePct)}</span
-								>
+								<span class="font-bold {tone}" data-testid="row-pct">{formatPct(row.pnlPct)}</span>
 								<button
 									class="w-full border-frame border-line py-1.5 text-base font-bold hover:brightness-125"
 									on:click={() => (selected = { row, token: group.token })}

@@ -17,7 +17,15 @@ export type PositionRow = {
 	held: number | null;
 	collateralPnlUsd: bigint | null;
 	cyTokenPnlUsd: bigint | null;
+	/**
+	 * NET TO CLOSE = money after closing minus money at the start, from the two
+	 * things that move it: the collateral's price since lock, A × (Pnow − Plock),
+	 * plus what the minted cyTokens cost to buy back now versus what they were
+	 * worth when minted, M × (Clock − Cnow). Null if either leg is unknown.
+	 */
 	netToCloseUsd: bigint | null;
+	/** Close VALUE of the receipt = A × Pnow − M × Cnow. Not a gain; kept for reference. */
+	closeValueUsd: bigint | null;
 	/** Oracle price of the collateral now, 18 dec. Null = unknown. */
 	underlyingUsdNow: bigint | null;
 	/** Collateral value now = A × Pnow. Null = unknown. */
@@ -26,7 +34,7 @@ export type PositionRow = {
 	cyTokenRepayUsd: bigint | null;
 	/** Value at lock = A × Plock = M at $1 nominal. Always known. 18 dec. */
 	costBasisUsd: bigint;
-	/** Net to close as a fraction of cost basis (0.05 = +5%). Null = unknown. */
+	/** Net to close as a fraction of what was locked, A × Plock (0.05 = +5%). Null = unknown. */
 	pnlPct: number | null;
 	/** Collateral price move since lock (0.10 = +10%). Null = unknown. */
 	pricePct: number | null;
@@ -137,6 +145,10 @@ export const buildTokenGroup = ({
 				cyTokenUsdAtLock === null || prices.cyTokenUsdNow === null
 					? null
 					: (receipt.balance * (cyTokenUsdAtLock - prices.cyTokenUsdNow)) / scale;
+			const netToCloseUsd =
+				metrics.collateralPnlUsd === null || payoffSavedUsd === null
+					? null
+					: metrics.collateralPnlUsd + payoffSavedUsd;
 			return {
 				receipt: { ...receipt, totalsFlr: metrics.underlyingAmount },
 				underlyingAmount: metrics.underlyingAmount,
@@ -144,12 +156,13 @@ export const buildTokenGroup = ({
 				held: daysHeld(lockDates.get(receipt.tokenId), nowMs),
 				collateralPnlUsd: metrics.collateralPnlUsd,
 				cyTokenPnlUsd: metrics.cyTokenPnlUsd,
-				netToCloseUsd: metrics.netToCloseUsd,
+				netToCloseUsd,
+				closeValueUsd: metrics.netToCloseUsd,
 				underlyingUsdNow: prices.underlyingUsdNow,
 				collateralValueUsd,
 				cyTokenRepayUsd,
 				costBasisUsd,
-				pnlPct: ratio(metrics.netToCloseUsd, costBasisUsd),
+				pnlPct: ratio(netToCloseUsd, costBasisUsd),
 				pricePct:
 					prices.underlyingUsdNow === null
 						? null
@@ -220,10 +233,8 @@ const sortValue = (row: PositionRow, key: SortKey): bigint | null => {
 		case 'net':
 			return row.netToCloseUsd;
 		case 'pct':
-			// The collateral's price move since lock. NOT net-to-close over cost
-			// basis: that ratio is dominated by 1 − cyToken price (the nominal
-			// discount) and reads ~+80% on a position locked minutes ago.
-			return row.pricePct === null ? null : BigInt(Math.round(row.pricePct * 1_000_000));
+			// Net to close as a share of what was locked. Six decimals is plenty.
+			return row.pnlPct === null ? null : BigInt(Math.round(row.pnlPct * 1_000_000));
 	}
 };
 
