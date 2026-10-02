@@ -1,2 +1,2 @@
 export const FLARE_REWARDS_SUBGRAPH_URL =
-  "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/cyclo-flare/prod/gn";
+  "https://api.goldsky.com/api/public/project_cm153vmqi5gke01vy66p4ftzf/subgraphs/cyclo-flare/2026-10-02-ea57/gn";
