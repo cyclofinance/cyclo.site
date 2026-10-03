@@ -8,15 +8,22 @@
   export let unit: string = "";
   export let maxButton: boolean = false;
 
-  export let validate: ValidateFunction = () => undefined;
+  const defaultValidate: ValidateFunction = (value) => {
+    if (value === undefined || value === "" || value === ".")
+      return "Invalid amount";
+    if (Number.isNaN(Number(value))) return "Invalid number";
+    return undefined;
+  };
+
+  export let validate: ValidateFunction = defaultValidate;
 
   export let isError: boolean = false;
   let error: string | undefined = undefined;
-  $: isError = error !== "" && error !== undefined;
 
   export let dataTestId: string = "";
 
-  let displayValue = amount.toString();
+  let displayValue = "";
+  let synced = false;
 
   const dispatch = createEventDispatcher();
 
@@ -30,24 +37,29 @@
       target: { value: target.value },
     });
     displayValue = formattedValue;
-
-    // Update the actual value
     amount = formattedValue;
     dispatch("input", { value: formattedValue });
-
     validateInput();
   }
 
-  // Keep display value in sync when amount changes externally
-  $: if (amount && amount.toString() !== displayValue) {
-    displayValue = amount.toString();
-  } else if (!amount) {
-    displayValue = "";
+  // An amount that did not come from the keyboard (the initial prop, or a
+  // bind:amount write) is sanitized, written back and validated. A pristine
+  // empty mount is not an amount yet, so it shows no error.
+  $: {
+    const raw = amount?.toString() ?? "";
+    const sanitized = handleDecimalSeparator({ target: { value: raw } });
+    if (!synced || sanitized !== displayValue) {
+      const pristine = !synced && raw === "";
+      synced = true;
+      displayValue = sanitized;
+      if (sanitized !== amount) amount = sanitized;
+      if (!pristine) validateInput();
+    }
   }
 
   const validateInput = () => {
-    error = undefined;
     error = validate(displayValue);
+    isError = error !== undefined && error !== "";
   };
 </script>
 
