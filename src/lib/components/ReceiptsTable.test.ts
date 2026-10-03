@@ -4,7 +4,31 @@ import { describe, it, expect } from "vitest";
 import { mockReceipt } from "$lib/mocks/mockReceipt";
 import type { CyToken, Receipt } from "$lib/types";
 
-const mockReceipts = [mockReceipt, mockReceipt];
+// 0.05 locked at 0.03 per token: totals are 1.666..., which rounding would
+// show as 1.66667.
+const repeatingReceipt = {
+  ...mockReceipt,
+  balance: 50000000000000000n,
+  tokenId: "30000000000000000",
+};
+
+const mockReceipts = [mockReceipt, repeatingReceipt];
+
+// Hand-written per-row literals, truncated (never rounded) to five places.
+const expectedCells = [
+  {
+    lockedPrice: "0.02308",
+    numberHeld: "0.03692",
+    totalLocked: "1.60000",
+    flrPerReceipt: "43.32755",
+  },
+  {
+    lockedPrice: "0.03000",
+    numberHeld: "0.05000",
+    totalLocked: "1.66666",
+    flrPerReceipt: "33.33333",
+  },
+];
 
 describe("ReceiptsTable Component", () => {
   const selectedToken: CyToken = {
@@ -22,25 +46,37 @@ describe("ReceiptsTable Component", () => {
   };
 
   it("renders the receipts table with correct headers and data", async () => {
-    render(ReceiptsTable, {
+    const { component } = render(ReceiptsTable, {
       receipts: mockReceipts as unknown as Receipt[],
       token: selectedToken,
     });
 
     expect(screen.getByTestId("headers")).toBeInTheDocument();
 
-    // Literal oracle, matched exactly: a sixth rendered digit must fail.
+    // Exact match: a sixth rendered digit must fail.
     for (let i = 0; i < mockReceipts.length; i++) {
       expect(screen.getByTestId(`locked-price-${i}`).textContent?.trim()).toBe(
-        "0.02308",
+        expectedCells[i].lockedPrice,
       );
       expect(screen.getByTestId(`number-held-${i}`).textContent?.trim()).toBe(
-        "0.03692",
+        expectedCells[i].numberHeld,
       );
       expect(screen.getByTestId(`total-locked-${i}`).textContent?.trim()).toBe(
-        "1.60000",
+        expectedCells[i].totalLocked,
       );
     }
+
+    // readableFlrPerReceipt is carried on the mapped receipt handed to
+    // ReceiptModal, not rendered by the table; read it from the Svelte 4
+    // dev-build instance snapshot that vitest compiles with.
+    const { mappedReceipts } = (
+      component as unknown as {
+        $capture_state: () => { mappedReceipts: Receipt[] };
+      }
+    ).$capture_state();
+    expect(mappedReceipts.map((r) => r.readableFlrPerReceipt)).toEqual(
+      expectedCells.map((c) => c.flrPerReceipt),
+    );
   });
 
   it("opens a receipt modal when redeem button is clicked", async () => {
