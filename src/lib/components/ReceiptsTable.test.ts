@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import { render, screen, waitFor } from "@testing-library/svelte";
 import userEvent from "@testing-library/user-event";
 import ReceiptsTable from "./ReceiptsTable.svelte";
 import { describe, it, expect, vi } from "vitest";
@@ -73,6 +73,7 @@ describe("ReceiptsTable Component", () => {
     } as unknown as Receipt;
     render(ReceiptsTable, { receipts: [badReceipt], token: selectedToken });
     expect(screen.getByTestId("total-locked-0")).toHaveTextContent("0.00000");
+    expect(screen.getByTestId("number-held-0")).toHaveTextContent(/^0\.00000$/);
   });
 
   it("disables Unlock on a fallback row with a non-numeric tokenId", async () => {
@@ -127,7 +128,8 @@ describe("ReceiptsTable Component", () => {
     });
 
     const redeemButton = screen.getByTestId("redeem-button-0");
-    await fireEvent.click(redeemButton);
+    expect(redeemButton).not.toBeDisabled();
+    await userEvent.click(redeemButton);
 
     await waitFor(() => {
       expect(screen.getByTestId("receipt-modal")).toBeInTheDocument();

@@ -31,6 +31,7 @@
         totalsFlr: 0n,
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
+        readableBalance: "0.00000",
         readableLockedPrice: "0.00000",
         malformed: true,
       };
@@ -41,6 +42,7 @@
         totalsFlr: 0n,
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
+        readableBalance: "0.00000",
         readableLockedPrice: "0.00000",
         malformed: true,
       };
@@ -64,6 +66,7 @@
       readableTotalsFlr: Number(formatUnits(totalsFlr, token.decimals)).toFixed(
         5,
       ),
+      readableBalance: Number(formatUnits(balance, token.decimals)).toFixed(5),
       readableLockedPrice: Number(formatUnits(tokenId, 18)).toFixed(5),
       malformed: false,
     };
@@ -94,7 +97,7 @@
             {receipt.readableTotalsFlr}
           </TableBodyCell>
           <TableBodyCell data-testid={`number-held-${index}`}>
-            {Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
+            {receipt.readableBalance}
           </TableBodyCell>
           <TableBodyCell data-testid={`locked-price-${index}`}>
             {receipt.readableLockedPrice ?? "0.00000"}
