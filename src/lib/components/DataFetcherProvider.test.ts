@@ -88,6 +88,21 @@ describe("DataFetcherProvider Component", () => {
     });
   });
 
+  it("stops refetching once unmounted: the network subscription is torn down on destroy", async () => {
+    const { unmount } = render(DataFetcherProvider);
+    await vi.waitFor(() => {
+      expect(getAndStartDataFetcher).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+
+    // A switch after destroy must not reach the provider: a leaked
+    // subscription would fetch for a component that no longer exists.
+    activeNetworkKey.set("arbitrum");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(getAndStartDataFetcher).toHaveBeenCalledTimes(1);
+  });
+
   it("discards a stale fetcher whose network was superseded before it resolved", async () => {
     const flareFetcher = new DataFetcher(flare.id);
     const arbitrumFetcher = new DataFetcher(arbitrum.id);
