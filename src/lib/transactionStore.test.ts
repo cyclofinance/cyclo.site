@@ -239,6 +239,7 @@ describe("transactionStore", () => {
       config: mockWagmiConfigStore as unknown as Config,
       selectedToken: mockSelectedToken,
       assets: mockAssets,
+      depositMinShareRatio: 0n,
     });
     reset();
     expect(get(transactionStore)).toEqual({
@@ -261,6 +262,7 @@ describe("transactionStore", () => {
       config: mockWagmiConfigStore as unknown as Config,
       selectedToken: mockSelectedToken,
       assets: BigInt(1000),
+      depositMinShareRatio: 0n,
     });
 
     awaitWalletConfirmation(
@@ -282,15 +284,28 @@ describe("transactionStore", () => {
       chainId: 1,
     });
 
+    const assets = BigInt(100);
+    const depositMinShareRatio = BigInt(99);
     await handleLockTransaction({
       signerAddress: mockSignerAddress,
       config: mockWagmiConfigStore as unknown as Config,
       selectedToken: mockSelectedToken,
-      assets: BigInt(100),
+      assets,
+      depositMinShareRatio,
     });
     expect(balancesStore.refreshBalances).toHaveBeenCalledWith(
       mockWagmiConfigStore,
       mockSignerAddress,
+    );
+    // The deposit must be invoked with the caller-supplied
+    // depositMinShareRatio. Pre-fix this position was hardcoded to 0n,
+    // accepting any oracle ratio and leaving the user open to an
+    // oracle-update sandwich.
+    expect(writeErc20PriceOracleReceiptVaultDeposit).toHaveBeenCalledWith(
+      mockWagmiConfigStore,
+      expect.objectContaining({
+        args: [assets, mockSignerAddress, depositMinShareRatio, "0x"],
+      }),
     );
 
     expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
@@ -311,6 +326,7 @@ describe("transactionStore", () => {
       config: mockWagmiConfigStore as unknown as Config,
       selectedToken: mockSelectedToken,
       assets,
+      depositMinShareRatio: 0n,
     });
 
     await waitFor(() => {
@@ -333,6 +349,7 @@ describe("transactionStore", () => {
       config: mockWagmiConfigStore as unknown as Config,
       selectedToken: mockSelectedToken,
       assets: BigInt(100),
+      depositMinShareRatio: 0n,
     });
 
     expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
@@ -378,6 +395,7 @@ describe("transactionStore", () => {
       config: mockWagmiConfigStore as unknown as Config,
       selectedToken: mockSelectedToken,
       assets: BigInt(100),
+      depositMinShareRatio: 0n,
     });
 
     expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
