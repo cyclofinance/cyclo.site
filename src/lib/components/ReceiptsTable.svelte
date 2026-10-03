@@ -7,7 +7,6 @@
     TableHeadCell,
     TableBodyCell,
     Modal,
-    Button,
   } from "flowbite-svelte";
   import type { CyToken, Receipt as ReceiptType } from "$lib/types";
   import { formatUnits } from "viem";
@@ -21,27 +20,42 @@
   let selectedReceipt: ReceiptType | null = null;
 
   const mappedReceipts = receipts.map((receipt) => {
-    // Guard against undefined values
-    if (!receipt.balance || !receipt.tokenId) {
+    let balance: bigint;
+    let tokenId: bigint;
+    try {
+      balance = BigInt(receipt.balance);
+      tokenId = BigInt(receipt.tokenId);
+    } catch {
       return {
         ...receipt,
-        totalsFlr: BigInt(0),
+        totalsFlr: 0n,
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
+        readableBalance: "0.00000",
+        readableLockedPrice: "0.00000",
+        malformed: true,
       };
     }
-
-    const balance = BigInt(receipt.balance);
-    const tokenId = BigInt(receipt.tokenId);
+    if (tokenId === 0n) {
+      return {
+        ...receipt,
+        totalsFlr: 0n,
+        readableFlrPerReceipt: "0.00000",
+        readableTotalsFlr: "0.00000",
+        readableBalance: "0.00000",
+        readableLockedPrice: "0.00000",
+        malformed: true,
+      };
+    }
 
     // Calculate totals: (balance * 10^18) / tokenId
     // balance is in token.decimals, we scale to 18 decimals, then divide by tokenId (in 18 decimals)
     // Result is total underlying token locked in 18 decimals
-    const totalsFlr = (balance * BigInt(10 ** 18)) / tokenId;
+    const totalsFlr = (balance * 10n ** 18n) / tokenId;
 
     // Calculate per-receipt: 10^36 / tokenId
     // This gives the cyToken per locked underlying token (in 18 decimals)
-    const flrPerReceipt = BigInt(10 ** 36) / tokenId;
+    const flrPerReceipt = 10n ** 36n / tokenId;
 
     return {
       ...receipt,
@@ -52,6 +66,9 @@
       readableTotalsFlr: Number(formatUnits(totalsFlr, token.decimals)).toFixed(
         5,
       ),
+      readableBalance: Number(formatUnits(balance, token.decimals)).toFixed(5),
+      readableLockedPrice: Number(formatUnits(tokenId, 18)).toFixed(5),
+      malformed: false,
     };
   });
 </script>
@@ -80,16 +97,18 @@
             {receipt.readableTotalsFlr}
           </TableBodyCell>
           <TableBodyCell data-testid={`number-held-${index}`}>
-            {Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
+            {receipt.readableBalance}
           </TableBodyCell>
           <TableBodyCell data-testid={`locked-price-${index}`}>
-            {Number(formatUnits(BigInt(receipt.tokenId), 18)).toFixed(5)}
+            {receipt.readableLockedPrice ?? "0.00000"}
           </TableBodyCell>
           <TableBodyCell class="">
-            <Button
-              class="flex items-center justify-center rounded-none border-2 border-white bg-primary px-2 py-1 font-bold text-white transition-all hover:bg-blue-700 disabled:bg-neutral-600"
+            <!-- flowbite's Button drops its attributes (testid, click, disabled) when disabled -->
+            <button
+              class="flex items-center justify-center rounded-none border-2 border-white bg-primary px-2 py-1 text-sm font-bold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-neutral-600"
               data-testid={`redeem-button-${index}`}
-              on:click={() => (selectedReceipt = receipt)}>Unlock</Button
+              disabled={receipt.malformed}
+              on:click={() => (selectedReceipt = receipt)}>Unlock</button
             >
           </TableBodyCell>
         </TableBodyRow>
