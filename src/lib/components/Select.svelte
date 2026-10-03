@@ -8,27 +8,31 @@
 
   export let dataTestId: string = "";
 
-  // Options are matched by optionKey when provided, else by reference.
-  // Without a key, replacing options with freshly constructed but logically
-  // equal objects resets the selection to the first option.
-  // eslint-disable-next-line
-  export let optionKey: ((option: T) => string | number) | undefined =
-    undefined;
+  // Options are matched by a stable key, not by reference, so a refetch that
+  // rebuilds options with new object identities keeps the selection.
+  const optionKey = (option: unknown): unknown => {
+    if (option === null || typeof option !== "object") return option;
+    const record = option as Record<string, unknown>;
+    if (typeof record.address === "string") {
+      const address = record.address.toLowerCase();
+      return record.chainId === undefined
+        ? address
+        : `${record.chainId}:${address}`;
+    }
+    if ("value" in record) return record.value;
+    if ("id" in record) return record.id;
+    return option;
+  };
 
-  // Ensure selected is one of options (rebinding it to the key-matching
-  // entry so bind:value tracks the current identities), or default to the
-  // first option. Assignment is guarded on identity change to avoid
-  // re-triggering this reactive block.
-  // optionKey is captured in a local const so TypeScript's narrowing
-  // persists inside the find callback.
+  // Rebind selected to the key-matching entry so bind:value, which compares
+  // by reference, highlights it; default to the first option otherwise.
   $: if (options.length > 0) {
-    const key = optionKey;
     const match =
-      selected && key
-        ? options.find((option) => key(option) === key(selected))
-        : selected && options.includes(selected)
-          ? selected
-          : undefined;
+      selected === undefined
+        ? undefined
+        : options.find(
+            (option) => optionKey(option) === optionKey(selected),
+          );
     const next = match ?? options[0];
     if (next !== selected) {
       selected = next;

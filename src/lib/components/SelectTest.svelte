@@ -1,18 +1,20 @@
-<script lang="ts">
+<script lang="ts" generics="T">
   import Select from "./Select.svelte";
 
-  type Option = { id: string; label: string };
-
-  export let options: Option[];
-  export let selected: Option;
-  export let optionKey: ((option: Option) => string) | undefined = undefined;
+  // eslint-disable-next-line
+  export let options: T[];
+  // eslint-disable-next-line
+  export let selected: T;
+  // eslint-disable-next-line
+  export let getOptionLabel: (option: T) => string;
 </script>
 
 <Select
   {options}
   bind:selected
-  {optionKey}
-  getOptionLabel={(option) => option.label}
+  {getOptionLabel}
   dataTestId="select-under-test"
 />
-<div data-testid="selected-id">{selected?.id}</div>
+<div data-testid="selected-label">
+  {selected === undefined ? "unset" : getOptionLabel(selected)}
+</div>
