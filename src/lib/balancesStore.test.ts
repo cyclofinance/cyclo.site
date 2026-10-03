@@ -15,6 +15,7 @@ import {
 } from "@wagmi/core";
 import type { CyToken } from "$lib/types";
 import { supportedNetworks } from "./stores";
+import { PYTH_ORACLE_ABI } from "./pyth";
 
 const { mockWagmiConfigStore } = await vi.hoisted(
   () => import("./mocks/mockStores"),
@@ -189,7 +190,10 @@ describe("balancesStore", () => {
     (simulateContract as Mock).mockResolvedValue({ result: [BigInt(1)] });
 
     (readContract as Mock).mockImplementation(
-      async (_config: unknown, call: { functionName: string }) => {
+      async (
+        _config: unknown,
+        call: { functionName: string; address: string; abi: unknown },
+      ) => {
         switch (call.functionName) {
           case "priceOracle":
             return mockPriceOracle;
@@ -198,7 +202,12 @@ describe("balancesStore", () => {
           case "I_PRICE_FEED_ID":
             return mockFeedId;
           case "I_STALE_AFTER":
-            return oracleStaleAfter;
+            // Only the vault's oracle, read through the oracle ABI, holds the
+            // bound; any other target yields a value the assertion rejects.
+            return call.address === mockPriceOracle &&
+              call.abi === PYTH_ORACLE_ABI
+              ? oracleStaleAfter
+              : 9999n;
           case "getPriceNoOlderThan":
             // 5 USD at Pyth's usual -8 exponent.
             return {
@@ -226,6 +235,52 @@ describe("balancesStore", () => {
     // 5e8 at expo -8 normalizes to 5e18 (18-decimal target per PythUtils).
     const { stats } = get(balancesStore);
     expect(stats["cyWETH.pyth"].lockPrice).toBe(5n * 10n ** 18n);
+  });
+
+  it("falls back to previewDeposit for the footer lock price when the oracle bound cannot be read", async () => {
+    const previewDepositLockPrice = 777n;
+    const underlyingLocked = 2n * 10n ** 18n;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    (readErc20TotalSupply as Mock).mockResolvedValue(BigInt(1000));
+    (readErc20BalanceOf as Mock).mockResolvedValue(underlyingLocked);
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: previewDepositLockPrice });
+    (simulateQuoterQuoteExactOutputSingle as Mock).mockResolvedValue({
+      result: [BigInt(1)],
+    });
+    (simulateContract as Mock).mockResolvedValue({ result: [BigInt(1)] });
+
+    (readContract as Mock).mockImplementation(
+      async (_config: unknown, call: { functionName: string }) => {
+        switch (call.functionName) {
+          case "priceOracle":
+            return "0x1111111111111111111111111111111111111111";
+          case "I_PYTH_CONTRACT":
+            return "0x2222222222222222222222222222222222222222";
+          case "I_PRICE_FEED_ID":
+            return "0x3333333333333333333333333333333333333333333333333333333333333333";
+          case "I_STALE_AFTER":
+            throw new Error("I_STALE_AFTER read failed");
+          default:
+            throw new Error(`unexpected readContract ${call.functionName}`);
+        }
+      },
+    );
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const pythCalls = (readContract as Mock).mock.calls.filter(
+      (call) => call[1].functionName === "getPriceNoOlderThan",
+    );
+    expect(pythCalls).toHaveLength(0);
+
+    const { stats } = get(balancesStore);
+    expect(stats["cyWETH.pyth"].lockPrice).toBe(previewDepositLockPrice);
+    expect(stats["cyWETH.pyth"].usdTvl).toBe(
+      (underlyingLocked * previewDepositLockPrice) / 10n ** 18n,
+    );
   });
 
   it("should reset the store to its initial state", () => {
