@@ -372,9 +372,21 @@ describe("ReceiptModal Component", () => {
     screen.debug();
   });
 
-  it("clears the redeem entry when the modal is pointed at a different receipt", async () => {
+  it("clears the redeem entry and follows the swapped-in receipt's price and tokenId", async () => {
     // A20-1: fields captured once at mount mixed one receipt's entry with
-    // another's after a swap.
+    // another's after a swap: the lock price shown came from the first
+    // receipt while the submitted tokenId came from the second.
+    setSignerBalances(parseEther("1000"), BigInt(0));
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.resolve(BigInt("10000000000000000")),
+    );
+
+    const receiptB = {
+      ...mockReceipt,
+      balance: 50000000000000000n,
+      tokenId: "34560000000000000",
+    } as Receipt;
+
     const { rerender } = render(ReceiptModal, {
       receipt: mockReceipt,
       token: selectedToken,
@@ -384,14 +396,61 @@ describe("ReceiptModal Component", () => {
     await userEvent.type(input, "0.5");
     expect(input).toHaveValue("0.5");
 
-    await rerender({
-      receipt: { ...mockReceipt, tokenId: "34560000000000000" },
-      token: selectedToken,
-    });
+    await rerender({ receipt: receiptB, token: selectedToken });
 
     await waitFor(() => {
       expect(screen.getByTestId("redeem-input")).toHaveValue("");
+      expect(screen.getByTestId("lock-up-price")).toHaveTextContent(
+        Number(formatEther(receiptB.tokenId)).toString(),
+      );
+      expect(screen.getByTestId("balance")).toHaveTextContent(
+        Number(formatEther(receiptB.balance)).toString(),
+      );
     });
+
+    await fireEvent.click(screen.getByTestId("set-val-to-max"));
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue(
+        formatEther(receiptB.balance),
+      );
+      expect(screen.getByTestId("unlock-button")).not.toBeDisabled();
+    });
+    await userEvent.click(screen.getByTestId("unlock-button"));
+
+    await waitFor(() => {
+      expect(initiateUnlockTransactionSpy).toHaveBeenCalledOnce();
+      expect(initiateUnlockTransactionSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokenId: receiptB.tokenId,
+          assets: receiptB.balance,
+        }),
+      );
+    });
+  });
+
+  it("does not submit when the signer is undefined, even after MAX", async () => {
+    // A20-3: a disconnected wallet leaves $signerAddress undefined; MAX still
+    // fills a positive amount from the balance store, so only the signer
+    // gate stands between the click and handleUnlockTransaction.
+    mockSignerAddressStore.mockSetSubscribeValue(
+      undefined as unknown as string,
+    );
+    setSignerBalances(parseEther("1000"), BigInt(0));
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    await fireEvent.click(screen.getByTestId("set-val-to-max"));
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue(
+        formatEther(mockReceipt.balance),
+      );
+    });
+
+    const unlockButton = screen.getByTestId("unlock-button");
+    expect(unlockButton).toHaveTextContent("CONNECT WALLET");
+    expect(unlockButton).toBeDisabled();
+    await userEvent.click(unlockButton);
+    expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
   });
 
   it("keeps the typed redeem entry while the receipt is unchanged", async () => {
@@ -465,8 +524,9 @@ describe("ReceiptModal Component", () => {
     });
   });
 
-  it("disables UNLOCK when the receipt's chain differs from the selected token's", async () => {
-    // A20-3: the button did not gate on the receipt/wallet chain matching.
+  it("reports WRONG NETWORK and does not submit when the receipt's chain differs from the selected token's", async () => {
+    // A20-3: the button did not gate on the receipt/wallet chain matching,
+    // and a greyed button alone does not tell the user why.
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
       false,
@@ -515,8 +575,12 @@ describe("ReceiptModal Component", () => {
     await userEvent.type(input, "0.01");
 
     await waitFor(() => {
-      expect(screen.getByTestId("unlock-button")).toBeDisabled();
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton).toHaveTextContent("WRONG NETWORK");
+      expect(unlockButton).toBeDisabled();
     });
+    await userEvent.click(screen.getByTestId("unlock-button"));
+    expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
   });
 
   it("should call handleUnlockTransaction when unlock button is clicked", async () => {
