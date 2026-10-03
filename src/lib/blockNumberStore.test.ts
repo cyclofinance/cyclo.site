@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { get } from "svelte/store";
 import blockNumberStore from "./blockNumberStore";
 import { getBlock } from "@wagmi/core";
+import type { Config } from "@wagmi/core";
 import type { Mock } from "vitest";
 
 vi.mock("@wagmi/core", () => ({
@@ -9,8 +10,11 @@ vi.mock("@wagmi/core", () => ({
 }));
 
 describe("blockNumberStore", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockConfig = {} as any;
+  const configFor = (chainId: number) =>
+    ({ state: { chainId } }) as unknown as Config;
+  const FLARE = 14;
+  const ARBITRUM = 42161;
+  const mockConfig = configFor(FLARE);
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -25,6 +29,7 @@ describe("blockNumberStore", () => {
 
     const store = get(blockNumberStore);
     expect(store.blockNumber).toBe(mockBlockNumber);
+    expect(store.chainId).toBe(FLARE);
     expect(store.status).toBe("Ready");
   });
 
@@ -81,18 +86,49 @@ describe("blockNumberStore", () => {
 
     const store = get(blockNumberStore);
     expect(store.blockNumber).toBe(BigInt(0));
+    expect(store.chainId).toBeNull();
     expect(store.status).toBe("Checking");
   });
 
-  it("non-monotonic block number does not clobber a higher block", async () => {
+  it("lower block number from the same chain does not clobber a higher block", async () => {
     (getBlock as Mock)
       .mockResolvedValueOnce({ number: BigInt(5000) })
       .mockResolvedValueOnce({ number: BigInt(4999) });
 
-    await blockNumberStore.refresh(mockConfig);
-    await blockNumberStore.refresh(mockConfig);
+    await blockNumberStore.refresh(configFor(FLARE));
+    await blockNumberStore.refresh(configFor(FLARE));
+
+    const store = get(blockNumberStore);
+    expect(store.blockNumber).toBe(BigInt(5000));
+    expect(store.chainId).toBe(FLARE);
+    expect(store.status).toBe("Ready");
+  });
+
+  it("equal block number from the same chain is kept, not treated as a regression", async () => {
+    (getBlock as Mock)
+      .mockResolvedValueOnce({ number: BigInt(5000) })
+      .mockResolvedValueOnce({ number: BigInt(5000) });
+
+    await blockNumberStore.refresh(configFor(FLARE));
+    await blockNumberStore.refresh(configFor(FLARE));
 
     expect(get(blockNumberStore).blockNumber).toBe(BigInt(5000));
+  });
+
+  it("lower block number from a different chain replaces the stored block", async () => {
+    (getBlock as Mock)
+      .mockResolvedValueOnce({ number: BigInt(5000) })
+      .mockResolvedValueOnce({ number: BigInt(100) });
+
+    // Arbitrum's head is far above Flare's; switching to Flare must not
+    // leave Arbitrum's block pinned in the store.
+    await blockNumberStore.refresh(configFor(ARBITRUM));
+    await blockNumberStore.refresh(configFor(FLARE));
+
+    const store = get(blockNumberStore);
+    expect(store.blockNumber).toBe(BigInt(100));
+    expect(store.chainId).toBe(FLARE);
+    expect(store.status).toBe("Ready");
   });
 
   it("rejects and sets Error status when RPC returns block.number=0n", async () => {

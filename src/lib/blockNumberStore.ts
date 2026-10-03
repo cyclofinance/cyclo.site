@@ -4,6 +4,7 @@ import type { Config } from "@wagmi/core";
 
 const initialState = {
   blockNumber: BigInt(0),
+  chainId: null as number | null,
   status: "Checking" as "Checking" | "Ready" | "Error",
 };
 
@@ -19,6 +20,7 @@ const blockNumberStore = () => {
 
   const refresh = async (config: Config) => {
     const token = ++inflightToken;
+    const chainId = config.state.chainId;
     try {
       const block = await getBlock(config);
       if (block.number === null || block.number <= 0n) {
@@ -27,10 +29,16 @@ const blockNumberStore = () => {
       if (token !== inflightToken) return block.number as bigint;
       update((state) => {
         const blockNumber = block.number as bigint;
+        // Monotonicity only means something within one chain; a block
+        // observed on a different chain replaces the stored one outright.
+        const sameChain = state.chainId === chainId;
         return {
           ...state,
+          chainId,
           blockNumber:
-            blockNumber > state.blockNumber ? blockNumber : state.blockNumber,
+            sameChain && blockNumber <= state.blockNumber
+              ? state.blockNumber
+              : blockNumber,
           status: "Ready",
         };
       });
