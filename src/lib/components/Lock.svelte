@@ -143,17 +143,16 @@
     const lockPrice = $balancesStore.stats[$selectedCyToken.name]?.lockPrice;
     const cyTokenOutput = $balancesStore.swapQuotes.cyTokenOutput;
     if (!lockPrice || !cyTokenOutput) return;
-    // 1% slippage on the contract-side minimum shares check. The contract
-    // re-reads its oracle at execution time and compares its computed share
-    // output against this floor; setting it to 0 (the previous value)
-    // accepted any positive share count, leaving sandwich attacks open.
-    const minSharesOut = (cyTokenOutput * 99n) / 100n;
+    // The vault's third deposit arg is an 18-decimal share RATIO, not a share
+    // amount: it reverts with MinShareRatio when the oracle ratio it reads at
+    // execution time is below this floor. 1% under the ratio quoted here.
+    const depositMinShareRatio = (lockPrice * 99n) / 100n;
     transactionStore.handleLockTransaction({
       signerAddress: $signerAddress,
       config: $wagmiConfig,
       selectedToken: $selectedCyToken,
       assets: assets,
-      minSharesOut,
+      depositMinShareRatio,
     });
   };
 

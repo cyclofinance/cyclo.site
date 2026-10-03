@@ -696,9 +696,15 @@ describe("Lock Component", () => {
     });
   });
 
-  it("should pass minSharesOut as 99% of swap-quote cyTokenOutput to handleLockTransaction", async () => {
-    const cyTokenOutput = 1234000000000000000000n;
-    const expectedMinSharesOut = (cyTokenOutput * 99n) / 100n;
+  it("should pass depositMinShareRatio as 99% of the quoted lockPrice ratio to handleLockTransaction", async () => {
+    // The vault compares depositMinShareRatio against its 18-decimal oracle
+    // ratio, so the floor is derived from lockPrice (the ratio the user was
+    // quoted), never from cyTokenOutput (an absolute share amount). The two
+    // are chosen so that 99% of one is not 99% of the other.
+    const lockPrice = 1234000000000000000n;
+    const cyTokenOutput = 5000000000000000000000n;
+    const expectedDepositMinShareRatio = 1221660000000000000n;
+    expect(expectedDepositMinShareRatio).not.toBe((cyTokenOutput * 99n) / 100n);
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
       false,
@@ -711,7 +717,7 @@ describe("Lock Component", () => {
           usdTvl: 0n,
         },
         cysFLR: {
-          lockPrice: 1n,
+          lockPrice,
           price: 0n,
           supply: 0n,
           underlyingTvl: 0n,
@@ -743,7 +749,9 @@ describe("Lock Component", () => {
     await userEvent.click(acceptButton);
 
     expect(initiateLockTransactionSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ minSharesOut: expectedMinSharesOut }),
+      expect.objectContaining({
+        depositMinShareRatio: expectedDepositMinShareRatio,
+      }),
     );
   });
 

@@ -50,7 +50,7 @@ export type InitiateLockTransactionArgs = {
   config: Config;
   selectedToken: CyToken;
   assets: bigint;
-  minSharesOut: bigint;
+  depositMinShareRatio: bigint;
 };
 
 export type RewardsPools = Record<string, bigint>;
