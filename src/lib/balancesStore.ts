@@ -28,6 +28,7 @@ interface StatsState {
     [key: string]: {
       supply: bigint;
       price: bigint;
+      priceUpdatedAt: number; // ms epoch of the last price write
       lockPrice: bigint;
       underlyingTvl: bigint;
       usdTvl: bigint;
@@ -57,6 +58,7 @@ const createInitialState = (tokens: CyToken[]): StatsState => {
     stats[token.name] = {
       supply: BigInt(0),
       price: BigInt(0),
+      priceUpdatedAt: 0,
       lockPrice: BigInt(0),
       underlyingTvl: BigInt(0),
       usdTvl: BigInt(0),
@@ -77,6 +79,44 @@ const createInitialState = (tokens: CyToken[]): StatsState => {
       cusdxOutput: BigInt(0),
     },
   };
+};
+
+export const scaleDecimals = (
+  amount: bigint,
+  fromDecimals: number,
+  toDecimals: number,
+): bigint =>
+  fromDecimals >= toDecimals
+    ? amount / 10n ** BigInt(fromDecimals - toDecimals)
+    : amount * 10n ** BigInt(toDecimals - fromDecimals);
+
+// Sized to the 10s refreshFooterStats tick in src/routes/+layout.svelte: a
+// cy* price that moves more than this between consecutive ticks is a
+// discontinuity (manipulated or shallow pool, fork RPC), not a market slide.
+export const MAX_PRICE_DEVIATION_BPS = 2000n;
+// A reference older than this was not observed one tick ago (throttled
+// background tab, sleep), so it bounds nothing and the quote is accepted as
+// on first load.
+export const MAX_PRICE_REFERENCE_AGE_MS = 60_000;
+
+export interface PriceReference {
+  price: bigint;
+  observedAt: number; // ms epoch
+}
+
+const boundPrice = (price: bigint, reference: bigint): bigint => {
+  // 0n is already the "price unavailable" signal, and without a nonzero
+  // reference (first load, stale reference) there is nothing to bound against.
+  if (price === 0n || reference === 0n) return price;
+  const upperBound = (reference * (10000n + MAX_PRICE_DEVIATION_BPS)) / 10000n;
+  const lowerBound = (reference * (10000n - MAX_PRICE_DEVIATION_BPS)) / 10000n;
+  if (price > upperBound || price < lowerBound) {
+    console.warn(
+      `getCyTokenUsdPrice: quoter price ${price} deviates more than ${MAX_PRICE_DEVIATION_BPS} bps from previous price ${reference}; suppressing price`,
+    );
+    return 0n;
+  }
+  return price;
 };
 
 const getDepositPreviewSwapValue = async (
@@ -178,7 +218,13 @@ const getCyTokenUsdPrice = async (
   cusdxAddress: Hex,
   selectedToken: CyToken,
   chainId?: number,
+  previous?: PriceReference,
 ) => {
+  const reference =
+    previous && Date.now() - previous.observedAt <= MAX_PRICE_REFERENCE_AGE_MS
+      ? previous.price
+      : 0n;
+
   // Use Algebra quoter for Arbitrum, standard quoter for Flare
   if (chainId === arbitrum.id) {
     try {
@@ -193,7 +239,7 @@ const getCyTokenUsdPrice = async (
       });
 
       // Algebra quoter returns [amountIn, fee]
-      return sim.result[0] ?? 0n;
+      return boundPrice(sim.result[0] ?? 0n, reference);
     } catch (error) {
       console.error(
         "Error getting cyTokenUsdPrice with Algebra quoter:",
@@ -219,7 +265,7 @@ const getCyTokenUsdPrice = async (
       account: zeroAddress,
       chainId,
     });
-    return data.result[0] || 0n;
+    return boundPrice(data.result[0] || 0n, reference);
   } catch {
     try {
       // try 10000 as the fee
@@ -237,7 +283,7 @@ const getCyTokenUsdPrice = async (
         account: zeroAddress,
         chainId,
       });
-      return data.result[0] || 0n;
+      return boundPrice(data.result[0] || 0n, reference);
     } catch (error) {
       console.error("Error getting cyTokenUsdPrice:", error);
       return 0n;
@@ -446,6 +492,7 @@ const balancesStore = () => {
         state.stats[selectedToken.name] = {
           supply: BigInt(0),
           price: BigInt(0),
+          priceUpdatedAt: 0,
           lockPrice: BigInt(0),
           underlyingTvl: BigInt(0),
           usdTvl: BigInt(0),
@@ -539,6 +586,7 @@ const balancesStore = () => {
 
   const refreshFooterStats = async (config: Config) => {
     const getTokenStats = async (token: CyToken, network: NetworkConfig) => {
+      const previous = get({ subscribe }).stats[token.name];
       const [supplyResult, priceResult, lockPriceResult, tvlResult] =
         await Promise.all([
           getcysFLRSupply(config, token, token.chainId).catch((error) => {
@@ -551,6 +599,10 @@ const balancesStore = () => {
             network.usdcAddress,
             token,
             token.chainId,
+            previous && {
+              price: previous.price,
+              observedAt: previous.priceUpdatedAt,
+            },
           ).catch((error) => {
             console.log(`Failed to fetch price for ${token.name}:`, error);
             return BigInt(0);
@@ -579,6 +631,7 @@ const balancesStore = () => {
       const stats = {
         supply: supplyResult,
         price: priceResult,
+        priceUpdatedAt: Date.now(),
         lockPrice: lockPriceResult,
         underlyingTvl: tvlResult,
         usdTvl:
@@ -606,6 +659,7 @@ const balancesStore = () => {
           updatedStats[tokenName] = {
             supply: BigInt(0),
             price: BigInt(0),
+            priceUpdatedAt: 0,
             lockPrice: BigInt(0),
             underlyingTvl: BigInt(0),
             usdTvl: BigInt(0),
