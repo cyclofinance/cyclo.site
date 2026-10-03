@@ -614,6 +614,46 @@ describe("Lock component wallet auto-switch guard", () => {
     expect(transactionStore.handleLockTransaction).not.toHaveBeenCalled();
   });
 
+  it.each([
+    TransactionStatus.CHECKING_ALLOWANCE,
+    TransactionStatus.PENDING_WALLET,
+    TransactionStatus.PENDING_APPROVAL,
+    TransactionStatus.PENDING_LOCK,
+    TransactionStatus.PENDING_UNLOCK,
+  ])(
+    "freezes the token select and LOCK button in the %s state",
+    async (status) => {
+      render(Lock);
+      await userEvent.type(screen.getByTestId("lock-input"), "1");
+      expect(screen.getByRole("combobox")).not.toBeDisabled();
+      expect(screen.getByTestId("lock-button")).not.toBeDisabled();
+
+      mockTxStore.mockSetStatus(status);
+      await tick();
+
+      expect(screen.getByRole("combobox")).toBeDisabled();
+      expect(screen.getByTestId("lock-button")).toBeDisabled();
+    },
+  );
+
+  it("does not dispatch a lock when a transaction starts in flight between disclaimer open and acknowledge", async () => {
+    render(Lock);
+    await userEvent.type(screen.getByTestId("lock-input"), "1");
+    await userEvent.click(screen.getByTestId("lock-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    // Another surface starts a transaction on the shared store while the
+    // disclaimer is open; the LOCK button is already behind the modal, so
+    // only runLockTransaction's own re-check can stop the second dispatch.
+    mockTxStore.mockSetStatus(TransactionStatus.PENDING_WALLET);
+    await tick();
+    vi.mocked(transactionStore.handleLockTransaction).mockClear();
+    await userEvent.click(screen.getByTestId("disclaimer-acknowledge-button"));
+    expect(transactionStore.handleLockTransaction).not.toHaveBeenCalled();
+  });
+
   it("re-enables the token select and LOCK button once the transaction settles", async () => {
     render(Lock);
 

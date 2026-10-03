@@ -284,6 +284,42 @@ describe("transactionStore", () => {
     expect(get(transactionStore).status).toBe(TransactionStatus.IDLE);
   });
 
+  it("should keep ignoring reset while a second lock handler is still running", async () => {
+    const deferAllowance = () => {
+      let resolve!: (allowance: bigint) => void;
+      (readErc20Allowance as Mock).mockReturnValueOnce(
+        new Promise<bigint>((r) => {
+          resolve = r;
+        }),
+      );
+      return () => resolve(mockAssets);
+    };
+    const args = {
+      signerAddress: mockSignerAddress,
+      config: mockWagmiConfigStore as unknown as Config,
+      selectedToken: mockSelectedToken,
+      assets: mockAssets,
+    };
+    const resolveFirst = deferAllowance();
+    const first = handleLockTransaction(args);
+    const resolveSecond = deferAllowance();
+    const second = handleLockTransaction(args);
+
+    resolveFirst();
+    await first;
+    expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
+
+    // The first handler settled, the second is still awaiting its allowance
+    // read: a dismiss now must still leave the store untouched.
+    reset();
+    expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
+
+    resolveSecond();
+    await second;
+    reset();
+    expect(get(transactionStore).status).toBe(TransactionStatus.IDLE);
+  });
+
   it("should let reset clear the store again after the lock handler throws", async () => {
     (readErc20Allowance as Mock).mockRejectedValueOnce(new Error("rpc down"));
     await expect(
