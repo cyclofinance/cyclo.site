@@ -139,19 +139,20 @@ describe("Href Button Component", () => {
     render(HrefButton, {
       props: { href: "https://example.com", target: "_blank" },
     });
-    const link = screen.getByRole("link");
-    expect(link.getAttribute("rel")).toContain("noopener");
-    expect(link.getAttribute("rel")).toContain("noreferrer");
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "rel",
+      "noopener noreferrer",
+    );
   });
 
   it("preserves caller-supplied rel alongside blank tokens", () => {
     render(HrefButton, {
       props: { href: "https://example.com", target: "_blank", rel: "author" },
     });
-    const rel = screen.getByRole("link").getAttribute("rel") ?? "";
-    expect(rel).toContain("noopener");
-    expect(rel).toContain("noreferrer");
-    expect(rel).toContain("author");
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "rel",
+      "noopener noreferrer author",
+    );
   });
 
   it('should render with default class as "outset"', () => {
