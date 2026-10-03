@@ -10,6 +10,44 @@
   const closeMenu = () => {
     mobileMenuOpen = false;
   };
+
+  let hamburger: HTMLButtonElement;
+
+  const FOCUSABLE =
+    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  const modalFocus = (node: HTMLElement) => {
+    node.focus();
+    const onKeydown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusable = Array.from(
+        node.querySelectorAll<HTMLElement>(FOCUSABLE),
+      );
+      if (focusable.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey) {
+        if (active === first || active === node) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    node.addEventListener("keydown", onKeydown);
+    return {
+      destroy() {
+        node.removeEventListener("keydown", onKeydown);
+        hamburger.focus();
+      },
+    };
+  };
 </script>
 
 <svelte:window on:keydown={(e) => e.key === "Escape" && closeMenu()} />
@@ -23,6 +61,7 @@
     aria-expanded={mobileMenuOpen}
     aria-controls="mobile-menu"
     data-testid="nav-hamburger"
+    bind:this={hamburger}
   >
     <BarsOutline class="block" size="xl" aria-hidden="true" />
   </button>
@@ -34,6 +73,8 @@
     role="dialog"
     aria-modal="true"
     aria-label="Navigation menu"
+    tabindex="-1"
+    use:modalFocus
     class="absolute left-0 top-0 z-50 flex h-screen w-full flex-col items-center justify-center gap-4 bg-black/80 sm:hidden"
   >
     <button

@@ -160,4 +160,48 @@ describe("NavButtons accessibility", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  it("moves focus to the dialog when the menu opens", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toHaveFocus();
+    });
+  });
+
+  it("wraps Tab from the last link back to the close button", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    screen.getByTestId("chart-button-mobile").focus();
+    await userEvent.tab();
+
+    expect(screen.getByLabelText("Close menu")).toHaveFocus();
+  });
+
+  it("wraps Shift+Tab from the close button and from the dialog itself to the last link", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    await userEvent.tab({ shift: true });
+    expect(screen.getByTestId("chart-button-mobile")).toHaveFocus();
+
+    screen.getByLabelText("Close menu").focus();
+    await userEvent.tab({ shift: true });
+    expect(screen.getByTestId("chart-button-mobile")).toHaveFocus();
+  });
+
+  it("restores focus to the hamburger when the menu closes", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    screen.getByTestId("docs-button-mobile").focus();
+    await userEvent.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId("nav-hamburger")).toHaveFocus();
+  });
 });
