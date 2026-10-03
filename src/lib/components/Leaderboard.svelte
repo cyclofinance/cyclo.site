@@ -21,7 +21,7 @@
       loading = false;
     } catch (e) {
       console.error(e);
-      error = e instanceof Error ? e.message : "Failed to fetch leaderboard";
+      error = "Could not load the leaderboard. Please try again later.";
       loading = false;
     }
   });

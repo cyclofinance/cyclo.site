@@ -20,7 +20,7 @@
       loading = false;
     } catch (e) {
       console.error(e);
-      error = e instanceof Error ? e.message : "Failed to fetch stats";
+      error = "Could not load stats. Please try again later.";
       loading = false;
     }
   }

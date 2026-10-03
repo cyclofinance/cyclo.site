@@ -164,6 +164,24 @@ describe("Leaderboard Component", () => {
     );
   });
 
+  it("should render generic error copy instead of the raw error message", async () => {
+    const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
+    vi.mocked(fetchTopRewards).mockRejectedValue(
+      new Error("HTTP 500 from https://internal.example/subgraph"),
+    );
+
+    render(Leaderboard);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Could not load the leaderboard. Please try again later.",
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/internal\.example/)).not.toBeInTheDocument();
+  });
+
   it("should percent-encode the account in the row href when it contains URL metacharacters", async () => {
     const maliciousAccount = "0xabc/../../admin?redirect=evil#frag'\"<>";
     const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
