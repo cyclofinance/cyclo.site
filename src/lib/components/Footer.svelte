@@ -9,11 +9,24 @@
     return (price * supply) / BigInt(1e6);
   }
 
-  const tokensByNetwork = supportedNetworks.map((network) => ({
-    key: network.key,
-    name: network.chain?.name ?? network.key,
-    tokens: network.tokens,
-  }));
+  const supportedChainIds = supportedNetworks.map(
+    (network) => network.chain.id,
+  );
+
+  $: otherTokens = $allTokens.filter(
+    (token) => !supportedChainIds.includes(token.chainId),
+  );
+
+  $: tokensByNetwork = [
+    ...supportedNetworks.map((network) => ({
+      key: network.key,
+      name: network.chain?.name ?? network.key,
+      tokens: $allTokens.filter((token) => token.chainId === network.chain.id),
+    })),
+    ...(otherTokens.length > 0
+      ? [{ key: "other", name: "Other networks", tokens: otherTokens }]
+      : []),
+  ];
 
   // Calculate globalTvl using allTokens to ensure all active tokens are included
   // Normalize all usdTvl values to 18 decimals before summing since they're stored with token.decimals
@@ -76,7 +89,7 @@
             class="flex items-center justify-between text-sm font-semibold uppercase"
           >
             <span>{network.name}</span>
-            <span
+            <span data-testId={`network-tvl-${network.key}`}
               >$ {Number(formatUnits(networkTvls[network.key] || 0n, 18))}</span
             >
           </div>

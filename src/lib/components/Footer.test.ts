@@ -1,6 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
 import Footer from "./Footer.svelte";
-import { describe, it, vi, expect, beforeEach } from "vitest";
+import { describe, it, vi, expect, beforeEach, afterEach } from "vitest";
+import { get } from "svelte/store";
+import { flare, arbitrum } from "@wagmi/core/chains";
+import { allTokens } from "$lib/stores";
+import type { CyToken } from "$lib/types";
+import type { Hex } from "viem";
 
 const { mockBalancesStore } = await vi.hoisted(
   () => import("$lib/mocks/mockStores"),
@@ -29,7 +34,13 @@ vi.mock("$lib/balancesStore", async () => {
   };
 });
 
+const initialAllTokens = get(allTokens);
+
 describe("Footer.svelte", () => {
+  afterEach(() => {
+    allTokens.set(initialAllTokens);
+  });
+
   beforeEach(() => {
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
@@ -169,5 +180,149 @@ describe("Footer.svelte", () => {
       expect(screen.getByTestId("market-cap-cysFLR")).toBeInTheDocument();
       expect(screen.getByText("$ 1000000000000")).toBeInTheDocument();
     });
+  });
+
+  it("updates the per-network breakdown when allTokens changes", async () => {
+    render(Footer);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("global-tvl")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("cyNEW")).not.toBeInTheDocument();
+
+    const newToken: CyToken = {
+      name: "cyNEW",
+      symbol: "cyNEW",
+      decimals: 18,
+      address: "0x0000000000000000000000000000000000000001" as Hex,
+      underlyingAddress: "0x0000000000000000000000000000000000000002" as Hex,
+      underlyingSymbol: "NEW",
+      underlyingDecimals: 18,
+      receiptAddress: "0x0000000000000000000000000000000000000003" as Hex,
+      chainId: flare.id,
+      networkName: "Flare",
+      active: true,
+    };
+    allTokens.update((tokens) => [...tokens, newToken]);
+
+    await waitFor(() => {
+      expect(screen.getByText("cyNEW")).toBeInTheDocument();
+    });
+  });
+
+  it("per-network subtotals sum to the global TVL before and after allTokens changes", async () => {
+    // formatUnits is mocked to value.toString(), so every figure renders as
+    // its 18-decimal-normalised bigint.
+    const readUsd = (element: HTMLElement): bigint =>
+      BigInt(/\$\s*(\d+)/.exec(element.textContent ?? "")![1]);
+    const networkRows = () => screen.getAllByTestId(/^network-tvl-/);
+    const sumOfRows = () =>
+      networkRows().reduce((sum, row) => sum + readUsd(row), 0n);
+    const globalTvl = () => readUsd(screen.getByTestId("global-tvl"));
+
+    render(Footer);
+
+    // Fixture: cysFLR 3000 + cyWETH 3000, both on Flare; nothing on Arbitrum.
+    await waitFor(() => {
+      expect(screen.getByTestId("network-tvl-flare")).toHaveTextContent(
+        "$ 6000",
+      );
+    });
+    expect(screen.getByTestId("network-tvl-arbitrum")).toHaveTextContent("$ 0");
+    expect(screen.queryByTestId("network-tvl-other")).not.toBeInTheDocument();
+    expect(networkRows()).toHaveLength(2);
+    expect(screen.getByText(flare.name)).toBeInTheDocument();
+    expect(screen.getByText(arbitrum.name)).toBeInTheDocument();
+    expect(globalTvl()).toBe(6000n);
+    expect(sumOfRows()).toBe(6000n);
+
+    const zeroStats = {
+      lockPrice: BigInt(0),
+      price: BigInt(0),
+      supply: BigInt(0),
+      underlyingTvl: BigInt(0),
+    };
+    // cyNEW: 1000 on Flare at 18 decimals. cyBIG: 7 * 10^6 at 24 decimals on
+    // Arbitrum, normalised to 7. cyFAR: 5 at 6 decimals on a chain neither
+    // network config lists, normalised to 5 * 10^12.
+    const stats = {
+      cyWETH: { ...zeroStats, usdTvl: BigInt(3000) },
+      cysFLR: { ...zeroStats, usdTvl: BigInt(3000) },
+      cyNEW: { ...zeroStats, usdTvl: BigInt(1000) },
+      cyBIG: { ...zeroStats, usdTvl: BigInt(7_000_000) },
+      cyFAR: { ...zeroStats, usdTvl: BigInt(5) },
+    };
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      stats,
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+      },
+      { cusdxOutput: BigInt(0), cyTokenOutput: BigInt(0) },
+    );
+    const tokenBase: CyToken = {
+      name: "cyNEW",
+      symbol: "cyNEW",
+      decimals: 18,
+      address: "0x0000000000000000000000000000000000000001" as Hex,
+      underlyingAddress: "0x0000000000000000000000000000000000000002" as Hex,
+      underlyingSymbol: "NEW",
+      underlyingDecimals: 18,
+      receiptAddress: "0x0000000000000000000000000000000000000003" as Hex,
+      chainId: flare.id,
+      networkName: "Flare",
+      active: true,
+    };
+    allTokens.update((tokens) => [
+      ...tokens,
+      tokenBase,
+      {
+        ...tokenBase,
+        name: "cyBIG",
+        symbol: "cyBIG",
+        decimals: 24,
+        underlyingSymbol: "BIG",
+        underlyingDecimals: 24,
+        chainId: arbitrum.id,
+        networkName: "Arbitrum",
+      },
+      {
+        ...tokenBase,
+        name: "cyFAR",
+        symbol: "cyFAR",
+        decimals: 6,
+        underlyingSymbol: "FAR",
+        underlyingDecimals: 6,
+        chainId: 999,
+        networkName: "Farchain",
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("network-tvl-flare")).toHaveTextContent(
+        "$ 7000",
+      );
+    });
+    expect(globalTvl()).toBe(5000000007007n);
+    expect(sumOfRows()).toBe(5000000007007n);
+    expect(networkRows().map((row) => row.dataset.testid)).toEqual([
+      "network-tvl-flare",
+      "network-tvl-arbitrum",
+      "network-tvl-other",
+    ]);
+    expect(readUsd(screen.getByTestId("network-tvl-arbitrum"))).toBe(7n);
+    expect(screen.getByTestId("network-tvl-other")).toHaveTextContent(
+      "$ 5000000000000",
+    );
+    expect(screen.getByText("Other networks")).toBeInTheDocument();
+    expect(screen.getByText("(Farchain)")).toBeInTheDocument();
   });
 });
