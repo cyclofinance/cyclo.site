@@ -9,11 +9,11 @@ fully static site (`@sveltejs/adapter-static`, `prerender = true`, `ssr =
 false` in `src/routes/+layout.server.ts`) with pages for locking/unlocking
 cyTokens, deploying trade strategies, the rewards leaderboard, and the docs.
 
-`cyclo.sol/` is a git submodule of the separate
-[cyclofinance/cyclo.sol](https://github.com/cyclofinance/cyclo.sol) contracts
-repo. This repo uses it only as a source of forge artifacts for wagmi codegen
-(`wagmi.config.ts` reads `cyclo.sol/out/ERC20PriceOracleReceiptVault.json`).
-Solidity changes and contract audit findings belong in the `cyclo.sol` repo.
+The vault ABI the site calls is `src/lib/contracts/erc20PriceOracleReceiptVaultAbi.ts`,
+written by `npm run abi` (`scripts/fetch-vault-abi.sh`) from the verified
+source of the production CycloVault implementation on Flare. Solidity lives in
+[cyclofinance/cyclo.sol](https://github.com/cyclofinance/cyclo.sol); this repo
+compiles none of it.
 
 ## Setup
 
@@ -22,10 +22,7 @@ Everything runs inside the nix dev shell (`flake.nix` re-exports
 in this order (mirrors `.github/workflows/test.yaml`):
 
 ```sh
-git submodule update --init --recursive     # cyclo.sol + its forge deps (slow)
 cp env.example .env                         # set PUBLIC_WALLETCONNECT_ID
-nix develop -c npm ci                       # JS deps (the repo root holds the only package.json)
-cd cyclo.sol && nix develop -c forge build && cd ..
 nix develop -c npm run codegen              # @wagmi/cli -> src/generated.ts
 nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
 ```
@@ -36,8 +33,7 @@ nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
   step). Do not run two root `nix develop -c` commands concurrently — the
   parallel installs race and corrupt `node_modules`.
 - `src/generated.ts` and `src/generated-graphql.ts` are gitignored and
-  imported by `src/` code; `npm run codegen` fails until the submodule is
-  built (`wagmi.config.ts` reads from `cyclo.sol/out/`).
+  imported by `src/` code.
 - `npm run graphql-codegen` introspects the live Flare rewards subgraph
   (schema URL from `src/lib/subgraph-urls.ts`), so it needs network access.
 - `PUBLIC_WALLETCONNECT_ID` is read via `$env/static/public` in
@@ -47,6 +43,7 @@ nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
 
 All via `nix develop -c <cmd>` at the repo root:
 
+- `npm run abi` — refetch the vault ABI (network access; commit the result)
 - `npm run dev` — vite dev server on `http://localhost:5173/`
 - `npm test -- run` — vitest single pass (bare `npm test` runs vitest in its
   default watch mode)
@@ -60,8 +57,7 @@ All via `nix develop -c <cmd>` at the repo root:
 
 ## CI / deployment
 
-Three workflows in `.github/workflows/`, all of which rebuild the submodule
-and rerun both codegens first:
+Three workflows in `.github/workflows/`, all of which rerun both codegens first:
 
 - `test.yaml` — on every push: `test` job (vitest) and `lint` job
   (`svelte-lint-check` + pre-commit prettier).

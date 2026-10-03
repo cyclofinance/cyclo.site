@@ -1,12 +1,4 @@
-## Setting up
+# cyclo.site
 
-Run the following commands in sequence
-
-nix develop
-cd ethgild
-npm i
-forge build
-cd ..
-npm run codegen
-
-This will generate the required JS actions for making contract calls with @wagmi/cli
+Front end for [Cyclo](https://cyclo.finance). Setup and commands are in
+[CLAUDE.md](CLAUDE.md).
