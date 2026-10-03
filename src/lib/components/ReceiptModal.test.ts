@@ -524,6 +524,20 @@ describe("ReceiptModal Component", () => {
     });
   });
 
+  it("does not submit a zero amount", async () => {
+    // With nothing entered the status reads UNLOCK, so the amount check is
+    // the only thing keeping a 0-asset redeem off the wire.
+    setSignerBalances(parseEther("1000"), BigInt(0));
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const unlockButton = screen.getByTestId("unlock-button");
+    expect(unlockButton).toHaveTextContent("UNLOCK");
+    expect(unlockButton).toBeDisabled();
+    await userEvent.click(unlockButton);
+    expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
+  });
+
   it("reports WRONG NETWORK and does not submit when the receipt's chain differs from the selected token's", async () => {
     // A20-3: the button did not gate on the receipt/wallet chain matching,
     // and a greyed button alone does not tell the user why.
