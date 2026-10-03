@@ -40,6 +40,19 @@ const { mockActiveNetworkKey, mockSupportedNetworks, mockSwitchNetwork } =
         rewardsSubgraphUrl: "",
         tokens: [],
       },
+      {
+        key: "other",
+        chain: { ...flare, id: 1000, name: "Other Network" },
+        wFLRAddress: "0x0" as const,
+        quoterAddress: "0x0" as const,
+        cusdxAddress: "0x0" as const,
+        usdcAddress: "0x0" as const,
+        explorerApiUrl: "",
+        explorerUrl: "",
+        orderbookSubgraphUrl: "",
+        rewardsSubgraphUrl: "",
+        tokens: [],
+      },
     ];
 
     const mockSwitchNetwork = vi.fn();
@@ -136,6 +149,8 @@ describe("NetworkSelector", () => {
     await fireEvent.change(selector, { target: { value: "test" } });
 
     expect(setSpy).toHaveBeenCalledWith("test");
+    // No wallet to switch, so no wallet switch is attempted.
+    expect(mockSwitchNetwork).not.toHaveBeenCalled();
   });
 
   it("does not call switchNetwork if selected key is not in availableNetworks", async () => {
@@ -193,7 +208,7 @@ describe("NetworkSelector", () => {
     });
   });
 
-  it("switches wallet network after updating the store (order check)", async () => {
+  it("switches the wallet network before committing the store (order check)", async () => {
     mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
 
     // capture call order
@@ -215,11 +230,12 @@ describe("NetworkSelector", () => {
       "network-switcher",
     ) as HTMLSelectElement;
     await fireEvent.change(selector, { target: { value: "test" } });
+    await new Promise((r) => setTimeout(r, 0));
 
-    expect(calls[0]).toBe("set:test");
-    expect(calls).toContain("switchNetwork");
-    expect(calls.indexOf("set:test")).toBeLessThan(
-      calls.indexOf("switchNetwork"),
+    expect(calls[0]).toBe("switchNetwork");
+    expect(calls).toContain("set:test");
+    expect(calls.indexOf("switchNetwork")).toBeLessThan(
+      calls.indexOf("set:test"),
     );
   });
 
@@ -241,13 +257,21 @@ describe("NetworkSelector", () => {
     ) as HTMLSelectElement;
 
     await fireEvent.change(selector, { target: { value: "test" } });
-    // The switch to "test" is still in flight; flip back to "flare".
-    await fireEvent.change(selector, { target: { value: "flare" } });
+    // The switch to "test" is still in flight; pick a third network.
+    await fireEvent.change(selector, { target: { value: "other" } });
 
     // Only the first switch runs; the concurrent change is discarded.
     expect(mockSwitchNetwork).toHaveBeenCalledTimes(1);
-    expect(get(mockActiveNetworkKey)).toBe("test");
+    // The store does not move until the wallet switch succeeds.
+    expect(get(mockActiveNetworkKey)).toBe("flare");
     // The select is put back on the network being switched to.
+    expect(selector.value).toBe("test");
+
+    // Still in flight; flip back to the committed network.
+    await fireEvent.change(selector, { target: { value: "flare" } });
+
+    expect(mockSwitchNetwork).toHaveBeenCalledTimes(1);
+    expect(get(mockActiveNetworkKey)).toBe("flare");
     expect(selector.value).toBe("test");
 
     resolveSwitch();
@@ -297,16 +321,20 @@ describe("NetworkSelector", () => {
     await fireEvent.change(selector, { target: { value: "test" } });
     resolveSwitch();
     await waitFor(() => expect(selector.disabled).toBe(false));
+    expect(get(mockActiveNetworkKey)).toBe("test");
 
     await fireEvent.change(selector, { target: { value: "flare" } });
 
     expect(mockSwitchNetwork).toHaveBeenCalledTimes(2);
-    expect(get(mockActiveNetworkKey)).toBe("flare");
+    // The second switch is in flight; the store commits once it resolves.
+    expect(get(mockActiveNetworkKey)).toBe("test");
+    resolveSwitch();
+    await waitFor(() => expect(get(mockActiveNetworkKey)).toBe("flare"));
   });
 
   it("allows a new switch after the in-flight switch rejects", async () => {
     mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
-    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     let rejectSwitch: (error: Error) => void = () => {};
     mockSwitchNetwork.mockImplementation(
@@ -323,10 +351,19 @@ describe("NetworkSelector", () => {
     ) as HTMLSelectElement;
 
     await fireEvent.change(selector, { target: { value: "test" } });
-    rejectSwitch(new Error("user rejected"));
+    const rejection = new Error("user rejected");
+    rejectSwitch(rejection);
     await waitFor(() => expect(selector.disabled).toBe(false));
+    // The rejected switch left the store untouched and rolled the select back.
+    expect(get(mockActiveNetworkKey)).toBe("flare");
+    expect(selector.value).toBe("flare");
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Failed to switch wallet network to test:",
+      rejection,
+    );
 
-    await fireEvent.change(selector, { target: { value: "flare" } });
+    // Retry the network that failed.
+    await fireEvent.change(selector, { target: { value: "test" } });
 
     expect(mockSwitchNetwork).toHaveBeenCalledTimes(2);
     expect(get(mockActiveNetworkKey)).toBe("flare");

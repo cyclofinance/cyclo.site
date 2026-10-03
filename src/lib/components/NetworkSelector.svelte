@@ -7,44 +7,46 @@
   import { switchNetwork } from "@wagmi/core";
   import { wagmiConfig } from "svelte-wagmi";
 
-  // True while a wallet network switch is in flight; blocks further changes
-  // so only one switch runs at a time.
-  let switching = false;
+  // The network a wallet switch is in flight to, or null when idle. Blocks
+  // further changes so only one switch runs at a time.
+  let pendingNetworkKey: string | null = null;
 
   const handleChange = async (event: Event) => {
     const target = event.target as HTMLSelectElement;
     const networkKey = target.value;
 
-    if (networkKey === $activeNetworkKey) return;
-
-    if (switching) {
+    if (pendingNetworkKey !== null) {
       // A switch is in flight; keep the select on the network being
       // switched to and ignore this change.
-      target.value = $activeNetworkKey;
+      target.value = pendingNetworkKey;
       return;
     }
+
+    if (networkKey === $activeNetworkKey) return;
 
     const selectedNetwork = availableNetworks.find(
       (network) => network.key === networkKey,
     );
+    if (!selectedNetwork) return;
 
-    setActiveNetwork(networkKey);
+    const config = $wagmiConfig;
+    if (!config) {
+      setActiveNetwork(networkKey);
+      return;
+    }
 
-    if (selectedNetwork) {
-      switching = true;
-      try {
-        const config = $wagmiConfig;
-        if (config) {
-          await switchNetwork(config, { chainId: selectedNetwork.chain.id });
-        }
-      } catch (error) {
-        console.warn(
-          `Failed to switch wallet network to ${selectedNetwork.key}:`,
-          error,
-        );
-      } finally {
-        switching = false;
-      }
+    pendingNetworkKey = networkKey;
+    try {
+      await switchNetwork(config, { chainId: selectedNetwork.chain.id });
+      setActiveNetwork(networkKey);
+    } catch (error) {
+      target.value = $activeNetworkKey;
+      console.error(
+        `Failed to switch wallet network to ${selectedNetwork.key}:`,
+        error,
+      );
+    } finally {
+      pendingNetworkKey = null;
     }
   };
 </script>
@@ -56,7 +58,7 @@
   <select
     class="rounded border border-white/40 bg-[#1C02B8] px-2 py-1 text-white focus:border-white focus:outline-none"
     value={$activeNetworkKey}
-    disabled={switching}
+    disabled={pendingNetworkKey !== null}
     on:change={handleChange}
     data-testid="network-switcher"
   >
