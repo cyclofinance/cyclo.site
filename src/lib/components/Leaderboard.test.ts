@@ -164,6 +164,32 @@ describe("Leaderboard Component", () => {
     );
   });
 
+  it("should reflect the actual row count in the heading", async () => {
+    const second: LeaderboardEntry = {
+      ...mockLeaderboard[0],
+      account: "0x2345678901234567890123456789012345678901",
+    };
+    const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
+    vi.mocked(fetchTopRewards).mockResolvedValue([mockLeaderboard[0], second]);
+
+    render(Leaderboard);
+
+    await screen.findByText(/#1 0x1234\.\.\.7890/);
+    expect(screen.getByText("Top 2 Accounts")).toBeInTheDocument();
+  });
+
+  it("should show the neutral heading while loading", async () => {
+    const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
+    vi.mocked(fetchTopRewards).mockImplementation(() => new Promise(() => {}));
+
+    render(Leaderboard);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("loader")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Top Accounts")).toBeInTheDocument();
+  });
+
   it("should percent-encode the account in the row href when it contains URL metacharacters", async () => {
     const maliciousAccount = "0xabc/../../admin?redirect=evil#frag'\"<>";
     const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
