@@ -6,7 +6,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: recursive
           fetch-depth: 0
       - uses: nixbuild/nix-quick-install-action@v30
         with:
@@ -24,10 +23,6 @@ jobs:
           # before trying to save a new cache
           # 1G = 1073741824
           gc-max-store-size-linux: 1G
-      - run: nix develop -c npm ci
-        working-directory: ./cyclo.sol
-      - run: nix develop -c forge build
-        working-directory: ./cyclo.sol
       - run: nix develop -c npm run codegen
       - run: nix develop -c npm run graphql-codegen
       - run: nix develop -c npm run test
@@ -39,7 +34,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: recursive
           fetch-depth: 0
       - uses: nixbuild/nix-quick-install-action@v30
         with:
@@ -57,10 +51,6 @@ jobs:
           # before trying to save a new cache
           # 1G = 1073741824
           gc-max-store-size-linux: 1G
-      - run: nix develop -c npm ci
-        working-directory: ./cyclo.sol
-      - run: nix develop -c forge build
-        working-directory: ./cyclo.sol
       - run: nix develop -c npm run codegen
       - run: nix develop -c npm run graphql-codegen
       - run: nix develop -c npm run svelte-lint-check

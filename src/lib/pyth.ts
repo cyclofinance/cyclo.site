@@ -1,12 +1,12 @@
 import { bytesToHex, isHex } from "viem";
 import type { Abi } from "viem";
-import ipythAbi from "../../cyclo.sol/out/IPyth.sol/IPyth.json";
-import pythOracleAbi from "../../cyclo.sol/out/PythOracle.sol/PythOracle.json";
-import cycloVault from "../../cyclo.sol/out/CycloVault.sol/CycloVault.json";
+import { iPythAbi } from "$lib/contracts/iPythAbi";
+import { pythOracleAbi } from "$lib/contracts/pythOracleAbi";
+import { erc20PriceOracleReceiptVaultAbi } from "$lib/contracts/erc20PriceOracleReceiptVaultAbi";
 
-export const I_PYTH_ABI = ipythAbi.abi as Abi;
-export const PYTH_ORACLE_ABI = pythOracleAbi.abi as Abi;
-export const CYCLO_VAULT_ABI = cycloVault.abi as Abi;
+export const I_PYTH_ABI = iPythAbi as Abi;
+export const PYTH_ORACLE_ABI = pythOracleAbi as Abi;
+export const CYCLO_VAULT_ABI = erc20PriceOracleReceiptVaultAbi as Abi;
 
 export const DEFAULT_PYTH_ADDR =
   "0xff1a0f4744e8582DF1aE09D5611b887B6a12925C" as const;
