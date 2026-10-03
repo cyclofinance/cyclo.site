@@ -25,7 +25,9 @@ describe("blockNumberStore", () => {
     const mockBlockNumber = BigInt(1000);
     (getBlock as Mock).mockResolvedValue({ number: mockBlockNumber });
 
-    await blockNumberStore.refresh(mockConfig);
+    await expect(blockNumberStore.refresh(mockConfig)).resolves.toBe(
+      mockBlockNumber,
+    );
 
     const store = get(blockNumberStore);
     expect(store.blockNumber).toBe(mockBlockNumber);
@@ -65,6 +67,50 @@ describe("blockNumberStore", () => {
     // Store must still reflect the fast request's result
     expect(get(blockNumberStore).blockNumber).toBe(BigInt(2000));
     expect(get(blockNumberStore).status).toBe("Ready");
+  });
+
+  it("stale in-flight response does not overwrite a newer request's Error status", async () => {
+    let resolveSlow!: (v: { number: bigint }) => void;
+    const slowPromise = new Promise<{ number: bigint }>((res) => {
+      resolveSlow = res;
+    });
+    (getBlock as Mock)
+      .mockReturnValueOnce(slowPromise)
+      .mockRejectedValueOnce(new Error("Failed to get block"));
+
+    const slowCall = blockNumberStore.refresh(mockConfig);
+    await expect(blockNumberStore.refresh(mockConfig)).rejects.toThrow();
+    expect(get(blockNumberStore).status).toBe("Error");
+
+    // A higher block from the older request must still be discarded: the
+    // token decides, not the number.
+    resolveSlow({ number: BigInt(3000) });
+    await slowCall;
+
+    const store = get(blockNumberStore);
+    expect(store.status).toBe("Error");
+    expect(store.blockNumber).toBe(BigInt(0));
+  });
+
+  it("stale in-flight failure neither touches the store nor is swallowed", async () => {
+    let rejectSlow!: (e: Error) => void;
+    const slowPromise = new Promise<{ number: bigint }>((_, rej) => {
+      rejectSlow = rej;
+    });
+    (getBlock as Mock)
+      .mockReturnValueOnce(slowPromise)
+      .mockResolvedValueOnce({ number: BigInt(2000) });
+
+    const slowCall = blockNumberStore.refresh(mockConfig);
+    await blockNumberStore.refresh(mockConfig);
+    expect(get(blockNumberStore).status).toBe("Ready");
+
+    rejectSlow(new Error("stale failure"));
+    await expect(slowCall).rejects.toThrow("stale failure");
+
+    const store = get(blockNumberStore);
+    expect(store.status).toBe("Ready");
+    expect(store.blockNumber).toBe(BigInt(2000));
   });
 
   it("reset() invalidates an in-flight refresh", async () => {
