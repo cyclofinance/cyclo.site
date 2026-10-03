@@ -18,13 +18,14 @@
   export let receipt: Receipt;
   export let token: CyToken;
   enum ButtonStatus {
+    CONNECT_WALLET = "CONNECT WALLET",
+    WRONG_NETWORK = "WRONG NETWORK",
     INSUFFICIENT_RECEIPTS = "INSUFFICIENT RECEIPTS",
     INSUFFICIENT_TOKEN = `INSUFFICIENT cyTOKEN`,
     READY = "UNLOCK",
   }
   let buttonStatus: ButtonStatus = ButtonStatus.READY;
 
-  let erc1155balance = BigInt(receipt.balance);
   let readableAmountToRedeem: string = "";
   let amountToRedeem = BigInt(0);
   let sFlrToReceive = BigInt(0);
@@ -32,7 +33,8 @@
   let shouldCallContract = false;
   let debounceTimer: ReturnType<typeof setTimeout>;
 
-  const readableBalance = Number(formatUnits(receipt.balance, token.decimals));
+  $: erc1155balance = BigInt(receipt.balance);
+  $: readableBalance = Number(formatUnits(receipt.balance, token.decimals));
 
   $: tokenIdBigInt = (() => {
     try {
@@ -44,6 +46,26 @@
   $: tokenIdValid = tokenIdBigInt !== null;
 
   let previewError: string | null = null;
+
+  // Balances are keyed by token name; a receipt with no token string belongs
+  // to the token whose table opened this modal.
+  $: balanceKey = receipt.token || token.name;
+
+  // A redeem must execute on the receipt's own chain against the currently
+  // selected vault; a signer is required to submit at all.
+  $: chainMismatch =
+    receipt.chainId !== undefined &&
+    Number(receipt.chainId) !== $selectedCyToken.chainId;
+
+  // An amount typed against one receipt is meaningless for another: reset the
+  // input state whenever the bound receipt changes.
+  let boundReceipt: Receipt | null = null;
+  $: if (receipt !== boundReceipt) {
+    boundReceipt = receipt;
+    readableAmountToRedeem = "";
+    amountToRedeem = BigInt(0);
+    sFlrToReceive = BigInt(0);
+  }
 
   const checkBalance = async () => {
     if (isCalculating || !tokenIdValid) {
@@ -78,10 +100,9 @@
   };
 
   $: maxRedeemable =
-    ($balancesStore.balances[receipt.token || "cysFLR"]?.signerBalance ?? 0n) <
+    ($balancesStore.balances[balanceKey]?.signerBalance ?? 0n) <
     (erc1155balance ?? 0n)
-      ? ($balancesStore.balances[receipt.token || "cysFLR"]?.signerBalance ??
-        0n)
+      ? ($balancesStore.balances[balanceKey]?.signerBalance ?? 0n)
       : (erc1155balance ?? 0n);
 
   $: if (shouldCallContract && amountToRedeem !== undefined && !isCalculating) {
@@ -97,16 +118,19 @@
 
   $: insufficientReceipts = erc1155balance < amountToRedeem;
   $: insufficientcysFlr =
-    ($balancesStore.balances[receipt.token || "cysFLR"]?.signerBalance ?? 0n) <
-    amountToRedeem;
+    ($balancesStore.balances[balanceKey]?.signerBalance ?? 0n) < amountToRedeem;
 
-  $: buttonStatus = !readableAmountToRedeem
-    ? ButtonStatus.READY
-    : insufficientReceipts
-      ? ButtonStatus.INSUFFICIENT_RECEIPTS
-      : insufficientcysFlr
-        ? ButtonStatus.INSUFFICIENT_TOKEN
-        : ButtonStatus.READY;
+  $: buttonStatus = !$signerAddress
+    ? ButtonStatus.CONNECT_WALLET
+    : chainMismatch
+      ? ButtonStatus.WRONG_NETWORK
+      : !readableAmountToRedeem
+        ? ButtonStatus.READY
+        : insufficientReceipts
+          ? ButtonStatus.INSUFFICIENT_RECEIPTS
+          : insufficientcysFlr
+            ? ButtonStatus.INSUFFICIENT_TOKEN
+            : ButtonStatus.READY;
 </script>
 
 <div
