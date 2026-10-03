@@ -58,6 +58,10 @@ describe("NavButtons active-route detection", () => {
     // prefix look-alikes must not match
     ["/lockdown/", { app: false, docs: false, rewards: false }],
     ["/docsy/", { app: false, docs: false, rewards: false }],
+    // a sibling path sharing the base as a bare string prefix is not under
+    // the base: it must be left whole, not stripped to "lytics/"
+    ["/cyclolytics/", { app: false, docs: false, rewards: false }],
+    ["/cyclolock/", { app: false, docs: false, rewards: false }],
   ];
 
   it.each(cases)("marks the right entry active for %s", (path, active) => {

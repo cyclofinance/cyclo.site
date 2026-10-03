@@ -10,7 +10,8 @@
 
   $: relativePath = (() => {
     let p = $page.url.pathname;
-    if (base && p.startsWith(base)) p = p.slice(base.length);
+    if (base && (p === base || p.startsWith(base + "/")))
+      p = p.slice(base.length);
     if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
     return p;
   })();
