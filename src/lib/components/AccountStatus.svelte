@@ -3,7 +3,7 @@
   import { fetchAccountStatus } from "$lib/queries/fetchAccountStatus";
   import Card from "./Card.svelte";
   import { tokens, selectedNetwork } from "$lib/stores";
-  import { formatUnits, isAddressEqual } from "viem";
+  import { formatUnits, isAddress, isAddressEqual } from "viem";
   import type { AccountStats } from "$lib/types";
   import AccountStatsComponent from "./AccountStats.svelte";
   import { LiquidityChangeType } from "../../generated-graphql";
@@ -12,6 +12,14 @@
 
   $: explorerUrl = $selectedNetwork.explorerUrl;
   $: currentTokens = $tokens;
+
+  const TX_HASH = /^0x[0-9a-fA-F]{64}$/;
+
+  // Explorer tx URL, or null when the subgraph-supplied hash is not a
+  // 0x-prefixed 32-byte hex string (the row then renders without a link).
+  function txUrl(explorer: string, hash: string): string | null {
+    return TX_HASH.test(hash) ? `${explorer}/tx/${hash.toLowerCase()}` : null;
+  }
 
   function isDeposit(
     transfer:
@@ -29,6 +37,11 @@
   let stats: AccountStats | null = null;
 
   onMount(async () => {
+    if (!isAddress(account)) {
+      error = "Invalid account address";
+      loading = false;
+      return;
+    }
     try {
       stats = await fetchAccountStatus(account);
       loading = false;
@@ -82,7 +95,7 @@
               return res;
             }, ) as transfer}
             <a
-              href={`${explorerUrl}/tx/${transfer.transactionHash}`}
+              href={txUrl(explorerUrl, transfer.transactionHash) ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               class="flex items-center justify-between rounded py-2 {(
