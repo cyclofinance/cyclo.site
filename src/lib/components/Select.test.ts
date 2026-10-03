@@ -166,3 +166,14 @@ describe("Select", () => {
     expect(selectUnderTest().selectedIndex).toBe(1);
   });
 });
+
+describe("Select with empty options", () => {
+  it("keeps the selection while options are empty", async () => {
+    const initial = makeTokens();
+    const { rerender } = renderSelect(initial, initial[1], tokenLabel);
+
+    await rerender({ options: [] });
+    expect(selectedLabel()).toHaveTextContent("cyWETH");
+    expect(screen.queryByTestId("select-under-test")).toBeNull();
+  });
+});
