@@ -664,6 +664,54 @@ describe("Lock component wallet auto-switch guard", () => {
     // Restore the global network selection for any later test.
     setActiveNetworkByChainId(14);
   });
+
+  it("hands the deposit the pre-flight token even when the selection flips mid-flight", async () => {
+    const arbToken = get(allTokens).find(
+      (token) => token.chainId === arbitrum.id,
+    );
+    expect(arbToken).toBeDefined();
+    // The Select normalises the bound token to its allTokens entry by
+    // reference, so the pre-flight token is read from there.
+    const preFlightToken = get(allTokens)[0];
+    expect(preFlightToken.chainId).not.toBe(arbitrum.id);
+    selectedCyToken.set(preFlightToken);
+    setActiveNetworkByChainId(preFlightToken.chainId);
+
+    render(Lock);
+    await userEvent.type(screen.getByTestId("lock-input"), "1");
+    await userEvent.click(screen.getByTestId("lock-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+    vi.mocked(transactionStore.handleLockTransaction).mockClear();
+    await userEvent.click(screen.getByTestId("disclaimer-acknowledge-button"));
+    expect(transactionStore.handleLockTransaction).toHaveBeenCalledTimes(1);
+
+    mockTxStore.mockSetStatus(TransactionStatus.PENDING_APPROVAL);
+    await tick();
+    selectedCyToken.set(arbToken as CyToken);
+    await tick();
+    await tick();
+
+    // The deposit leg keeps the token captured at click time: the flip
+    // reaches neither the handler nor the wallet while in flight.
+    const callArgs = vi.mocked(transactionStore.handleLockTransaction).mock
+      .calls[0][0];
+    expect(callArgs.selectedToken).toBe(preFlightToken);
+    expect(callArgs.selectedToken.address).not.toBe(arbToken?.address);
+    expect(switchNetwork).not.toHaveBeenCalled();
+
+    mockTxStore.mockSetStatus(TransactionStatus.SUCCESS);
+    await waitFor(() => {
+      expect(switchNetwork).toHaveBeenCalledTimes(1);
+    });
+
+    // Restore token before network: the mounted component re-aligns the
+    // network to the token, so restoring the network first would be undone.
+    selectedCyToken.set(preFlightToken);
+    await tick();
+    setActiveNetworkByChainId(14);
+  });
 });
 
 describe("Lock component with divergent share/underlying decimals", () => {
