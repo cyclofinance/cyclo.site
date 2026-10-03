@@ -9,7 +9,7 @@ import { useDataFetcher } from "$lib/dataFetcher";
 import { Router } from "sushi/router";
 import { switchNetwork } from "@wagmi/core";
 import type { Config } from "@wagmi/core";
-import { wagmiConfig } from "svelte-wagmi";
+import { wagmiConfig, chainId } from "svelte-wagmi";
 import { mockWeb3Config } from "$lib/mocks/mockWagmiConfig";
 
 // Mock ethers
@@ -168,6 +168,19 @@ describe("DcaStrategy Component", () => {
   const mockWagmiConfigStore = wagmiConfig as unknown as Writable<
     Config | undefined
   >;
+  const mockChainIdStore = chainId as unknown as Writable<number | undefined>;
+
+  // A 32-byte vault id, the only length the form-level pre-flight accepts.
+  const VAULT_ID_A = `0x${"1".repeat(64)}`;
+  const VAULT_ID_B = `0x${"2".repeat(64)}`;
+
+  const vaultIdInput = (label: "Input vault id" | "Output vault id") =>
+    screen
+      .getAllByRole("textbox")
+      .find(
+        (input) =>
+          input.closest("div")?.previousElementSibling?.textContent === label,
+      )!;
 
   // Lets the reactive network block observe a settled switch outcome.
   const flushMicrotasks = () =>
@@ -181,6 +194,7 @@ describe("DcaStrategy Component", () => {
     vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as any);
     // No wallet by default, so the network block never prompts a chain switch.
     mockWagmiConfigStore.set(undefined);
+    mockChainIdStore.set(undefined);
     vi.mocked(switchNetwork).mockReset();
     vi.mocked(switchNetwork).mockResolvedValue(undefined as never);
     // The component persists its cyToken selection back into the store, so
@@ -364,14 +378,14 @@ describe("DcaStrategy Component", () => {
     // Enter valid vault IDs
     if (inputVaultIdInput) {
       await fireEvent.input(inputVaultIdInput, {
-        target: { value: "0x123abc" },
+        target: { value: VAULT_ID_A },
       });
       await fireEvent.blur(inputVaultIdInput);
     }
 
     if (outputVaultIdInput) {
       await fireEvent.input(outputVaultIdInput, {
-        target: { value: "0x456def" },
+        target: { value: VAULT_ID_B },
       });
       await fireEvent.blur(outputVaultIdInput);
     }
@@ -392,8 +406,8 @@ describe("DcaStrategy Component", () => {
     // Check that handleDeployDca was called with the correct vault IDs
     const callArgs = vi.mocked(transactionStore.handleDeployDca).mock
       .calls[0][0];
-    expect(callArgs.inputVaultId).toBe("0x123abc");
-    expect(callArgs.outputVaultId).toBe("0x456def");
+    expect(callArgs.inputVaultId).toBe(VAULT_ID_A);
+    expect(callArgs.outputVaultId).toBe(VAULT_ID_B);
   });
 
   // Test for invalid vault ID validation
@@ -684,5 +698,133 @@ describe("DcaStrategy Component", () => {
     await fireEvent.click(screen.getByTestId("deploy-button"));
 
     expect(transactionStore.handleDeployDca).not.toHaveBeenCalled();
+  });
+
+  // #325 — VaultIdInput only checks isHex, and only on blur, so a vault id that
+  // is hex but not 32 bytes is never flagged; handleDeploy must refuse it itself.
+  it.each(["Input vault id", "Output vault id"] as const)(
+    "does not deploy a short %s",
+    async (label) => {
+      render(DcaStrategy);
+      await fireEvent.click(screen.getByText("Show advanced options"));
+      await fillRequiredFields();
+
+      const input = vaultIdInput(label);
+      await fireEvent.input(input, { target: { value: "0x1" } });
+      await fireEvent.blur(input);
+
+      // The child is content with "0x1", so Deploy is enabled and handleDeploy
+      // is the only remaining gate.
+      expect(
+        screen.queryByText("Invalid vault id: must be a valid hex string"),
+      ).not.toBeInTheDocument();
+      const deployButton = screen.getByTestId("deploy-button");
+      expect(deployButton).not.toBeDisabled();
+
+      await fireEvent.click(deployButton);
+      await flushMicrotasks();
+
+      expect(transactionStore.handleDeployDca).not.toHaveBeenCalled();
+    },
+  );
+
+  // #322 — the wallet is on another chain and refuses to switch, so the deploy
+  // must be aborted rather than sent to the chain the wallet is actually on.
+  it("does not deploy when the wallet refuses to switch to the cyToken's chain", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(999);
+    vi.mocked(switchNetwork).mockRejectedValue(new Error("user rejected"));
+
+    render(DcaStrategy);
+    await flushMicrotasks();
+    await fillRequiredFields();
+
+    const deployButton = screen.getByTestId("deploy-button");
+    expect(deployButton).not.toBeDisabled();
+    await fireEvent.click(deployButton);
+    await flushMicrotasks();
+
+    expect(switchNetwork).toHaveBeenLastCalledWith(mockWeb3Config, {
+      chainId: 14,
+    });
+    expect(transactionStore.handleDeployDca).not.toHaveBeenCalled();
+  });
+
+  // #322 — the complement: a wallet on another chain that accepts the switch
+  // is moved to the cyToken's chain and the deploy goes ahead.
+  it("switches the wallet to the cyToken's chain when deploying", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(999);
+
+    render(DcaStrategy);
+    await flushMicrotasks();
+    await fillRequiredFields();
+    // Only the deploy-time prompt is under test, not the mount-time sync.
+    vi.mocked(switchNetwork).mockClear();
+
+    await fireEvent.click(screen.getByTestId("deploy-button"));
+    await flushMicrotasks();
+
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+    expect(switchNetwork).toHaveBeenCalledWith(mockWeb3Config, {
+      chainId: 14,
+    });
+    expect(transactionStore.handleDeployDca).toHaveBeenCalledTimes(1);
+  });
+
+  // #322 — a wallet already on the cyToken's chain is not asked to switch.
+  it("does not prompt the wallet when deploying already on the cyToken's chain", async () => {
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(14);
+
+    render(DcaStrategy);
+    await flushMicrotasks();
+    await fillRequiredFields();
+    vi.mocked(switchNetwork).mockClear();
+
+    await fireEvent.click(screen.getByTestId("deploy-button"));
+    await flushMicrotasks();
+
+    expect(switchNetwork).not.toHaveBeenCalled();
+    expect(transactionStore.handleDeployDca).toHaveBeenCalledTimes(1);
+  });
+
+  // #322 — a switch the deploy itself completed moved the wallet, so the
+  // network sync must not prompt for that chain again afterwards.
+  it("does not re-prompt the wallet for a chain the deploy already switched to", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    mockChainIdStore.set(999);
+    // The mount-time prompt is rejected, so nothing is recorded as switched.
+    vi.mocked(switchNetwork).mockRejectedValueOnce(new Error("user rejected"));
+
+    render(DcaStrategy);
+    await flushMicrotasks();
+    expect(switchNetwork).toHaveBeenCalledTimes(1);
+
+    // Deploying prompts again and this time the wallet accepts.
+    await fillRequiredFields();
+    await fireEvent.click(screen.getByTestId("deploy-button"));
+    await flushMicrotasks();
+    expect(switchNetwork).toHaveBeenCalledTimes(2);
+    expect(transactionStore.handleDeployDca).toHaveBeenCalledTimes(1);
+
+    // Disconnect, browse the other network's cyToken, reconnect and come back.
+    mockWagmiConfigStore.set(undefined);
+    const cyTokenSelect = screen.getByTestId(
+      "cy-token-select",
+    ) as HTMLSelectElement;
+    cyTokenSelect.selectedIndex = 1; // Test Token 2, on chain 999
+    await fireEvent.change(cyTokenSelect);
+    await flushMicrotasks();
+
+    mockWagmiConfigStore.set(mockWeb3Config as Config);
+    cyTokenSelect.selectedIndex = 0; // Test Token, on chain 14
+    await fireEvent.change(cyTokenSelect);
+    await flushMicrotasks();
+
+    // The deploy already moved the wallet to chain 14, so no third prompt.
+    expect(switchNetwork).toHaveBeenCalledTimes(2);
   });
 });

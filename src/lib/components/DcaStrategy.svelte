@@ -9,7 +9,7 @@
     setActiveNetwork,
   } from "$lib/stores";
   import { switchNetwork } from "@wagmi/core";
-  import { wagmiConfig } from "svelte-wagmi";
+  import { wagmiConfig, chainId } from "svelte-wagmi";
   import type { CyToken, Token } from "$lib/types";
   import TradeAmountInput from "$lib/components/TradeAmountInput.svelte";
   import Button from "$lib/components/Button.svelte";
@@ -89,7 +89,6 @@
             `Failed to switch wallet network to ${selectedNetworkForCyToken.key}:`,
             error,
           );
-          lastSwitchedChainId = undefined;
         })
         .finally(() => {
           isSwitchingChain = false;
@@ -165,7 +164,9 @@
 
   const dataFetcher: DataFetcher = useDataFetcher();
 
-  const handleDeploy = () => {
+  const isVaultId = (vaultId: Hex) => /^0x[0-9a-fA-F]{64}$/.test(vaultId);
+
+  const handleDeploy = async () => {
     if (!selectedToken || !selectedAmountToken) return;
 
     if (validateSelectedAmount(selectedAmount?.toString())) return;
@@ -176,9 +177,28 @@
       validateOverrideDepositAmount(overrideDepositAmount?.toString())
     )
       return;
+    // VaultIdInput only checks isHex on blur, so a short id reaches here unflagged.
+    if (inputVaultId && !isVaultId(inputVaultId)) return;
+    if (outputVaultId && !isVaultId(outputVaultId)) return;
 
     // Ensure the active network matches the selected cyToken's network
     setActiveNetwork(selectedNetworkForCyToken.key);
+
+    // Abort rather than deploy to the wrong chain when the wallet refuses to switch.
+    const config = $wagmiConfig;
+    const targetChainId = selectedNetworkForCyToken.chain.id;
+    if (config && $chainId !== targetChainId) {
+      try {
+        await switchNetwork(config, { chainId: targetChainId });
+        lastSwitchedChainId = targetChainId;
+      } catch (error) {
+        console.warn(
+          `Failed to switch wallet network to ${selectedNetworkForCyToken.key}:`,
+          error,
+        );
+        return;
+      }
+    }
 
     transactionStore.handleDeployDca(
       {
