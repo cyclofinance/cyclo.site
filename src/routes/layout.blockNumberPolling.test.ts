@@ -20,16 +20,16 @@ vi.mock("$env/static/public", () => ({
 }));
 
 vi.mock("svelte-wagmi", async () => {
-  const { writable } = await import("svelte/store");
+  const stores = await import("$lib/mocks/mockStores");
   return {
     defaultConfig: vi.fn(() => ({
       init: vi.fn().mockResolvedValue(undefined),
     })),
-    wagmiConfig: writable({}),
-    signerAddress: writable(""),
-    chainId: writable(null),
-    connected: writable(false),
-    web3Modal: writable(null),
+    wagmiConfig: stores.mockWagmiConfigStore,
+    signerAddress: stores.mockSignerAddressStore,
+    chainId: stores.mockChainIdStore,
+    connected: stores.mockConnectedStore,
+    web3Modal: stores.web3ModalStore,
   };
 });
 
