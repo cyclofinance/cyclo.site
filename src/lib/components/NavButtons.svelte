@@ -7,6 +7,14 @@
   const toggleMenu = () => {
     mobileMenuOpen = !mobileMenuOpen;
   };
+
+  $: relativePath = (() => {
+    let p = $page.url.pathname;
+    if (base && (p === base || p.startsWith(base + "/")))
+      p = p.slice(base.length);
+    if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+    return p;
+  })();
 </script>
 
 <div class="flex items-center justify-center sm:hidden">
@@ -75,8 +83,7 @@
     href={base + "/lock"}
     data-testid="app-button"
     class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-    class:underline={$page.url.pathname === "/lock" ||
-      $page.url.pathname === "/unlock"}
+    class:underline={relativePath === "/lock" || relativePath === "/unlock"}
   >
     App
   </a>
@@ -84,8 +91,8 @@
     href={base + "/docs"}
     data-testid="docs-button"
     class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-    class:underline={$page.url.pathname.startsWith("/docs")}
-    on:click={toggleMenu}
+    class:underline={relativePath === "/docs" ||
+      relativePath.startsWith("/docs/")}
   >
     Docs
   </a>
@@ -93,8 +100,7 @@
     href={base + "/rewards"}
     data-testid="rewards-button"
     class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-    class:underline={$page.url.pathname === "/rewards"}
-    on:click={toggleMenu}
+    class:underline={relativePath === "/rewards"}
   >
     Rewards
   </a>
@@ -102,7 +108,6 @@
     href={base + "/trade"}
     data-testid="trade-button"
     class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-    on:click={toggleMenu}
   >
     Trade
   </a>
@@ -110,7 +115,6 @@
     href={base + "/chart"}
     data-testid="chart-button"
     class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-    on:click={toggleMenu}
   >
     Chart
   </a>
