@@ -7,7 +7,6 @@
     TableHeadCell,
     TableBodyCell,
     Modal,
-    Button,
   } from "flowbite-svelte";
   import type { CyToken, Receipt as ReceiptType } from "$lib/types";
   import { formatUnits } from "viem";
@@ -33,6 +32,7 @@
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
         readableLockedPrice: "0.00000",
+        malformed: true,
       };
     }
     if (tokenId === 0n) {
@@ -42,6 +42,7 @@
         readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
         readableLockedPrice: "0.00000",
+        malformed: true,
       };
     }
 
@@ -64,6 +65,7 @@
         5,
       ),
       readableLockedPrice: Number(formatUnits(tokenId, 18)).toFixed(5),
+      malformed: false,
     };
   });
 </script>
@@ -98,10 +100,12 @@
             {receipt.readableLockedPrice ?? "0.00000"}
           </TableBodyCell>
           <TableBodyCell class="">
-            <Button
-              class="flex items-center justify-center rounded-none border-2 border-white bg-primary px-2 py-1 font-bold text-white transition-all hover:bg-blue-700 disabled:bg-neutral-600"
+            <!-- flowbite's Button drops its attributes (testid, click, disabled) when disabled -->
+            <button
+              class="flex items-center justify-center rounded-none border-2 border-white bg-primary px-2 py-1 text-sm font-bold text-white transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-neutral-600"
               data-testid={`redeem-button-${index}`}
-              on:click={() => (selectedReceipt = receipt)}>Unlock</Button
+              disabled={receipt.malformed}
+              on:click={() => (selectedReceipt = receipt)}>Unlock</button
             >
           </TableBodyCell>
         </TableBodyRow>

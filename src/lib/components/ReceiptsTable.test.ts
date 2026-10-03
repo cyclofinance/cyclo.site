@@ -1,9 +1,16 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import userEvent from "@testing-library/user-event";
 import ReceiptsTable from "./ReceiptsTable.svelte";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { mockReceipt } from "$lib/mocks/mockReceipt";
 import type { CyToken, Receipt } from "$lib/types";
 import { formatEther } from "ethers";
+import { formatUnits } from "viem";
+
+vi.mock("viem", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("viem")>();
+  return { ...actual, formatUnits: vi.fn(actual.formatUnits) };
+});
 
 const mockReceipts = [mockReceipt, mockReceipt];
 
@@ -68,7 +75,25 @@ describe("ReceiptsTable Component", () => {
     expect(screen.getByTestId("total-locked-0")).toHaveTextContent("0.00000");
   });
 
-  it("uses exact BigInt arithmetic for totalsFlr (no Number precision loss)", () => {
+  it("disables Unlock on a fallback row with a non-numeric tokenId", async () => {
+    const badReceipt = { ...mockReceipt, tokenId: "abc" } as unknown as Receipt;
+    render(ReceiptsTable, { receipts: [badReceipt], token: selectedToken });
+    const button = screen.getByTestId("redeem-button-0");
+    expect(button).toBeDisabled();
+    await userEvent.click(button);
+    expect(screen.queryByTestId("receipt-modal")).toBeNull();
+  });
+
+  it("disables Unlock on a fallback row with tokenId '0'", async () => {
+    const zeroReceipt = { ...mockReceipt, tokenId: "0" } as unknown as Receipt;
+    render(ReceiptsTable, { receipts: [zeroReceipt], token: selectedToken });
+    const button = screen.getByTestId("redeem-button-0");
+    expect(button).toBeDisabled();
+    await userEvent.click(button);
+    expect(screen.queryByTestId("receipt-modal")).toBeNull();
+  });
+
+  it("renders the exact 5-decimal total for 2e18 balance at tokenId 1.5e18", () => {
     const precisionReceipt = {
       ...mockReceipt,
       balance: (2n * 10n ** 18n).toString(),
@@ -78,9 +103,21 @@ describe("ReceiptsTable Component", () => {
       receipts: [precisionReceipt],
       token: selectedToken,
     });
-    // totalsFlr = (2e18 * 10^18) / 1.5e18 = 2e18 * (1/1.5) = 1333333333333333333n
-    // With Number(10**18) the constant itself would be imprecise; with 10n**18n it is exact.
-    expect(screen.getByTestId("total-locked-0")).not.toHaveTextContent("NaN");
+    // 2 / 1.5 = 1.333... -> 1333333333333333333n in 18 decimals -> "1.33333"
+    expect(screen.getByTestId("total-locked-0")).toHaveTextContent(
+      /^1\.33333$/,
+    );
+  });
+
+  it("computes the per-receipt rate from an exact 10^36 numerator", () => {
+    const receipt = { ...mockReceipt, tokenId: "7" } as unknown as Receipt;
+    render(ReceiptsTable, { receipts: [receipt], token: selectedToken });
+    // 1/7 = 0.(142857), so 10^36 / 7 is the six-digit block six times over.
+    // Number(10 ** 36) is not a power of ten, so BigInt(10 ** 36) / 7n differs.
+    expect(formatUnits).toHaveBeenCalledWith(
+      142857142857142857142857142857142857n,
+      selectedToken.decimals,
+    );
   });
 
   it("opens a receipt modal when redeem button is clicked", async () => {
