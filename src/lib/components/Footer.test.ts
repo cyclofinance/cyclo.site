@@ -128,7 +128,7 @@ describe("Footer.svelte", () => {
     });
   });
 
-  it("should display an em-dash for price and market cap when the price is unavailable", async () => {
+  it("should flag price and market cap as unavailable in the error style when the price is unavailable", async () => {
     mockBalancesStore.mockSetSubscribeValue(
       "Ready",
       false,
@@ -170,24 +170,41 @@ describe("Footer.svelte", () => {
       const priceRow = screen
         .getByText("Current cysFLR Price")
         .closest("div") as HTMLElement;
-      expect(within(priceRow).getByText("—")).toBeInTheDocument();
+      expect(within(priceRow).getByText("price unavailable")).toHaveClass(
+        "text-red-400",
+      );
       expect(within(priceRow).queryByText(/\$/)).not.toBeInTheDocument();
 
       const capRow = screen.getByTestId("market-cap-cysFLR") as HTMLElement;
-      expect(within(capRow).getByText("—")).toBeInTheDocument();
+      expect(within(capRow).getByText("price unavailable")).toHaveClass(
+        "text-red-400",
+      );
       expect(within(capRow).queryByText(/\$/)).not.toBeInTheDocument();
+
+      // cyWETH's genuine zero in the same render stays unstyled.
+      expect(
+        within(screen.getByTestId("market-cap-cyWETH")).getByText("$ 0"),
+      ).not.toHaveClass("text-red-400");
     });
   });
 
-  it("should still display $ 0 for a genuine zero price", async () => {
+  it("should still display an unstyled $ 0 for a genuine zero price", async () => {
     render(Footer);
 
     await waitFor(() => {
       const priceRow = screen
         .getByText("Current cysFLR Price")
         .closest("div") as HTMLElement;
-      expect(within(priceRow).getByText("$ 0")).toBeInTheDocument();
-      expect(within(priceRow).queryByText("—")).not.toBeInTheDocument();
+      expect(within(priceRow).getByText("$ 0")).not.toHaveClass("text-red-400");
+      expect(
+        within(priceRow).queryByText("price unavailable"),
+      ).not.toBeInTheDocument();
+
+      const capRow = screen.getByTestId("market-cap-cysFLR") as HTMLElement;
+      expect(within(capRow).getByText("$ 0")).not.toHaveClass("text-red-400");
+      expect(
+        within(capRow).queryByText("price unavailable"),
+      ).not.toBeInTheDocument();
     });
   });
 

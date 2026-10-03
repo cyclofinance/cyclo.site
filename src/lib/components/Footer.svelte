@@ -113,7 +113,7 @@
               >
                 <span>Current {token.symbol} Price</span>
                 {#if price === null}
-                  <span>—</span>
+                  <span class="text-red-400">price unavailable</span>
                 {:else}
                   <span>$ {Number(formatUnits(price, 6))}</span>
                 {/if}
@@ -142,7 +142,7 @@
               >
                 <span>{token.symbol} Market Cap</span>
                 {#if price === null}
-                  <span>—</span>
+                  <span class="text-red-400">price unavailable</span>
                 {:else}
                   <span>
                     $ {Number(
