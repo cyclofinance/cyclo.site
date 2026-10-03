@@ -284,6 +284,11 @@ describe("balancesStore", () => {
       );
     });
 
+    it("returns the price unchanged at expo -18", async () => {
+      mockPyth(123456789n, -18n);
+      expect((await lockPriceAfterRefresh()).lockPrice).toBe(123456789n);
+    });
+
     it("scales expo 5 by exactly 10^23", async () => {
       mockPyth(123456789n, 5n);
       expect((await lockPriceAfterRefresh()).lockPrice).toBe(
