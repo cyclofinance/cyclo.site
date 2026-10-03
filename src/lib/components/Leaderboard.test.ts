@@ -18,6 +18,7 @@ const { mockTokensStore } = vi.hoisted(() => {
       address: "0x19831cfB53A0dbeAD9866C43557C1D48DfF76567" as Hex,
       underlyingAddress: "0x12e605bc104e93B45e1aD99F9e555f659051c2BB" as Hex,
       underlyingSymbol: "sFLR",
+      underlyingDecimals: 18,
       receiptAddress: "0xd387FC43E19a63036d8FCeD559E81f5dDeF7ef09" as Hex,
       symbol: "cysFLR",
       decimals: 18,
@@ -30,6 +31,7 @@ const { mockTokensStore } = vi.hoisted(() => {
       address: "0xd8BF1d2720E9fFD01a2F9A2eFc3E101a05B852b4" as Hex,
       underlyingAddress: "0x1502fa4be69d526124d453619276faccab275d3d" as Hex,
       underlyingSymbol: "WETH",
+      underlyingDecimals: 18,
       receiptAddress: "0xBE2615A0fcB54A49A1eB472be30d992599FE0968" as Hex,
       symbol: "cyWETH",
       decimals: 18,
@@ -117,6 +119,35 @@ describe("Leaderboard Component", () => {
     });
   });
 
+  it("should render zero fallbacks instead of crashing on a malformed row", async () => {
+    const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
+    // Malformed subgraph row: `shares` is missing entirely and one
+    // eligibleBalances value is a string rather than a bigint.
+    const malformedLeaderboard = [
+      {
+        account: "0xabcdef1234567890abcdef1234567890abcdef12",
+        eligibleBalances: {
+          cysFLR: "123000000000000000000",
+          cyWETH: BigInt(200) * ONE,
+        },
+      },
+    ] as unknown as LeaderboardEntry[];
+    vi.mocked(fetchTopRewards).mockResolvedValue(malformedLeaderboard);
+
+    render(Leaderboard);
+
+    await waitFor(() => {
+      expect(screen.getByText("#1 0xabcd...ef12")).toBeInTheDocument();
+    });
+    // Valid bigint still renders.
+    expect(screen.getByText("200.0000")).toBeInTheDocument();
+    // Missing shares row falls back to zero everywhere.
+    expect(screen.getByTestId("total-rewards")).toHaveTextContent(/^0\.0000$/);
+    expect(screen.getAllByText("(0.0000%)")).toHaveLength(2);
+    // String eligibleBalance + two missing rewardsAmounts + total = 4 zeros.
+    expect(screen.getAllByText("0.0000")).toHaveLength(4);
+  });
+
   it("should navigate to account page when clicking on a row", async () => {
     const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
     vi.mocked(fetchTopRewards).mockResolvedValue(mockLeaderboard);
@@ -130,6 +161,25 @@ describe("Leaderboard Component", () => {
     expect(accountLink.closest("a")).toHaveAttribute(
       "href",
       "/rewards/0x1234567890123456789012345678901234567890",
+    );
+  });
+
+  it("should percent-encode the account in the row href when it contains URL metacharacters", async () => {
+    const maliciousAccount = "0xabc/../../admin?redirect=evil#frag'\"<>";
+    const { fetchTopRewards } = await import("$lib/queries/fetchTopRewards");
+    vi.mocked(fetchTopRewards).mockResolvedValue([
+      { ...mockLeaderboard[0], account: maliciousAccount },
+    ]);
+
+    const { container } = render(Leaderboard);
+
+    await waitFor(() => {
+      expect(container.querySelector("a")).not.toBeNull();
+    });
+
+    expect(container.querySelector("a")).toHaveAttribute(
+      "href",
+      `/rewards/${encodeURIComponent(maliciousAccount)}`,
     );
   });
 });

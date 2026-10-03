@@ -41,7 +41,7 @@ const { mockSelectedNetworkStore, MOCKED_ORDERBOOK_SUBGRAPH_URL } = vi.hoisted(
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { flare } = require("@wagmi/core/chains");
     const MOCKED_ORDERBOOK_SUBGRAPH_URL =
-      "https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn";
+      "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/ob4-flare/prod/gn";
     const mockNetworkConfig = {
       key: "flare",
       chain: flare,
@@ -95,6 +95,7 @@ describe("transactionStore.handleDeployDca", () => {
       name: "Cyclo TEST",
       decimals: 18,
       underlyingSymbol: "TEST",
+      underlyingDecimals: 18,
       underlyingAddress: "0xdef456" as `0x${string}`,
       receiptAddress: "0xfed789" as `0x${string}`,
     },

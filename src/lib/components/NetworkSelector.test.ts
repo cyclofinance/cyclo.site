@@ -1,5 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/svelte";
+import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { get } from "svelte/store";
 import type { Config } from "@wagmi/core";
 import { mockWeb3Config } from "$lib/mocks/mockWagmiConfig";
 
@@ -220,5 +221,114 @@ describe("NetworkSelector", () => {
     expect(calls.indexOf("set:test")).toBeLessThan(
       calls.indexOf("switchNetwork"),
     );
+  });
+
+  it("ignores further changes while a network switch is in flight", async () => {
+    mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
+
+    let resolveSwitch: () => void = () => {};
+    mockSwitchNetwork.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSwitch = resolve;
+        }),
+    );
+
+    render(NetworkSelector);
+
+    const selector = screen.getByTestId(
+      "network-switcher",
+    ) as HTMLSelectElement;
+
+    await fireEvent.change(selector, { target: { value: "test" } });
+    // The switch to "test" is still in flight; flip back to "flare".
+    await fireEvent.change(selector, { target: { value: "flare" } });
+
+    // Only the first switch runs; the concurrent change is discarded.
+    expect(mockSwitchNetwork).toHaveBeenCalledTimes(1);
+    expect(get(mockActiveNetworkKey)).toBe("test");
+    // The select is put back on the network being switched to.
+    expect(selector.value).toBe("test");
+
+    resolveSwitch();
+  });
+
+  it("disables the select while a switch is in flight and re-enables it after", async () => {
+    mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
+
+    let resolveSwitch: () => void = () => {};
+    mockSwitchNetwork.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSwitch = resolve;
+        }),
+    );
+
+    render(NetworkSelector);
+
+    const selector = screen.getByTestId(
+      "network-switcher",
+    ) as HTMLSelectElement;
+
+    await fireEvent.change(selector, { target: { value: "test" } });
+    expect(selector.disabled).toBe(true);
+
+    resolveSwitch();
+    await waitFor(() => expect(selector.disabled).toBe(false));
+  });
+
+  it("allows a new switch after the in-flight switch resolves", async () => {
+    mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
+
+    let resolveSwitch: () => void = () => {};
+    mockSwitchNetwork.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSwitch = resolve;
+        }),
+    );
+
+    render(NetworkSelector);
+
+    const selector = screen.getByTestId(
+      "network-switcher",
+    ) as HTMLSelectElement;
+
+    await fireEvent.change(selector, { target: { value: "test" } });
+    resolveSwitch();
+    await waitFor(() => expect(selector.disabled).toBe(false));
+
+    await fireEvent.change(selector, { target: { value: "flare" } });
+
+    expect(mockSwitchNetwork).toHaveBeenCalledTimes(2);
+    expect(get(mockActiveNetworkKey)).toBe("flare");
+  });
+
+  it("allows a new switch after the in-flight switch rejects", async () => {
+    mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    let rejectSwitch: (error: Error) => void = () => {};
+    mockSwitchNetwork.mockImplementation(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectSwitch = reject;
+        }),
+    );
+
+    render(NetworkSelector);
+
+    const selector = screen.getByTestId(
+      "network-switcher",
+    ) as HTMLSelectElement;
+
+    await fireEvent.change(selector, { target: { value: "test" } });
+    rejectSwitch(new Error("user rejected"));
+    await waitFor(() => expect(selector.disabled).toBe(false));
+
+    await fireEvent.change(selector, { target: { value: "flare" } });
+
+    expect(mockSwitchNetwork).toHaveBeenCalledTimes(2);
+    expect(get(mockActiveNetworkKey)).toBe("flare");
   });
 });
