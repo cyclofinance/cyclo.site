@@ -9,8 +9,10 @@ export type Receipt = {
   balance: bigint;
   readableTokenId?: string;
   readableTotalsFlr?: string;
-  readableFlrPerReceipt?: string;
+  readableReupPerUnderlying?: string;
+  readableReupTotal?: string;
   totalsFlr?: bigint;
+  reupTotal?: bigint;
   token?: string;
 };
 
