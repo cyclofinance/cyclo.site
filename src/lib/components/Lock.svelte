@@ -39,7 +39,10 @@
   $: assets = (() => {
     if (!amountToLock) return 0n;
     try {
-      return parseUnits(amountToLock.toString(), $selectedCyToken.decimals);
+      return parseUnits(
+        amountToLock.toString(),
+        $selectedCyToken.underlyingDecimals,
+      );
     } catch {
       return 0n;
     }
@@ -160,7 +163,7 @@
             {formatUnits(
               $balancesStore.balances[$selectedCyToken.name]
                 ?.signerUnderlyingBalance || 0n,
-              $selectedCyToken.decimals,
+              $selectedCyToken.underlyingDecimals,
             )}
           </span>
         </div>
@@ -248,7 +251,10 @@
             const balance =
               $balancesStore.balances[$selectedCyToken.name]
                 ?.signerUnderlyingBalance || 0n;
-            amountToLock = formatUnits(balance, $selectedCyToken.decimals);
+            amountToLock = formatUnits(
+              balance,
+              $selectedCyToken.underlyingDecimals,
+            );
           }}
           bind:amount={amountToLock}
           maxValue={$balancesStore.balances[$selectedCyToken.name]
@@ -264,7 +270,7 @@
             {$selectedCyToken.underlyingSymbol} Balance: {formatUnits(
               $balancesStore.balances[$selectedCyToken.name]
                 ?.signerUnderlyingBalance || 0n,
-              $selectedCyToken.decimals,
+              $selectedCyToken.underlyingDecimals,
             )}
           </p>
         {:else}

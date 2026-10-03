@@ -79,6 +79,7 @@ describe("getDcaDeploymentArgs", () => {
       name: "Cyclo TEST",
       decimals: 18,
       underlyingSymbol: "TEST",
+      underlyingDecimals: 18,
       underlyingAddress: "0xdef456" as `0x${string}`,
       receiptAddress: "0xfed789" as `0x${string}`,
       chainId: 14,

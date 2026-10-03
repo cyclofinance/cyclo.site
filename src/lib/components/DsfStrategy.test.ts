@@ -89,6 +89,7 @@ vi.mock("$lib/stores", async () => {
     chainId: 14,
     underlyingAddress: "0x1234560000000000000000000000000000000000",
     underlyingSymbol: "FLR",
+    underlyingDecimals: 18,
     receiptAddress: "0xabcdef0000000000000000000000000000000000",
     networkName: "flare",
     active: true,
@@ -118,7 +119,7 @@ vi.mock("$lib/stores", async () => {
     explorerApiUrl: "https://flare-explorer.flare.network/api",
     explorerUrl: "https://flarescan.com",
     orderbookSubgraphUrl:
-      "https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn",
+      "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/ob4-flare/prod/gn",
     rewardsSubgraphUrl: MOCK_REWARDS_SUBGRAPH_URL,
     tokens: [mockCyToken],
   };
