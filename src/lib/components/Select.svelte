@@ -30,9 +30,7 @@
     const match =
       selected === undefined
         ? undefined
-        : options.find(
-            (option) => optionKey(option) === optionKey(selected),
-          );
+        : options.find((option) => optionKey(option) === optionKey(selected));
     const next = match ?? options[0];
     if (next !== selected) {
       selected = next;
