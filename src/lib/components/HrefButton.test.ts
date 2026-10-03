@@ -56,6 +56,11 @@ describe("Href Button Component", () => {
     expect(screen.getByRole("link")).toHaveAttribute("href", "#");
   });
 
+  it("sanitizes CR-injected protocol-relative href to #", () => {
+    render(HrefButton, { props: { href: "/\r\\evil.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
   it("sanitizes backslash-prefixed \\\\evil.com href to #", () => {
     render(HrefButton, { props: { href: "\\\\evil.com" } });
     expect(screen.getByRole("link")).toHaveAttribute("href", "#");
@@ -64,6 +69,70 @@ describe("Href Button Component", () => {
   it("preserves single-slash /docs href unchanged", () => {
     render(HrefButton, { props: { href: "/docs" } });
     expect(screen.getByRole("link")).toHaveAttribute("href", "/docs");
+  });
+
+  it("preserves relative href with surrounding whitespace trimmed", () => {
+    render(HrefButton, { props: { href: " /docs " } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/docs");
+  });
+
+  it("renders relative href with interior tab deleted", () => {
+    render(HrefButton, { props: { href: "/do\tcs" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/docs");
+  });
+
+  it("renders https href with interior newline deleted", () => {
+    render(HrefButton, { props: { href: "https://exam\nple.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "href",
+      "https://example.com",
+    );
+  });
+
+  it("preserves fragment-only href unchanged", () => {
+    render(HrefButton, { props: { href: "#section" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#section");
+  });
+
+  it("preserves query-only href unchanged", () => {
+    render(HrefButton, { props: { href: "?tab=1" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "?tab=1");
+  });
+
+  it("preserves mailto: href unchanged", () => {
+    render(HrefButton, { props: { href: "mailto:hi@example.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "href",
+      "mailto:hi@example.com",
+    );
+  });
+
+  it("preserves http: href unchanged", () => {
+    render(HrefButton, { props: { href: "http://example.com" } });
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "href",
+      "http://example.com",
+    );
+  });
+
+  it("preserves upper-case HTTPS: scheme unchanged", () => {
+    render(HrefButton, { props: { href: "HTTPS://EXAMPLE.COM" } });
+    expect(screen.getByRole("link")).toHaveAttribute(
+      "href",
+      "HTTPS://EXAMPLE.COM",
+    );
+  });
+
+  it("sanitizes javascript: href carrying an allowed scheme later in the string", () => {
+    render(HrefButton, { props: { href: "javascript:alert(1)//https://x" } });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "#");
+  });
+
+  it("passes caller rel through unchanged without target=_blank", () => {
+    render(HrefButton, {
+      props: { href: "https://example.com", rel: "author" },
+    });
+    expect(screen.getByRole("link")).toHaveAttribute("rel", "author");
   });
 
   it("adds noopener noreferrer rel when target=_blank", () => {
