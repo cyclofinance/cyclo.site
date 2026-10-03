@@ -36,9 +36,12 @@
   $: erc1155balance = BigInt(receipt.balance);
   $: readableBalance = Number(formatUnits(receipt.balance, token.decimals));
 
+  // BigInt("") is 0n, so an empty or whitespace tokenId is rejected before
+  // parsing rather than treated as id 0.
   $: tokenIdBigInt = (() => {
     try {
-      return BigInt(receipt.tokenId);
+      const trimmed = receipt.tokenId.trim();
+      return trimmed === "" ? null : BigInt(trimmed);
     } catch {
       return null;
     }
@@ -78,6 +81,7 @@
     if (!readableAmountToRedeem || readableAmountToRedeem === "") {
       amountToRedeem = BigInt(0);
       sFlrToReceive = BigInt(0);
+      previewError = null;
       return;
     }
 

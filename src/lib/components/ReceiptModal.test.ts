@@ -80,6 +80,18 @@ describe("ReceiptModal Component", () => {
       },
     );
 
+  // Debounce timers from earlier tests' unmounted modals can still fire into
+  // the shared readContract mock, so assertions look at the previewRedeem
+  // args rather than call counts.
+  const previewedArgs = () =>
+    vi
+      .mocked(readContract)
+      .mock.calls.map(
+        (call) => (call[1] as { args?: readonly unknown[] }).args ?? [],
+      );
+  const previewedAmounts = () => previewedArgs().map((args) => args[0]);
+  const previewedTokenIds = () => previewedArgs().map((args) => args[1]);
+
   beforeEach(() => {
     initiateUnlockTransactionSpy.mockClear();
     vi.resetAllMocks();
@@ -543,6 +555,68 @@ describe("ReceiptModal Component", () => {
       expect(unlockButton).toHaveTextContent("UNLOCK");
       expect(unlockButton).toBeDisabled();
     });
+  });
+
+  it.each([
+    ["an empty string", ""],
+    ["whitespace only", " \t "],
+  ])(
+    "should disable unlock and show placeholder when tokenId is %s",
+    async (_label, tokenId) => {
+      setSignerBalances(BigInt(1000000000000000000), BigInt(0));
+
+      const emptyReceipt = { ...mockReceipt, tokenId } as Receipt;
+      render(ReceiptModal, { receipt: emptyReceipt, token: selectedToken });
+
+      // Same covering balances and amount as the invalid-tokenId test, so the
+      // empty tokenId is the only thing disabling the button.
+      const input = screen.getByTestId("redeem-input");
+      await userEvent.type(input, "0.0001");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("redeem-input")).toHaveValue("0.0001");
+        expect(screen.getByTestId("lock-up-price")).toHaveTextContent("—");
+        const unlockButton = screen.getByTestId("unlock-button");
+        expect(unlockButton).toHaveTextContent("UNLOCK");
+        expect(unlockButton).toBeDisabled();
+      });
+      // BigInt("") is 0n: an admitted empty tokenId would preview against id 0.
+      expect(previewedTokenIds()).not.toContain(0n);
+      await userEvent.click(screen.getByTestId("unlock-button"));
+      expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  it("should clear the preview error when the amount is emptied before the pending preview runs", async () => {
+    setSignerBalances(BigInt(1000000000000000000), BigInt(0));
+
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.reject(new Error("contract reverted")),
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("preview-error")).toHaveTextContent(
+        "contract reverted",
+      );
+    });
+    expect(previewedAmounts()).toContain(parseEther("0.0001"));
+
+    // A further keystroke schedules the debounced preview; emptying the input
+    // before it fires routes checkBalance through its empty-input early return
+    // rather than through readContract.
+    await userEvent.type(input, "1");
+    await userEvent.clear(input);
+    expect(input).toHaveValue("");
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("preview-error")).toBeNull();
+    });
+    expect(previewedAmounts()).not.toContain(parseEther("0.00011"));
   });
 
   it("should surface previewRedeem errors without zeroing amountToRedeem", async () => {
