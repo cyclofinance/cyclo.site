@@ -8,9 +8,33 @@
 
   export let dataTestId: string = "";
 
-  // Ensure selected is in options, or default to first option
-  $: if (options.length > 0 && (!selected || !options.includes(selected))) {
-    selected = options[0];
+  // Options are matched by a stable key, not by reference, so a refetch that
+  // rebuilds options with new object identities keeps the selection.
+  const optionKey = (option: unknown): unknown => {
+    if (option === null || typeof option !== "object") return option;
+    const record = option as Record<string, unknown>;
+    if (typeof record.address === "string") {
+      const address = record.address.toLowerCase();
+      return record.chainId === undefined
+        ? address
+        : `${record.chainId}:${address}`;
+    }
+    if ("value" in record) return record.value;
+    if ("id" in record) return record.id;
+    return option;
+  };
+
+  // Rebind selected to the key-matching entry so bind:value, which compares
+  // by reference, highlights it; default to the first option otherwise.
+  $: if (options.length > 0) {
+    const match =
+      selected === undefined
+        ? undefined
+        : options.find((option) => optionKey(option) === optionKey(selected));
+    const next = match ?? options[0];
+    if (next !== selected) {
+      selected = next;
+    }
   }
 </script>
 
