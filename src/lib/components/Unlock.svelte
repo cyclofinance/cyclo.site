@@ -91,7 +91,7 @@
    */
   $: if (
     $signerAddress &&
-    $selectedNetwork?.rewardsSubgraphUrl &&
+    $selectedNetwork?.cycloSubgraphUrl &&
     $selectedCyToken?.name &&
     !isRefreshing
   ) {

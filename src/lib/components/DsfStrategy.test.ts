@@ -108,7 +108,7 @@ vi.mock("$lib/stores", async () => {
     active: true,
   };
 
-  const MOCK_REWARDS_SUBGRAPH_URL = "https://mock-rewards-subgraph/gn";
+  const MOCK_CYCLO_SUBGRAPH_URL = "https://mock-cyclo-subgraph/gn";
   const mockNetworkConfig = {
     key: "flare",
     chain: flare,
@@ -120,7 +120,7 @@ vi.mock("$lib/stores", async () => {
     explorerUrl: "https://flarescan.com",
     orderbookSubgraphUrl:
       "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/ob4-flare/prod/gn",
-    rewardsSubgraphUrl: MOCK_REWARDS_SUBGRAPH_URL,
+    cycloSubgraphUrl: MOCK_CYCLO_SUBGRAPH_URL,
     tokens: [mockCyToken],
   };
 

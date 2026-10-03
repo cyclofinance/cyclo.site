@@ -87,11 +87,3 @@ export const tokensForNetwork = (key: string): Token[] => {
 
 // Default tokens (Flare) retained for backwards compatibility
 export const tokens: Token[] = NETWORK_TOKEN_CONFIGS[0].tokens;
-
-// Per-epoch reward pools (rFLR, 18 decimals)
-export const DEC25_REWARD_POOL = 1_000_000n * ONE;
-export const JAN26_REWARD_POOL = 500_000n * ONE;
-export const FEB26_REWARD_POOL = 500_000n * ONE;
-export const MAR26_REWARD_POOL = 300_000n * ONE;
-
-export const TOTAL_REWARD = MAR26_REWARD_POOL;

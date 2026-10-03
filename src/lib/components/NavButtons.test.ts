@@ -15,7 +15,6 @@ describe("NavButtons Component", () => {
     // Desktop buttons
     await waitFor(() => {
       expect(screen.getByTestId("docs-button")).toBeInTheDocument();
-      expect(screen.getByTestId("rewards-button")).toBeInTheDocument();
     });
 
     // Open mobile menu
@@ -25,8 +24,25 @@ describe("NavButtons Component", () => {
     // Mobile buttons (now visible)
     await waitFor(() => {
       expect(screen.getByTestId("docs-button-mobile")).toBeInTheDocument();
-      expect(screen.getByTestId("rewards-button-mobile")).toBeInTheDocument();
     });
+  });
+
+  it("has no link to /rewards in the desktop or mobile menu", async () => {
+    const { container } = render(NavButtons);
+
+    const hamburger = screen.getByTestId("nav-hamburger");
+    await userEvent.click(hamburger);
+    await waitFor(() => {
+      expect(screen.getByTestId("docs-button-mobile")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId("rewards-button")).toBeNull();
+    expect(screen.queryByTestId("rewards-button-mobile")).toBeNull();
+    const hrefs = Array.from(container.querySelectorAll("a")).map((a) =>
+      a.getAttribute("href"),
+    );
+    expect(hrefs).not.toContain(base + "/rewards");
+    expect(screen.queryByText("Rewards")).toBeNull();
   });
 
   it("should check app button is displayed and has correct href", async () => {
@@ -41,9 +57,6 @@ describe("NavButtons Component", () => {
 
     const docsButton = getByTestId("docs-button");
     expect(docsButton).toHaveAttribute("href", base + "/docs");
-
-    const rewardsButton = getByTestId("rewards-button");
-    expect(rewardsButton).toHaveAttribute("href", base + "/rewards");
 
     const tradeButton = getByTestId("trade-button");
     expect(tradeButton).toHaveAttribute("href", base + "/trade");
@@ -62,7 +75,6 @@ describe("NavButtons Component", () => {
     const hamburger = screen.getByTestId("nav-hamburger");
     await userEvent.click(hamburger);
     expect(screen.getByTestId("docs-button-mobile")).toBeInTheDocument();
-    expect(screen.getByTestId("rewards-button-mobile")).toBeInTheDocument();
   });
 
   it("should close mobile menu when a link is clicked", async () => {

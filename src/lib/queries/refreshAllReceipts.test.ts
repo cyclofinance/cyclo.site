@@ -7,7 +7,7 @@ const { mockTokens, mockNetworkConfig } = vi.hoisted(() => {
   const tokens = writable([]);
   const selectedNetwork = writable({
     chain: { id: 14 },
-    rewardsSubgraphUrl: "http://mocked-subgraph-url",
+    cycloSubgraphUrl: "http://mocked-subgraph-url",
   });
   return { mockTokens: tokens, mockNetworkConfig: selectedNetwork };
 });

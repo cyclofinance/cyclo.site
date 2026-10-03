@@ -38,7 +38,7 @@ export const refreshReceiptsForToken = async (
 
   const targetReceiptAddress = token.receiptAddress.toLowerCase();
 
-  const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
+  const subgraphUrl = get(selectedNetwork).cycloSubgraphUrl;
   const network = get(selectedNetwork);
   const chainId = network.chain.id.toString();
 
