@@ -171,10 +171,10 @@ describe("Lock component in-flight freeze survives a modal dismiss", () => {
     await waitFor(() => {
       expect(writeErc20PriceOracleReceiptVaultDeposit).toHaveBeenCalledTimes(1);
     });
-    expect(
-      vi.mocked(writeErc20PriceOracleReceiptVaultDeposit).mock.calls[0][1]
-        .address,
-    ).toBe(preFlightToken.address);
+    expect(writeErc20PriceOracleReceiptVaultDeposit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ address: preFlightToken.address }),
+    );
     expect(preFlightToken.address).not.toBe(arbToken.address);
 
     // Settled: the modal reports success, the freeze lifts, and the

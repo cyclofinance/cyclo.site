@@ -5,7 +5,7 @@ import Select from "./Select.svelte";
 
 describe("Select Component", () => {
   const options = ["alpha", "beta"];
-  const getOptionLabel = (option: string) => option.toUpperCase();
+  const getOptionLabel = (option: unknown) => String(option).toUpperCase();
 
   it("renders enabled by default and takes a new selection", async () => {
     render(Select, { props: { options, selected: "alpha", getOptionLabel } });
