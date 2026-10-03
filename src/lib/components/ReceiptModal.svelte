@@ -18,13 +18,14 @@
   export let receipt: Receipt;
   export let token: CyToken;
   enum ButtonStatus {
+    CONNECT_WALLET = "CONNECT WALLET",
+    WRONG_NETWORK = "WRONG NETWORK",
     INSUFFICIENT_RECEIPTS = "INSUFFICIENT RECEIPTS",
     INSUFFICIENT_TOKEN = `INSUFFICIENT cyTOKEN`,
     READY = "UNLOCK",
   }
   let buttonStatus: ButtonStatus = ButtonStatus.READY;
 
-  $: erc1155balance = BigInt(receipt.balance);
   let readableAmountToRedeem: string = "";
   let amountToRedeem = BigInt(0);
   let sFlrToReceive = BigInt(0);
@@ -32,16 +33,25 @@
   let shouldCallContract = false;
   let debounceTimer: ReturnType<typeof setTimeout>;
 
+  $: erc1155balance = BigInt(receipt.balance);
   $: readableBalance = Number(formatUnits(receipt.balance, token.decimals));
   $: tokenId = receipt.tokenId;
 
-  // Clear the redeem entry when the modal is pointed at a different receipt,
-  // so a swap cannot carry one receipt's amount onto another. Keyed on the
-  // receipt's identity: the reset assigns the entry fields, so an unguarded
-  // block would re-run on its own writes and wipe the amount as it is typed.
-  let redeemEntryReceiptId: string | undefined;
-  $: if (receipt.tokenId !== redeemEntryReceiptId) {
-    redeemEntryReceiptId = receipt.tokenId;
+  // Balances are keyed by token name; a receipt with no token string belongs
+  // to the token whose table opened this modal.
+  $: balanceKey = receipt.token || token.name;
+
+  // A redeem must execute on the receipt's own chain against the currently
+  // selected vault; a signer is required to submit at all.
+  $: chainMismatch =
+    receipt.chainId !== undefined &&
+    Number(receipt.chainId) !== $selectedCyToken.chainId;
+
+  // An amount typed against one receipt is meaningless for another: reset the
+  // input state whenever the bound receipt changes.
+  let boundReceipt: Receipt | null = null;
+  $: if (receipt !== boundReceipt) {
+    boundReceipt = receipt;
     readableAmountToRedeem = "";
     amountToRedeem = BigInt(0);
     sFlrToReceive = BigInt(0);
@@ -78,12 +88,11 @@
     }
   };
 
-  $: signerCyTokenBalance =
-    $balancesStore.balances[token.name]?.signerBalance ?? 0n;
   $: maxRedeemable =
-    signerCyTokenBalance < erc1155balance
-      ? signerCyTokenBalance
-      : erc1155balance;
+    ($balancesStore.balances[balanceKey]?.signerBalance ?? 0n) <
+    (erc1155balance ?? 0n)
+      ? ($balancesStore.balances[balanceKey]?.signerBalance ?? 0n)
+      : (erc1155balance ?? 0n);
 
   $: if (shouldCallContract && amountToRedeem !== undefined && !isCalculating) {
     if (debounceTimer) {
@@ -97,20 +106,20 @@
   }
 
   $: insufficientReceipts = erc1155balance < amountToRedeem;
-  $: insufficientcysFlr = signerCyTokenBalance < amountToRedeem;
+  $: insufficientcysFlr =
+    ($balancesStore.balances[balanceKey]?.signerBalance ?? 0n) < amountToRedeem;
 
-  $: chainMismatch =
-    receipt.chainId !== undefined &&
-    Number(receipt.chainId) !== $selectedCyToken.chainId;
-  $: walletReady = !!$signerAddress && !chainMismatch;
-
-  $: buttonStatus = !readableAmountToRedeem
-    ? ButtonStatus.READY
-    : insufficientReceipts
-      ? ButtonStatus.INSUFFICIENT_RECEIPTS
-      : insufficientcysFlr
-        ? ButtonStatus.INSUFFICIENT_TOKEN
-        : ButtonStatus.READY;
+  $: buttonStatus = !$signerAddress
+    ? ButtonStatus.CONNECT_WALLET
+    : chainMismatch
+      ? ButtonStatus.WRONG_NETWORK
+      : !readableAmountToRedeem
+        ? ButtonStatus.READY
+        : insufficientReceipts
+          ? ButtonStatus.INSUFFICIENT_RECEIPTS
+          : insufficientcysFlr
+            ? ButtonStatus.INSUFFICIENT_TOKEN
+            : ButtonStatus.READY;
 </script>
 
 <div
@@ -260,8 +269,7 @@
     dataTestId="unlock-button"
     customClass="w-full bg-white text-primary"
     disabled={buttonStatus !== ButtonStatus.READY ||
-      amountToRedeem === 0n ||
-      !walletReady}
+      amountToRedeem === BigInt(0)}
     on:click={() =>
       transactionStore.handleUnlockTransaction({
         signerAddress: $signerAddress,
