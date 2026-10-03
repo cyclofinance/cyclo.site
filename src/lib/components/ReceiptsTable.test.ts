@@ -3,8 +3,6 @@ import ReceiptsTable from "./ReceiptsTable.svelte";
 import { describe, it, expect } from "vitest";
 import { mockReceipt } from "$lib/mocks/mockReceipt";
 import type { CyToken, Receipt } from "$lib/types";
-import { formatEther } from "ethers";
-import { trimToDecimals } from "$lib/utils/trimToDecimals";
 
 const mockReceipts = [mockReceipt, mockReceipt];
 
@@ -31,15 +29,16 @@ describe("ReceiptsTable Component", () => {
 
     expect(screen.getByTestId("headers")).toBeInTheDocument();
 
+    // Literal oracle, matched exactly: a sixth rendered digit must fail.
     for (let i = 0; i < mockReceipts.length; i++) {
-      expect(screen.getByTestId(`locked-price-${i}`)).toHaveTextContent(
-        trimToDecimals(formatEther(mockReceipts[i].tokenId), 5),
+      expect(screen.getByTestId(`locked-price-${i}`).textContent?.trim()).toBe(
+        "0.02308",
       );
-      expect(screen.getByTestId(`number-held-${i}`)).toHaveTextContent(
-        trimToDecimals(formatEther(mockReceipts[i].balance), 5),
+      expect(screen.getByTestId(`number-held-${i}`).textContent?.trim()).toBe(
+        "0.03692",
       );
-      expect(screen.getByTestId(`total-locked-${i}`)).toHaveTextContent(
-        trimToDecimals(mockReceipts[i].readableTotalsFlr!, 5),
+      expect(screen.getByTestId(`total-locked-${i}`).textContent?.trim()).toBe(
+        "1.60000",
       );
     }
   });
