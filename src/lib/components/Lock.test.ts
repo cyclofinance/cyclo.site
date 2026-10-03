@@ -398,6 +398,74 @@ describe("Lock Component", () => {
     expect(initiateLockTransactionSpy).not.toHaveBeenCalled();
   });
 
+  // The button was enabled when the disclaimer opened; the store moves under
+  // it before the user acknowledges. Only the synchronous re-check inside
+  // runLockTransaction stands between that and a deposit with no live price
+  // or quote behind it.
+  const balancesWith = (lockPrice: bigint, cyTokenOutput: bigint) =>
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: {
+          signerBalance: 9876000000000000000n,
+          signerUnderlyingBalance: 9876000000000000000n,
+        },
+      },
+      { cusdxOutput: 0n, cyTokenOutput },
+    );
+
+  it("should not dispatch lock transaction if lockPrice goes stale between disclaimer open and acknowledge", async () => {
+    balancesWith(1234000000000000000n, 1234000000000000000000n);
+    render(Lock);
+
+    await userEvent.type(screen.getByTestId("lock-input"), "0.0005");
+    await userEvent.click(screen.getByTestId("lock-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    balancesWith(0n, 1234000000000000000000n);
+
+    await userEvent.click(screen.getByTestId("disclaimer-acknowledge-button"));
+
+    expect(initiateLockTransactionSpy).not.toHaveBeenCalled();
+  });
+
+  it("should not dispatch lock transaction if the quote drops to zero between disclaimer open and acknowledge", async () => {
+    balancesWith(1234000000000000000n, 1234000000000000000000n);
+    render(Lock);
+
+    await userEvent.type(screen.getByTestId("lock-input"), "0.0005");
+    await userEvent.click(screen.getByTestId("lock-button"));
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    balancesWith(1234000000000000000n, 0n);
+
+    await userEvent.click(screen.getByTestId("disclaimer-acknowledge-button"));
+
+    expect(initiateLockTransactionSpy).not.toHaveBeenCalled();
+  });
+
   it("should display the same amount it sends to handleLockTransaction when MAX is clicked", async () => {
     // 18-decimal balance with all digits non-trivial. A Number() round-trip
     // on formatUnits would truncate to ~15 sig figs; the test guards
