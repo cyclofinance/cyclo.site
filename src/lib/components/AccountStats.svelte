@@ -6,7 +6,7 @@
   export let stats: AccountStats;
 
   $: isEligible =
-    stats?.eligibleBalances &&
+    stats.eligibleBalances &&
     Object.values(stats.eligibleBalances).some((balance) => balance > 0n);
 </script>
 

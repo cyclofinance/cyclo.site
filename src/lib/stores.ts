@@ -31,7 +31,7 @@ const flareConfig: NetworkConfig = {
   explorerApiUrl: "https://flare-explorer.flare.network/api",
   explorerUrl: "https://flarescan.com",
   orderbookSubgraphUrl:
-    "https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-flare/2024-12-13-9dc7/gn",
+    "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/ob4-flare/prod/gn",
   rewardsSubgraphUrl: FLARE_REWARDS_SUBGRAPH_URL,
   tokens: [
     {
@@ -86,9 +86,9 @@ const arbitrumConfig: NetworkConfig = {
   explorerApiUrl: "https://api.etherscan.io/v2/api",
   explorerUrl: "https://arbiscan.io",
   orderbookSubgraphUrl:
-    "https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/ob4-arbitrum-one/2024-12-13-7435/gn",
+    "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/ob4-arbitrum-one/prod/gn",
   rewardsSubgraphUrl:
-    "https://api.goldsky.com/api/public/project_cm4zggfv2trr301whddsl9vaj/subgraphs/cyclo-arbitrum-one/2026-04-20-e5f8/gn",
+    "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/cyclo-arbitrum-one/prod/gn",
   tokens: [
     {
       name: "cyWETH.pyth",

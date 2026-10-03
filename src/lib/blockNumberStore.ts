@@ -14,12 +14,15 @@ const blockNumberStore = () => {
   const refresh = async (config: Config) => {
     try {
       const block = await getBlock(config);
+      if (block.number === null || block.number <= 0n) {
+        throw new Error(`Invalid block number from RPC: ${block.number}`);
+      }
       update((state) => ({
         ...state,
-        blockNumber: block.number,
+        blockNumber: block.number as bigint,
         status: "Ready",
       }));
-      return block.number;
+      return block.number as bigint;
     } catch (error) {
       console.error("Error getting block number:", error);
       update((state) => ({
