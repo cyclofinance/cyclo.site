@@ -193,7 +193,7 @@ describe("NetworkSelector", () => {
     });
   });
 
-  it("switches wallet network after updating the store (order check)", async () => {
+  it("switches the wallet network before committing the store (order check)", async () => {
     mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
 
     // capture call order
@@ -247,7 +247,8 @@ describe("NetworkSelector", () => {
 
     // Only the first switch runs; the concurrent change is discarded.
     expect(mockSwitchNetwork).toHaveBeenCalledTimes(1);
-    expect(get(mockActiveNetworkKey)).toBe("test");
+    // The store does not move until the wallet switch succeeds.
+    expect(get(mockActiveNetworkKey)).toBe("flare");
     // The select is put back on the network being switched to.
     expect(selector.value).toBe("test");
 
@@ -298,16 +299,20 @@ describe("NetworkSelector", () => {
     await fireEvent.change(selector, { target: { value: "test" } });
     resolveSwitch();
     await waitFor(() => expect(selector.disabled).toBe(false));
+    expect(get(mockActiveNetworkKey)).toBe("test");
 
     await fireEvent.change(selector, { target: { value: "flare" } });
 
     expect(mockSwitchNetwork).toHaveBeenCalledTimes(2);
-    expect(get(mockActiveNetworkKey)).toBe("flare");
+    // The second switch is in flight; the store commits once it resolves.
+    expect(get(mockActiveNetworkKey)).toBe("test");
+    resolveSwitch();
+    await waitFor(() => expect(get(mockActiveNetworkKey)).toBe("flare"));
   });
 
   it("allows a new switch after the in-flight switch rejects", async () => {
     mockWagmiConfigStore.mockSetSubscribeValue(mockWeb3Config as Config);
-    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
 
     let rejectSwitch: (error: Error) => void = () => {};
     mockSwitchNetwork.mockImplementation(
@@ -326,8 +331,12 @@ describe("NetworkSelector", () => {
     await fireEvent.change(selector, { target: { value: "test" } });
     rejectSwitch(new Error("user rejected"));
     await waitFor(() => expect(selector.disabled).toBe(false));
+    // The rejected switch left the store untouched and rolled the select back.
+    expect(get(mockActiveNetworkKey)).toBe("flare");
+    expect(selector.value).toBe("flare");
 
-    await fireEvent.change(selector, { target: { value: "flare" } });
+    // Retry the network that failed.
+    await fireEvent.change(selector, { target: { value: "test" } });
 
     expect(mockSwitchNetwork).toHaveBeenCalledTimes(2);
     expect(get(mockActiveNetworkKey)).toBe("flare");
