@@ -35,7 +35,20 @@
 
   $: erc1155balance = BigInt(receipt.balance);
   $: readableBalance = Number(formatUnits(receipt.balance, token.decimals));
-  $: tokenId = receipt.tokenId;
+
+  // BigInt("") is 0n, so an empty or whitespace tokenId is rejected before
+  // parsing rather than treated as id 0.
+  $: tokenIdBigInt = (() => {
+    try {
+      const trimmed = receipt.tokenId.trim();
+      return trimmed === "" ? null : BigInt(trimmed);
+    } catch {
+      return null;
+    }
+  })();
+  $: tokenIdValid = tokenIdBigInt !== null;
+
+  let previewError: string | null = null;
 
   // Balances are keyed by token name; a receipt with no token string belongs
   // to the token whose table opened this modal.
@@ -58,7 +71,7 @@
   }
 
   const checkBalance = async () => {
-    if (isCalculating || !receipt.tokenId) {
+    if (isCalculating || !tokenIdValid) {
       if (!readableAmountToRedeem) {
         amountToRedeem = BigInt(0);
       }
@@ -68,21 +81,23 @@
     if (!readableAmountToRedeem || readableAmountToRedeem === "") {
       amountToRedeem = BigInt(0);
       sFlrToReceive = BigInt(0);
+      previewError = null;
       return;
     }
 
     try {
       isCalculating = true;
+      previewError = null;
       const _sFlrToReceive = await readContract($wagmiConfig, {
         abi: erc20PriceOracleReceiptVaultAbi,
         functionName: "previewRedeem",
         address: $selectedCyToken.address,
-        args: [amountToRedeem, receipt.tokenId],
+        args: [amountToRedeem, tokenIdBigInt!],
       });
       sFlrToReceive = _sFlrToReceive as bigint;
-    } catch {
+    } catch (e) {
+      previewError = e instanceof Error ? e.message : String(e);
       sFlrToReceive = BigInt(0);
-      amountToRedeem = BigInt(0);
     } finally {
       isCalculating = false;
     }
@@ -156,7 +171,11 @@
   >
     <span>{receipt.token} PER LOCKED {token.underlyingSymbol}</span>
     <div class="flex flex-row gap-4">
-      <span data-testid="lock-up-price">{Number(formatEther(tokenId))}</span>
+      <span data-testid="lock-up-price"
+        >{tokenIdBigInt !== null
+          ? Number(formatEther(tokenIdBigInt))
+          : "—"}</span
+      >
     </div>
   </div>
 
@@ -213,6 +232,14 @@
           ),
         )}
       </p>
+      {#if previewError}
+        <p
+          class="my-1 text-left text-xs text-red-400 sm:text-right"
+          data-testid="preview-error"
+        >
+          Preview unavailable: {previewError}
+        </p>
+      {/if}
     </div>
   </div>
   <!-- Burn diagram for desktop -->
@@ -269,7 +296,8 @@
     dataTestId="unlock-button"
     customClass="w-full bg-white text-primary"
     disabled={buttonStatus !== ButtonStatus.READY ||
-      amountToRedeem === BigInt(0)}
+      amountToRedeem === BigInt(0) ||
+      !tokenIdValid}
     on:click={() =>
       transactionStore.handleUnlockTransaction({
         signerAddress: $signerAddress,
