@@ -24,5 +24,9 @@
 {#if $dataFetcherStore}
   <slot />
 {:else if $dataFetcherError}
-  <slot name="error" error={$dataFetcherError} />
+  <slot name="error" error={$dataFetcherError}>
+    <div role="alert" class="p-4 text-red-500">
+      Failed to load pricing data: {$dataFetcherError.message}
+    </div>
+  </slot>
 {/if}
