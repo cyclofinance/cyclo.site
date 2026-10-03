@@ -11,7 +11,7 @@ subgraphs:
   flare: https://example.com/subgraph
 
 metaboards:
-  flare: https://api.goldsky.com/api/public/project_clv14x04y9kzi01saerx7bxpg/subgraphs/mb-flare-0x893BBFB7/0.1/gn
+  flare: https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/mb-flare-0x893BBFB7/prod/gn
 
 orderbooks:
   flare:
@@ -75,7 +75,7 @@ deployments:
 
 gui:
   name: Auction based cost averaging
-  description: https://raw.githubusercontent.com/rainlanguage/rain.strategies/e25bc4876b5ffb8bb28097b0ca66de291c75ff56/src/auction-dca.md
+  description: https://raw.githubusercontent.com/rainlanguage/rain.strategies/04482222098bad66357472fea67f2498da5435a0/src/auction-dca.md
   short-description:  >
     A strategy that aims to fill a time-based budget via looping auctions - useful for breaking up large trades into smaller amounts or smoothing out market volatility for regular investments.
   deployments:
