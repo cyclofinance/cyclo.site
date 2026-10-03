@@ -14,5 +14,22 @@
       "filed": [],
       "notes": "Scoped run on the #350 fix. Fail-on-base: exactly the 3 new tests fail against origin/main source. Mutants: gate removal killed by the suppression test; a redundant settle-watcher subscription survived its deletion mutant and was removed from the diff instead of shipped."
     }
+  },
+  {
+    "timestamp": "2026-10-03T17:55:00Z",
+    "commit": "f88e771d437677785210976bd516a7cead2865df",
+    "testsAfterCommit": "df58e030a5701512362d3fe7e79e6e473e13c76d",
+    "publishedTag": null,
+    "commitsAheadOfTag": null,
+    "scope": "PR diff: transactionStore.ts reset latch, Lock.svelte/Select.svelte in-flight tx guards (issue #350, vetter rework 2026-08-16)",
+    "tool": "adversarial-mutation-test mutation-probe",
+    "skillVersion": "0.35.0",
+    "summary": {
+      "behaviours": 19,
+      "candidates": 2,
+      "confirmed": 0,
+      "filed": [],
+      "notes": "19 mutants over the diff (6 latch, 10 Lock.svelte freeze, 2 Select.svelte, 1 counter-vs-boolean latch): pass 1 killed 14/18, survivors (PENDING_WALLET and PENDING_UNLOCK dropped from the predicate, synchronous re-check removed, Select disabled by default) plus the boolean-latch mutant closed by new tests, full pass 19/19 killed. Triage candidates, not filed (rework protocol forbids issue/label actions): handleUnlockTransaction, handlePythPriceUpdate and the deploy handlers are not latched, so a modal dismiss during those flows still resets the shared store under a running handler; an Escape dismiss mid-lock hides the modal until the next status transition while the freeze holds."
+    }
   }
 ]
