@@ -30,7 +30,6 @@
       return {
         ...receipt,
         totalsFlr: 0n,
-        readableFlrPerReceipt: "0.00000",
         readableTotalsFlr: "0.00000",
         readableReupPerUnderlying: "0.00000",
         readableReupTotal: "0.00000",
@@ -46,10 +45,6 @@
     // Result is total underlying token locked in 18 decimals
     const totalsFlr = (balance * 10n ** 18n) / tokenId;
 
-    // Calculate per-receipt: 10^36 / tokenId
-    // This gives the cyToken per locked underlying token (in 18 decimals)
-    const flrPerReceipt = 10n ** 36n / tokenId;
-
     // Re-up: if current lock price > the price at mint (tokenId), the receipt holder
     // could mint additional cyToken without locking more underlying.
     // addlPerUnderlying is in 18 decimals (USD price per 1 underlying).
@@ -61,9 +56,6 @@
     return {
       ...receipt,
       totalsFlr,
-      readableFlrPerReceipt: Number(
-        formatUnits(flrPerReceipt, token.decimals),
-      ).toFixed(5),
       readableTotalsFlr: Number(formatUnits(totalsFlr, token.decimals)).toFixed(
         5,
       ),
@@ -78,7 +70,7 @@
   });
 
   $: grandTotalReup = mappedReceipts.reduce(
-    (acc, r) => acc + (r.reupTotal ?? 0n),
+    (acc, r) => acc + r.reupTotal,
     0n,
   );
   $: readableGrandTotalReup = Number(

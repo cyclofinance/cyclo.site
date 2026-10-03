@@ -5,6 +5,7 @@ import { mockReceipt } from "$lib/mocks/mockReceipt";
 import type { CyToken, Receipt } from "$lib/types";
 import type { Hex } from "viem";
 import { formatEther } from "ethers";
+import { supportedNetworks } from "$lib/stores";
 
 const { mockBalancesWritable } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -109,16 +110,16 @@ const cyWETH: CyToken = {
   underlyingSymbol: "WETH",
 };
 
-// Mirrors the production cyFXRP.ftso entry in src/lib/stores.ts: a live
-// cyToken whose decimals are 6, not 18.
-const cyFXRP: CyToken = {
-  ...cysFLR,
-  name: "cyFXRP.ftso",
-  symbol: "cyFXRP.ftso",
-  decimals: 6,
-  underlyingSymbol: "FXRP",
-  underlyingDecimals: 6,
+// The production cyFXRP.ftso entry itself, so this fixture cannot drift from
+// src/lib/stores.ts: a live cyToken whose decimals are 6, not 18.
+const liveToken = (name: string): CyToken => {
+  const token = supportedNetworks
+    .flatMap((network) => network.tokens)
+    .find((candidate) => candidate.name === name);
+  if (!token) throw new Error(`no active token named ${name} in $lib/stores`);
+  return token;
 };
+const cyFXRP = liveToken("cyFXRP.ftso");
 
 describe("ReceiptsTable Component", () => {
   const selectedToken = cysFLR;
@@ -252,6 +253,7 @@ describe("ReceiptsTable re-up math (issue #237)", () => {
   });
 
   it("renders re-up in the cyToken's own decimals for the 6-decimal cyFXRP.ftso, keeping a fractional price delta", async () => {
+    expect(cyFXRP.decimals).toBe(6);
     // 5.5 FXRP-per-cyFXRP lock price, expressed in 18 decimals like every
     // other lock price, against a cyToken that has only 6 decimals.
     setLockPrice("cyFXRP.ftso", 5_500_000_000_000_000_000n);
@@ -288,16 +290,19 @@ describe("ReceiptsTable re-up math (issue #237)", () => {
     expect(cell("reup-total-sum")).toBe("1500000.00000 cysFLR");
   });
 
-  it("shows sub-1e-5 re-up dust as zero and still carries it into the grand total", async () => {
+  it("shows sub-1e-5 re-up dust as zero in its own cell and adds it to the grand total at full precision", async () => {
     // Current lock price 1.000004.
     setLockPrice("cysFLR", 1_000_004_000_000_000_000n);
 
     render(ReceiptsTable, {
       receipts: [
-        // 1 cysFLR minted at 1 -> 1 sFLR locked, addl 0.000004/sFLR.
+        // 1 cysFLR minted at 1 -> 1 sFLR locked, addl 0.000004/sFLR
+        // -> 0.000004 cysFLR: dust below the 5th displayed decimal.
         receiptAt(10n ** 18n, 10n ** 18n),
-        // 1 cysFLR minted at 0.5 -> 2 sFLR locked, addl 0.500004/sFLR.
-        receiptAt(5n * 10n ** 17n, 10n ** 18n),
+        // 0.0000040000196 cysFLR minted at 0.000004 -> 1.0000049 sFLR locked,
+        // addl 1.000000/sFLR -> 1.0000049 cysFLR, just below the 1.000005
+        // rounding boundary on its own.
+        receiptAt(4n * 10n ** 12n, 4_000_019_600_000n),
       ],
       token: cysFLR,
     });
@@ -306,12 +311,13 @@ describe("ReceiptsTable re-up math (issue #237)", () => {
     expect(cell("reup-per-1-0")).toBe("0.00000");
     expect(cell("reup-total-0")).toBe("0.00000");
 
-    expect(cell("total-locked-1")).toBe("2.00000");
-    expect(cell("reup-per-1-1")).toBe("0.50000");
-    // 2 * 0.500004 = 1.000008, which displays rounded up at the 5th decimal.
-    expect(cell("reup-total-1")).toBe("1.00001");
+    // 1.0000049 rounds down to 1.00000 wherever it is shown on its own.
+    expect(cell("total-locked-1")).toBe("1.00000");
+    expect(cell("reup-per-1-1")).toBe("1.00000");
+    expect(cell("reup-total-1")).toBe("1.00000");
 
-    // 0.000004 + 1.000008 = 1.000008000004 -> 1.00001.
+    // 0.000004 + 1.0000049 = 1.0000089 -> 1.00001. Without the dust the sum
+    // is 1.0000049 -> 1.00000, so only a full-precision sum renders this.
     expect(cell("reup-total-sum")).toBe("1.00001 cysFLR");
   });
 
