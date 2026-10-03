@@ -91,6 +91,9 @@ describe("ReceiptModal Component", () => {
       );
   const previewedAmounts = () => previewedArgs().map((args) => args[0]);
   const previewedTokenIds = () => previewedArgs().map((args) => args[1]);
+  // Outlasts the component's 300ms preview debounce.
+  const settleDebounce = () =>
+    new Promise((resolve) => setTimeout(resolve, 400));
 
   beforeEach(() => {
     initiateUnlockTransactionSpy.mockClear();
@@ -238,6 +241,44 @@ describe("ReceiptModal Component", () => {
       expect(screen.getByTestId("flr-to-receive")).toHaveTextContent(
         "21.663778162911611785 sFLR",
       );
+    });
+    // previewRedeem's uint256 id slot receives the parsed bigint, not the
+    // receipt's raw string.
+    expect(previewedArgs()).toContainEqual([
+      parseEther("0.5"),
+      BigInt(mockReceipt.tokenId),
+    ]);
+  });
+
+  it("should clear a stale preview error once a later preview succeeds", async () => {
+    setSignerBalances(BigInt(1000000000000000000), BigInt(0));
+
+    // Keyed on the amount so stray previews from other instances cannot
+    // consume a one-shot rejection.
+    vi.mocked(readContract).mockImplementation((_config, { args }) =>
+      (args as readonly unknown[])[0] === parseEther("0.0001")
+        ? Promise.reject(new Error("contract reverted"))
+        : Promise.resolve(BigInt("21663778162911611785")),
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("preview-error")).toHaveTextContent(
+        "contract reverted",
+      );
+    });
+
+    await userEvent.type(input, "1");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("flr-to-receive")).toHaveTextContent(
+        "21.663778162911611785 sFLR",
+      );
+      expect(screen.queryByTestId("preview-error")).toBeNull();
     });
   });
 
@@ -555,6 +596,9 @@ describe("ReceiptModal Component", () => {
       expect(unlockButton).toHaveTextContent("UNLOCK");
       expect(unlockButton).toBeDisabled();
     });
+    // No preview is requested for an unparseable id once the debounce elapses.
+    await settleDebounce();
+    expect(previewedTokenIds()).not.toContain(null);
   });
 
   it.each([
@@ -580,8 +624,11 @@ describe("ReceiptModal Component", () => {
         expect(unlockButton).toHaveTextContent("UNLOCK");
         expect(unlockButton).toBeDisabled();
       });
-      // BigInt("") is 0n: an admitted empty tokenId would preview against id 0.
+      // BigInt("") is 0n: an admitted empty tokenId would preview against id 0
+      // once the debounce elapses.
+      await settleDebounce();
       expect(previewedTokenIds()).not.toContain(0n);
+      expect(previewedTokenIds()).not.toContain(null);
       await userEvent.click(screen.getByTestId("unlock-button"));
       expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
     },
