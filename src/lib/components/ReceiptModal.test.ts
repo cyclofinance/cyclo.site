@@ -137,6 +137,33 @@ describe("ReceiptModal Component", () => {
     });
   });
 
+  it("shows a tiny max redeem as a plain decimal, never in exponent notation", async () => {
+    setSignerBalances(123n, BigInt(0));
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const maxButton = screen.getByTestId("set-val-to-max");
+    await fireEvent.click(maxButton);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue(
+        "0.000000000000000123",
+      );
+    });
+
+    await waitFor(() => {
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton.getAttribute("disabled")).toBeFalsy();
+    });
+    await userEvent.click(screen.getByTestId("unlock-button"));
+
+    await waitFor(() => {
+      expect(initiateUnlockTransactionSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ assets: 123n }),
+      );
+    });
+  });
+
   it("caps max redeem by the modal token's balance when receipt.token is unset", async () => {
     setSignerBalances(BigInt(0), parseEther("1000"));
 

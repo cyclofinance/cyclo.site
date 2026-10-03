@@ -23,9 +23,8 @@
 
   export let dataTestId: string = "";
 
-  let displayValue = handleDecimalSeparator({
-    target: { value: amount?.toString() ?? "" },
-  });
+  let displayValue = "";
+  let synced = false;
 
   const dispatch = createEventDispatcher();
 
@@ -44,15 +43,18 @@
     validateInput();
   }
 
-  // Keep display value in sync when amount changes externally, routing through sanitizer
+  // An amount that did not come from the keyboard (the initial prop, or a
+  // bind:amount write) is sanitized, written back and validated. A pristine
+  // empty mount is not an amount yet, so it shows no error.
   $: {
-    const sanitized = amount
-      ? handleDecimalSeparator({ target: { value: amount.toString() } })
-      : "";
-    if (sanitized !== displayValue) {
+    const raw = amount?.toString() ?? "";
+    const sanitized = handleDecimalSeparator({ target: { value: raw } });
+    if (!synced || sanitized !== displayValue) {
+      const pristine = !synced && raw === "";
+      synced = true;
       displayValue = sanitized;
       if (sanitized !== amount) amount = sanitized;
-      validateInput();
+      if (!pristine) validateInput();
     }
   }
 

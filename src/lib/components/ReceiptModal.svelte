@@ -196,9 +196,7 @@
         maxButton
         on:setValueToMax={() => {
           amountToRedeem = maxRedeemable;
-          readableAmountToRedeem = Number(
-            formatUnits(maxRedeemable, token.decimals),
-          ).toString();
+          readableAmountToRedeem = formatUnits(maxRedeemable, token.decimals);
           shouldCallContract = true;
         }}
       />
