@@ -19,7 +19,6 @@
 
   export let isError: boolean = false;
   let error: string | undefined = undefined;
-  $: isError = error !== "" && error !== undefined;
 
   export let dataTestId: string = "";
 
@@ -59,8 +58,8 @@
   }
 
   const validateInput = () => {
-    error = undefined;
     error = validate(displayValue);
+    isError = error !== undefined && error !== "";
   };
 </script>
 

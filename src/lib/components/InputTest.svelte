@@ -5,6 +5,10 @@
   export let amount: string = "";
   export let amountStore = writable<string>(amount);
   $: $amountStore = amount;
+
+  let isError = false;
+  export let isErrorStore = writable<boolean>(false);
+  $: $isErrorStore = isError;
 </script>
 
-<Input bind:amount />
+<Input bind:amount bind:isError />

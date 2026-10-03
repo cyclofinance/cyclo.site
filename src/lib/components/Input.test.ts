@@ -229,6 +229,21 @@ describe("Input", () => {
     });
   });
 
+  describe("isError binding", () => {
+    it("follows the validation error through bind:isError", async () => {
+      const isErrorStore = writable(false);
+      const { component } = render(InputTest, { amount: "5", isErrorStore });
+
+      expect(get(isErrorStore)).toBe(false);
+
+      await act(() => component.$set({ amount: "." }));
+      expect(get(isErrorStore)).toBe(true);
+
+      await act(() => component.$set({ amount: "7" }));
+      expect(get(isErrorStore)).toBe(false);
+    });
+  });
+
   it("dispatches setValueToMax event when MAX button is clicked", async () => {
     const mockDispatch = vi.fn();
     const { component } = render(Input, { amount: "0.0", maxButton: true });
