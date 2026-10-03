@@ -44,14 +44,6 @@
       Docs
     </a>
     <a
-      href={base + "/rewards"}
-      data-testid="rewards-button-mobile"
-      class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-      on:click={toggleMenu}
-    >
-      Rewards
-    </a>
-    <a
       href={base + "/trade"}
       data-testid="trade-button-mobile"
       class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
@@ -88,15 +80,6 @@
     on:click={toggleMenu}
   >
     Docs
-  </a>
-  <a
-    href={base + "/rewards"}
-    data-testid="rewards-button"
-    class="text-lg text-white sm:ml-4 sm:block sm:text-xl"
-    class:underline={$page.url.pathname === "/rewards"}
-    on:click={toggleMenu}
-  >
-    Rewards
   </a>
   <a
     href={base + "/trade"}

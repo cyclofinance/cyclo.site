@@ -27,7 +27,7 @@ describe("getSingleTokenReceipts", () => {
     explorerApiUrl: "https://flare-explorer.flare.network/api",
     explorerUrl: "https://flarescan.com",
     orderbookSubgraphUrl: "",
-    rewardsSubgraphUrl: "",
+    cycloSubgraphUrl: "",
     tokens: [],
   };
 
