@@ -113,3 +113,105 @@ describe("NavButtons Component", () => {
     });
   });
 });
+
+describe("NavButtons accessibility", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("exposes the hamburger as a labelled button whose aria-expanded tracks the menu state", async () => {
+    render(NavButtons);
+    const hamburger = screen.getByTestId("nav-hamburger");
+    expect(hamburger.tagName).toBe("BUTTON");
+    expect(hamburger).toHaveAttribute("aria-label", "Open menu");
+    expect(hamburger).toHaveAttribute("aria-controls", "mobile-menu");
+    expect(hamburger).toHaveAttribute("aria-expanded", "false");
+    expect(hamburger.querySelector("svg")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+
+    await userEvent.click(hamburger);
+    expect(hamburger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("marks the open mobile menu as a modal dialog", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAttribute("id", "mobile-menu");
+  });
+
+  it("gives the close button an accessible label and it closes the menu", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    const close = screen.getByLabelText("Close menu");
+    expect(close).toBeInTheDocument();
+
+    await userEvent.click(close);
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes the mobile menu when Escape is pressed", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+    expect(screen.getByTestId("docs-button-mobile")).toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("docs-button-mobile"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("moves focus to the dialog when the menu opens", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toHaveFocus();
+    });
+  });
+
+  it("wraps Tab from the last link back to the close button", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    screen.getByTestId("chart-button-mobile").focus();
+    await userEvent.tab();
+
+    expect(screen.getByLabelText("Close menu")).toHaveFocus();
+  });
+
+  it("wraps Shift+Tab from the close button and from the dialog itself to the last link", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    await userEvent.tab({ shift: true });
+    expect(screen.getByTestId("chart-button-mobile")).toHaveFocus();
+
+    screen.getByLabelText("Close menu").focus();
+    await userEvent.tab({ shift: true });
+    expect(screen.getByTestId("chart-button-mobile")).toHaveFocus();
+  });
+
+  it("restores focus to the hamburger when the menu closes", async () => {
+    render(NavButtons);
+    await userEvent.click(screen.getByTestId("nav-hamburger"));
+
+    screen.getByTestId("docs-button-mobile").focus();
+    await userEvent.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId("nav-hamburger")).toHaveFocus();
+  });
+});
