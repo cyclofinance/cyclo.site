@@ -4,6 +4,7 @@
   import Card from "./Card.svelte";
   import type { AccountStats } from "$lib/types";
   import AccountStatsComponent from "./AccountStats.svelte";
+  import { isAddress } from "viem";
 
   export let account: string;
 
@@ -12,6 +13,11 @@
   let stats: AccountStats | null = null;
 
   onMount(async () => {
+    if (!isAddress(account)) {
+      error = "Invalid account address";
+      loading = false;
+      return;
+    }
     try {
       stats = await fetchAccountStatus(account);
       loading = false;
@@ -42,7 +48,7 @@
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-semibold text-white">Your Rewards</h2>
         <a
-          href={`/rewards/${account}`}
+          href={`/rewards/${encodeURIComponent(account.toLowerCase())}`}
           data-testid="full-tx-history-button"
           class="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-white hover:bg-primary/90"
         >
