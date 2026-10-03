@@ -191,6 +191,38 @@ describe("balancesStore", () => {
     expect(storeValue.status).toBe("Ready");
   });
 
+  it("initialises an unknown token with no price reference on refreshPrices", async () => {
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(1000) });
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+    (readErc20TotalSupply as Mock).mockResolvedValue(0n);
+
+    const unknownToken: CyToken = {
+      name: "cyUNKNOWN",
+      address: "0xcdef1234abcdef5678",
+      underlyingAddress: "0xabcd1234",
+      underlyingSymbol: "UNK",
+      underlyingDecimals: 18,
+      receiptAddress: "0xeeff5678",
+      symbol: "cyUNKNOWN",
+      decimals: 18,
+      chainId: 14,
+      networkName: "Flare",
+      active: true,
+    };
+
+    await refreshPrices(
+      mockWagmiConfigStore as unknown as Config,
+      unknownToken,
+    );
+
+    const { stats } = get(balancesStore);
+    expect(stats.cyUNKNOWN.price).toBe(0n);
+    expect(stats.cyUNKNOWN.priceUpdatedAt).toBe(0);
+    expect(stats.cyUNKNOWN.lockPrice).toBe(1000n);
+  });
+
   it("should reset the store to its initial state", () => {
     const mockWFlrBalance = BigInt(1000);
     (readErc20BalanceOf as Mock).mockResolvedValue(mockWFlrBalance);
@@ -477,6 +509,18 @@ describe("balancesStore", () => {
       vi.setSystemTime(t0 + 2 * tick);
       await refreshFooterStats(config);
       expect(get(balancesStore).stats.cysFLR.price).toBe(abovePrice);
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it("returns a zero price as-is on a later tick without flagging it", async () => {
+      const quoter = flareQuoter().mockResolvedValue({ result: [firstPrice] });
+      await refreshFooterStats(config);
+
+      vi.setSystemTime(t0 + tick);
+      quoter.mockResolvedValue({ result: [0n] });
+      await refreshFooterStats(config);
+
+      expect(get(balancesStore).stats.cysFLR.price).toBe(0n);
       expect(warnSpy).not.toHaveBeenCalled();
     });
 
