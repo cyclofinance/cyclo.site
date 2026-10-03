@@ -4,15 +4,15 @@ import { describe, it, expect } from "vitest";
 import { mockReceipt } from "$lib/mocks/mockReceipt";
 import type { CyToken, Receipt } from "$lib/types";
 
-// 0.05 locked at 0.03 per token: totals are 1.666..., which rounding would
-// show as 1.66667.
-const repeatingReceipt = {
+// 0.05 locked at 0.030005 per token: every figure except number-held has a
+// sixth decimal that rounding would carry into the fifth.
+const sixthDecimalReceipt = {
   ...mockReceipt,
   balance: 50000000000000000n,
-  tokenId: "30000000000000000",
+  tokenId: "30005000000000000",
 };
 
-const mockReceipts = [mockReceipt, repeatingReceipt];
+const mockReceipts = [mockReceipt, sixthDecimalReceipt];
 
 // Hand-written per-row literals, truncated (never rounded) to five places.
 const expectedCells = [
@@ -25,8 +25,8 @@ const expectedCells = [
   {
     lockedPrice: "0.03000",
     numberHeld: "0.05000",
-    totalLocked: "1.66666",
-    flrPerReceipt: "33.33333",
+    totalLocked: "1.66638",
+    flrPerReceipt: "33.32777",
   },
 ];
 
