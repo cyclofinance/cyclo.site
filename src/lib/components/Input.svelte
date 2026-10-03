@@ -59,9 +59,7 @@
       class="mr-2 w-full min-w-0 border-none bg-primary p-0 text-right text-base text-white outline-none [appearance:textfield] focus:ring-0 sm:text-lg md:text-2xl [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       {...$$restProps}
       on:input={handleInput}
-      min={0}
       placeholder="0.0"
-      step="0.1"
       type="text"
       value={displayValue}
       data-testid={dataTestId}
