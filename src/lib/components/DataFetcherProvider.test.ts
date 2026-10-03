@@ -81,6 +81,17 @@ describe("DataFetcherProvider Component", () => {
     );
   });
 
+  it("wraps a non-Error rejection so the error slot still shows its text", async () => {
+    vi.mocked(getAndStartDataFetcher).mockRejectedValue("boom");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    render(DataFetcherTest);
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("slot-error")).toHaveTextContent(/^boom$/);
+    });
+  });
+
   it("renders a visible error itself when the caller supplies no error slot", async () => {
     vi.mocked(getAndStartDataFetcher).mockRejectedValue(
       new Error("Failed to get public client for chainId 14"),
