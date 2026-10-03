@@ -126,6 +126,10 @@ describe("NavButtons accessibility", () => {
     expect(hamburger).toHaveAttribute("aria-label", "Open menu");
     expect(hamburger).toHaveAttribute("aria-controls", "mobile-menu");
     expect(hamburger).toHaveAttribute("aria-expanded", "false");
+    expect(hamburger.querySelector("svg")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
 
     await userEvent.click(hamburger);
     expect(hamburger).toHaveAttribute("aria-expanded", "true");
@@ -140,11 +144,17 @@ describe("NavButtons accessibility", () => {
     expect(dialog).toHaveAttribute("id", "mobile-menu");
   });
 
-  it("gives the close button an accessible label", async () => {
+  it("gives the close button an accessible label and it closes the menu", async () => {
     render(NavButtons);
     await userEvent.click(screen.getByTestId("nav-hamburger"));
 
-    expect(screen.getByLabelText("Close menu")).toBeInTheDocument();
+    const close = screen.getByLabelText("Close menu");
+    expect(close).toBeInTheDocument();
+
+    await userEvent.click(close);
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 
   it("closes the mobile menu when Escape is pressed", async () => {
