@@ -94,6 +94,24 @@ describe("ReceiptsTable Component", () => {
     expect(screen.getByTestId("locked-price-1")).toHaveTextContent("4.00000");
   });
 
+  it('renders "1.00000" when balance arrives as the string "1000000000000000000" (#358)', async () => {
+    const stringBalanceReceipts = [
+      {
+        ...mockReceipt,
+        balance: "1000000000000000000",
+        tokenId: "2000000000000000000",
+      },
+    ];
+
+    render(ReceiptsTable, {
+      receipts: stringBalanceReceipts as unknown as Receipt[],
+      token: selectedToken,
+    });
+
+    expect(screen.getByTestId("number-held-0")).toHaveTextContent("1.00000");
+    expect(screen.getByTestId("total-locked-0")).toHaveTextContent("0.50000");
+  });
+
   it('renders the "0.00000" fallback for malformed balances instead of throwing (#358)', async () => {
     const malformedReceipts = [
       { ...mockReceipt, balance: undefined },
