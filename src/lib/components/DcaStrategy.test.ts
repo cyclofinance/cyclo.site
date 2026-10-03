@@ -4,7 +4,7 @@ import type { Writable } from "svelte/store";
 import { get } from "svelte/store";
 import DcaStrategy from "./DcaStrategy.svelte";
 import transactionStore from "$lib/transactionStore";
-import { allTokens, selectedCyToken } from "$lib/stores";
+import { allTokens, selectedCyToken, setActiveNetwork } from "$lib/stores";
 import { useDataFetcher } from "$lib/dataFetcher";
 import { Router } from "sushi/router";
 import { switchNetwork } from "@wagmi/core";
@@ -826,5 +826,19 @@ describe("DcaStrategy Component", () => {
 
     // The deploy already moved the wallet to chain 14, so no third prompt.
     expect(switchNetwork).toHaveBeenCalledTimes(2);
+  });
+
+  // Deploying re-syncs the app's active network to the selected cyToken's
+  // network, independently of the mount-time sync.
+  it("syncs the app's active network to the cyToken's network when deploying", async () => {
+    render(DcaStrategy);
+    await fillRequiredFields();
+    vi.mocked(setActiveNetwork).mockClear();
+
+    await fireEvent.click(screen.getByTestId("deploy-button"));
+    await flushMicrotasks();
+
+    expect(setActiveNetwork).toHaveBeenCalledWith("flare");
+    expect(transactionStore.handleDeployDca).toHaveBeenCalledTimes(1);
   });
 });
