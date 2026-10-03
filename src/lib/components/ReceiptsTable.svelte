@@ -14,6 +14,7 @@
 
   import ReceiptModal from "$lib/components/ReceiptModal.svelte";
   import Card from "./Card.svelte";
+  import { trimToDecimals } from "$lib/utils/trimToDecimals";
 
   export let token: CyToken;
 
@@ -46,10 +47,12 @@
     return {
       ...receipt,
       totalsFlr: totalsFlr,
-      readableFlrPerReceipt: Number(
+      readableFlrPerReceipt: trimToDecimals(
         formatUnits(flrPerReceipt, token.decimals),
-      ).toFixed(5),
-      readableTotalsFlr: Number(formatUnits(totalsFlr, token.decimals)).toFixed(
+        5,
+      ),
+      readableTotalsFlr: trimToDecimals(
+        formatUnits(totalsFlr, token.decimals),
         5,
       ),
     };
@@ -80,10 +83,10 @@
             {receipt.readableTotalsFlr}
           </TableBodyCell>
           <TableBodyCell data-testid={`number-held-${index}`}>
-            {Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
+            {trimToDecimals(formatUnits(receipt.balance, token.decimals), 5)}
           </TableBodyCell>
           <TableBodyCell data-testid={`locked-price-${index}`}>
-            {Number(formatUnits(BigInt(receipt.tokenId), 18)).toFixed(5)}
+            {trimToDecimals(formatUnits(BigInt(receipt.tokenId), 18), 5)}
           </TableBodyCell>
           <TableBodyCell class="">
             <Button
