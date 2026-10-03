@@ -6,20 +6,21 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 
 `cyclo.site` is the SvelteKit frontend for the Cyclo protocol. It builds to a
 fully static site (`@sveltejs/adapter-static`, `prerender = true`, `ssr =
-false` in `src/routes/+layout.server.ts`) with pages for locking/unlocking
-cyTokens, deploying trade strategies, the rewards leaderboard, and the docs.
+false`
+in `src/routes/+layout.server.ts`) with pages for locking/unlocking cyTokens,
+deploying trade strategies, the rewards leaderboard, and the docs.
 
-The vault ABI the site calls is `src/lib/contracts/erc20PriceOracleReceiptVaultAbi.ts`,
-written by `npm run abi` (`scripts/fetch-vault-abi.sh`) from the verified
-source of the production CycloVault implementation on Flare. Solidity lives in
+The contract ABIs the site calls live in `src/lib/contracts/` (vault, Pyth
+oracle, IPyth), written by `npm run abi` (`scripts/fetch-vault-abi.sh`) from
+their verified production sources and the Pyth SDK package. Solidity lives in
 [cyclofinance/cyclo.sol](https://github.com/cyclofinance/cyclo.sol); this repo
 compiles none of it.
 
 ## Setup
 
 Everything runs inside the nix dev shell (`flake.nix` re-exports
-[rainix](https://github.com/rainprotocol/rainix) shells). From a fresh clone,
-in this order (mirrors `.github/workflows/test.yaml`):
+[rainix](https://github.com/rainprotocol/rainix) shells). From a fresh clone, in
+this order (mirrors `.github/workflows/test.yaml`):
 
 ```sh
 cp env.example .env                         # set PUBLIC_WALLETCONNECT_ID
@@ -28,14 +29,14 @@ nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
 ```
 
 - The root dev shell's entry hook runs `npm ci --ignore-scripts` whenever
-  `package.json` exists, so every `nix develop -c <cmd>` at the root
-  reinstalls deps on entry (this is why CI has no explicit root `npm ci`
-  step). Do not run two root `nix develop -c` commands concurrently — the
-  parallel installs race and corrupt `node_modules`.
-- `src/generated.ts` and `src/generated-graphql.ts` are gitignored and
-  imported by `src/` code.
-- `npm run graphql-codegen` introspects the live Flare rewards subgraph
-  (schema URL from `src/lib/subgraph-urls.ts`), so it needs network access.
+  `package.json` exists, so every `nix develop -c <cmd>` at the root reinstalls
+  deps on entry (this is why CI has no explicit root `npm ci` step). Do not run
+  two root `nix develop -c` commands concurrently — the parallel installs race
+  and corrupt `node_modules`.
+- `src/generated.ts` and `src/generated-graphql.ts` are gitignored and imported
+  by `src/` code.
+- `npm run graphql-codegen` introspects the live Flare rewards subgraph (schema
+  URL from `src/lib/subgraph-urls.ts`), so it needs network access.
 - `PUBLIC_WALLETCONNECT_ID` is read via `$env/static/public` in
   `src/routes/+layout.svelte`; CI injects it as a secret.
 
@@ -43,7 +44,8 @@ nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
 
 All via `nix develop -c <cmd>` at the repo root:
 
-- `npm run abi` — refetch the vault ABI (network access; commit the result)
+- `npm run abi` — refetch the committed contract ABIs (network access; commit
+  the result)
 - `npm run dev` — vite dev server on `http://localhost:5173/`
 - `npm test -- run` — vitest single pass (bare `npm test` runs vitest in its
   default watch mode)
@@ -71,32 +73,32 @@ production.
 
 ## Testing conventions
 
-- Vitest with `environment: jsdom`; the global setup in `vitest-setup.ts`
-  mocks `svelte-wagmi` and `$app/stores` for every test.
+- Vitest with `environment: jsdom`; the global setup in `vitest-setup.ts` mocks
+  `svelte-wagmi` and `$app/stores` for every test.
 - Three co-existing test patterns, all under `src/`:
-  1. Paired `*.test.ts` files next to the source (the dominant pattern, used
-     for components, stores, and queries).
+  1. Paired `*.test.ts` files next to the source (the dominant pattern, used for
+     components, stores, and queries).
   2. `*.test.svelte` harness components (e.g.
      `src/lib/components/InfoTooltip.test.svelte`) and `*Test.svelte` fixture
      components (e.g. `CardTest.svelte`) rendered by the paired `.test.ts`.
   3. In-source `if (import.meta.vitest)` blocks (e.g. `src/lib/methods.ts`,
      `src/lib/docs/*.ts`), enabled by `includeSource` in `vite.config.ts`.
-- Components are tested with `@testing-library/svelte`; shared helpers live
-  in `src/lib/test/`, mock factories in `src/lib/mocks/`.
+- Components are tested with `@testing-library/svelte`; shared helpers live in
+  `src/lib/test/`, mock factories in `src/lib/mocks/`.
 
 ## Network / token / contract config
 
 - `src/lib/stores.ts` is the single source of truth for chains:
-  `supportedNetworks` holds one `NetworkConfig` per chain (`flare`,
-  `arbitrum`) with contract addresses, explorer URLs, subgraph URLs, and the
-  cyToken list. Wallet/chain state comes from `svelte-wagmi`.
+  `supportedNetworks` holds one `NetworkConfig` per chain (`flare`, `arbitrum`)
+  with contract addresses, explorer URLs, subgraph URLs, and the cyToken list.
+  Wallet/chain state comes from `svelte-wagmi`.
 - Tokens carry an `active` flag; inactive tokens stay in the list with
   `active: false` rather than being deleted.
 - Subgraph URLs are date-versioned Goldsky deployments:
   `src/lib/subgraph-urls.ts` exports `FLARE_REWARDS_SUBGRAPH_URL` (also the
-  schema source for `codegen.ts`); the Arbitrum rewards URL and the
-  per-network orderbook URLs are inline in `stores.ts`. Updating a subgraph
-  means replacing the URL string at each of those sites.
+  schema source for `codegen.ts`); the Arbitrum rewards URL and the per-network
+  orderbook URLs are inline in `stores.ts`. Updating a subgraph means replacing
+  the URL string at each of those sites.
 - `src/lib/constants.ts` holds the 18-decimal `ONE`, the per-network
   deposit-token pickers (`NETWORK_TOKEN_CONFIGS`), and the per-epoch reward
   pools (`DEC25_REWARD_POOL` … `MAR26_REWARD_POOL`); `TOTAL_REWARD` points at
@@ -109,19 +111,18 @@ production.
 
 User-facing docs are `.svx` (mdsvex) files under `src/docs/<NN-category>/`,
 served at `/docs`. Authoring rules are in `src/docs/README`: one level of
-categories, order-number filename prefixes, a `metadata.json` per category,
-and front matter with `title` and `published: true`.
+categories, order-number filename prefixes, a `metadata.json` per category, and
+front matter with `title` and `published: true`.
 
 ## Audit history
 
-- Audit findings against this repo are tracked as GitHub issues labeled
-  `audit`, with a pass label (`pass0` process review through `pass5`
-  correctness/intent) and a severity label (`critical`, `high`, `medium`,
-  `low`, `info`).
+- Audit findings against this repo are tracked as GitHub issues labeled `audit`,
+  with a pass label (`pass0` process review through `pass5` correctness/intent)
+  and a severity label (`critical`, `high`, `medium`, `low`, `info`).
 - The Solidity contracts were audited by Protofire; the report lives in the
   `cyclo.sol` repo (`audit/` directory), and the user-facing summary is
   `src/docs/10-introduction/92-audit.svx`.
-- `audit/known-false-positives.md` records findings that audit passes
-  repeatedly surface but that are not bugs; consult it before filing a new
-  audit issue, and add an entry when one is closed as invalid. Per-pass
-  findings logs live in `audit/` too.
+- `audit/known-false-positives.md` records findings that audit passes repeatedly
+  surface but that are not bugs; consult it before filing a new audit issue, and
+  add an entry when one is closed as invalid. Per-pass findings logs live in
+  `audit/` too.
