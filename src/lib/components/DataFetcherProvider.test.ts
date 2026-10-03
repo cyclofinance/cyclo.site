@@ -19,7 +19,7 @@ describe("DataFetcherProvider Component", () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it("should call getAndStartDataFetcher on mount", async () => {
@@ -54,6 +54,56 @@ describe("DataFetcherProvider Component", () => {
 
     await vi.waitFor(() => {
       expect(screen.getByTestId("data-fetcher-available")).toBeInTheDocument();
+    });
+  });
+
+  it("renders the error slot with the cause and logs it when getAndStartDataFetcher rejects", async () => {
+    const cause = new Error("Wagmi config not available");
+    vi.mocked(getAndStartDataFetcher).mockRejectedValue(cause);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    render(DataFetcherTest);
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("slot-error")).toHaveTextContent(
+        "Wagmi config not available",
+      );
+    });
+    expect(screen.getByTestId("data-fetcher-error")).toHaveTextContent(
+      "Wagmi config not available",
+    );
+    expect(screen.queryByTestId("slot-content")).not.toBeInTheDocument();
+    expect(consoleError).toHaveBeenCalledWith(
+      "DataFetcherProvider: failed to initialise",
+      cause,
+    );
+  });
+
+  it("wraps a non-Error rejection so the error slot still shows its text", async () => {
+    vi.mocked(getAndStartDataFetcher).mockRejectedValue("boom");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    render(DataFetcherTest);
+
+    await vi.waitFor(() => {
+      expect(screen.getByTestId("slot-error")).toHaveTextContent(/^boom$/);
+    });
+  });
+
+  it("renders a visible error itself when the caller supplies no error slot", async () => {
+    vi.mocked(getAndStartDataFetcher).mockRejectedValue(
+      new Error("Failed to get public client for chainId 14"),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    render(DataFetcherProvider);
+
+    await vi.waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Failed to load pricing data: Failed to get public client for chainId 14",
+      );
     });
   });
 });
