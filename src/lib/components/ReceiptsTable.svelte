@@ -69,10 +69,7 @@
     };
   });
 
-  $: grandTotalReup = mappedReceipts.reduce(
-    (acc, r) => acc + r.reupTotal,
-    0n,
-  );
+  $: grandTotalReup = mappedReceipts.reduce((acc, r) => acc + r.reupTotal, 0n);
   $: readableGrandTotalReup = Number(
     formatUnits(grandTotalReup, token.decimals),
   ).toFixed(5);
