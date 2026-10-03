@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/svelte";
 import Footer from "./Footer.svelte";
 import { describe, it, vi, expect, beforeEach, afterEach } from "vitest";
 import { get } from "svelte/store";
-import { flare } from "@wagmi/core/chains";
+import { flare, arbitrum } from "@wagmi/core/chains";
 import { allTokens } from "$lib/stores";
 import type { CyToken } from "$lib/types";
 import type { Hex } from "viem";
@@ -231,6 +231,8 @@ describe("Footer.svelte", () => {
     expect(screen.getByTestId("network-tvl-arbitrum")).toHaveTextContent("$ 0");
     expect(screen.queryByTestId("network-tvl-other")).not.toBeInTheDocument();
     expect(networkRows()).toHaveLength(2);
+    expect(screen.getByText(flare.name)).toBeInTheDocument();
+    expect(screen.getByText(arbitrum.name)).toBeInTheDocument();
     expect(globalTvl()).toBe(6000n);
     expect(sumOfRows()).toBe(6000n);
 
@@ -240,12 +242,14 @@ describe("Footer.svelte", () => {
       supply: BigInt(0),
       underlyingTvl: BigInt(0),
     };
-    // cyNEW: 1000 on Flare at 18 decimals. cyFAR: 5 at 6 decimals on a chain
-    // neither network config lists, normalised to 5 * 10^12.
+    // cyNEW: 1000 on Flare at 18 decimals. cyBIG: 7 * 10^6 at 24 decimals on
+    // Arbitrum, normalised to 7. cyFAR: 5 at 6 decimals on a chain neither
+    // network config lists, normalised to 5 * 10^12.
     const stats = {
       cyWETH: { ...zeroStats, usdTvl: BigInt(3000) },
       cysFLR: { ...zeroStats, usdTvl: BigInt(3000) },
       cyNEW: { ...zeroStats, usdTvl: BigInt(1000) },
+      cyBIG: { ...zeroStats, usdTvl: BigInt(7_000_000) },
       cyFAR: { ...zeroStats, usdTvl: BigInt(5) },
     };
     mockBalancesStore.mockSetSubscribeValue(
@@ -282,6 +286,16 @@ describe("Footer.svelte", () => {
       tokenBase,
       {
         ...tokenBase,
+        name: "cyBIG",
+        symbol: "cyBIG",
+        decimals: 24,
+        underlyingSymbol: "BIG",
+        underlyingDecimals: 24,
+        chainId: arbitrum.id,
+        networkName: "Arbitrum",
+      },
+      {
+        ...tokenBase,
         name: "cyFAR",
         symbol: "cyFAR",
         decimals: 6,
@@ -297,10 +311,10 @@ describe("Footer.svelte", () => {
         "$ 7000",
       );
     });
-    expect(globalTvl()).toBe(5000000007000n);
-    expect(sumOfRows()).toBe(5000000007000n);
+    expect(globalTvl()).toBe(5000000007007n);
+    expect(sumOfRows()).toBe(5000000007007n);
     expect(networkRows()).toHaveLength(3);
-    expect(screen.getByTestId("network-tvl-arbitrum")).toHaveTextContent("$ 0");
+    expect(readUsd(screen.getByTestId("network-tvl-arbitrum"))).toBe(7n);
     expect(screen.getByTestId("network-tvl-other")).toHaveTextContent(
       "$ 5000000000000",
     );
