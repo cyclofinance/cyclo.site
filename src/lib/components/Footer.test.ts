@@ -313,7 +313,11 @@ describe("Footer.svelte", () => {
     });
     expect(globalTvl()).toBe(5000000007007n);
     expect(sumOfRows()).toBe(5000000007007n);
-    expect(networkRows()).toHaveLength(3);
+    expect(networkRows().map((row) => row.dataset.testid)).toEqual([
+      "network-tvl-flare",
+      "network-tvl-arbitrum",
+      "network-tvl-other",
+    ]);
     expect(readUsd(screen.getByTestId("network-tvl-arbitrum"))).toBe(7n);
     expect(screen.getByTestId("network-tvl-other")).toHaveTextContent(
       "$ 5000000000000",
