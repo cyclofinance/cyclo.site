@@ -1,6 +1,5 @@
 import type { Config } from "@wagmi/core";
 import { type Hex } from "viem";
-import type { AccountStatusQuery } from "../generated-graphql";
 
 export type Receipt = {
   chainId: string;
@@ -50,43 +49,4 @@ export type InitiateLockTransactionArgs = {
   config: Config;
   selectedToken: CyToken;
   assets: bigint;
-};
-
-export type RewardsPools = Record<string, bigint>;
-
-export type Share = {
-  percentageShare: bigint;
-  rewardsAmount: bigint;
-};
-
-export type Shares = {
-  [key: string]: Share;
-} & {
-  totalRewards: bigint;
-};
-
-export type AccountStats = {
-  account: Hex;
-  eligibleBalances: Record<string, bigint>;
-  shares: Shares;
-  transfers: {
-    in: NonNullable<AccountStatusQuery["account"]>["transfersIn"];
-    out: NonNullable<AccountStatusQuery["account"]>["transfersOut"];
-  };
-  liquidityChanges: NonNullable<
-    AccountStatusQuery["account"]
-  >["liquidityChanges"];
-};
-
-export type LeaderboardEntry = Omit<
-  AccountStats,
-  "transfers" | "liquidityChanges"
->;
-
-export type GlobalStats = {
-  eligibleHolders: number;
-  totalEligible: Record<string, bigint>;
-  totalEligibleSum: bigint;
-  rewardsPools: RewardsPools;
-  apy: Record<string, bigint>;
 };

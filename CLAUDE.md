@@ -7,7 +7,7 @@ Guidance for Claude Code (claude.ai/code) when working in this repository.
 `cyclo.site` is the SvelteKit frontend for the Cyclo protocol. It builds to a
 fully static site (`@sveltejs/adapter-static`, `prerender = true`, `ssr =
 false` in `src/routes/+layout.server.ts`) with pages for locking/unlocking
-cyTokens, deploying trade strategies, the rewards leaderboard, and the docs.
+cyTokens, deploying trade strategies, and the docs.
 
 `cyclo.sol/` is a git submodule of the separate
 [cyclofinance/cyclo.sol](https://github.com/cyclofinance/cyclo.sol) contracts
@@ -38,7 +38,7 @@ nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
 - `src/generated.ts` and `src/generated-graphql.ts` are gitignored and
   imported by `src/` code; `npm run codegen` fails until the submodule is
   built (`wagmi.config.ts` reads from `cyclo.sol/out/`).
-- `npm run graphql-codegen` introspects the live Flare rewards subgraph
+- `npm run graphql-codegen` introspects the live Flare cyclo subgraph
   (schema URL from `src/lib/subgraph-urls.ts`), so it needs network access.
 - `PUBLIC_WALLETCONNECT_ID` is read via `$env/static/public` in
   `src/routes/+layout.svelte`; CI injects it as a secret.
@@ -97,14 +97,12 @@ production.
 - Tokens carry an `active` flag; inactive tokens stay in the list with
   `active: false` rather than being deleted.
 - Subgraph URLs are date-versioned Goldsky deployments:
-  `src/lib/subgraph-urls.ts` exports `FLARE_REWARDS_SUBGRAPH_URL` (also the
-  schema source for `codegen.ts`); the Arbitrum rewards URL and the
+  `src/lib/subgraph-urls.ts` exports `FLARE_CYCLO_SUBGRAPH_URL` (also the
+  schema source for `codegen.ts`); the Arbitrum cyclo URL and the
   per-network orderbook URLs are inline in `stores.ts`. Updating a subgraph
   means replacing the URL string at each of those sites.
-- `src/lib/constants.ts` holds the 18-decimal `ONE`, the per-network
-  deposit-token pickers (`NETWORK_TOKEN_CONFIGS`), and the per-epoch reward
-  pools (`DEC25_REWARD_POOL` … `MAR26_REWARD_POOL`); `TOTAL_REWARD` points at
-  the current epoch's pool and moves with each epoch.
+- `src/lib/constants.ts` holds the 18-decimal `ONE` and the per-network
+  deposit-token pickers (`NETWORK_TOKEN_CONFIGS`).
 - The user-facing contract address list is
   `src/docs/10-introduction/91-contract-addresses.svx`; it duplicates the
   addresses in `stores.ts`, so address changes touch both.
