@@ -80,6 +80,21 @@ describe("ReceiptModal Component", () => {
       },
     );
 
+  // Debounce timers from earlier tests' unmounted modals can still fire into
+  // the shared readContract mock, so assertions look at the previewRedeem
+  // args rather than call counts.
+  const previewedArgs = () =>
+    vi
+      .mocked(readContract)
+      .mock.calls.map(
+        (call) => (call[1] as { args?: readonly unknown[] }).args ?? [],
+      );
+  const previewedAmounts = () => previewedArgs().map((args) => args[0]);
+  const previewedTokenIds = () => previewedArgs().map((args) => args[1]);
+  // Outlasts the component's 300ms preview debounce.
+  const settleDebounce = () =>
+    new Promise((resolve) => setTimeout(resolve, 400));
+
   beforeEach(() => {
     initiateUnlockTransactionSpy.mockClear();
     vi.resetAllMocks();
@@ -226,6 +241,44 @@ describe("ReceiptModal Component", () => {
       expect(screen.getByTestId("flr-to-receive")).toHaveTextContent(
         "21.663778162911611785 sFLR",
       );
+    });
+    // previewRedeem's uint256 id slot receives the parsed bigint, not the
+    // receipt's raw string.
+    expect(previewedArgs()).toContainEqual([
+      parseEther("0.5"),
+      BigInt(mockReceipt.tokenId),
+    ]);
+  });
+
+  it("should clear a stale preview error once a later preview succeeds", async () => {
+    setSignerBalances(BigInt(1000000000000000000), BigInt(0));
+
+    // Keyed on the amount so stray previews from other instances cannot
+    // consume a one-shot rejection.
+    vi.mocked(readContract).mockImplementation((_config, { args }) =>
+      (args as readonly unknown[])[0] === parseEther("0.0001")
+        ? Promise.reject(new Error("contract reverted"))
+        : Promise.resolve(BigInt("21663778162911611785")),
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("preview-error")).toHaveTextContent(
+        "contract reverted",
+      );
+    });
+
+    await userEvent.type(input, "1");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("flr-to-receive")).toHaveTextContent(
+        "21.663778162911611785 sFLR",
+      );
+      expect(screen.queryByTestId("preview-error")).toBeNull();
     });
   });
 
@@ -485,6 +538,194 @@ describe("ReceiptModal Component", () => {
       expect(initiateUnlockTransactionSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           assets: mockReceipt.balance,
+        }),
+      );
+    });
+  });
+
+  it("should disable unlock and show placeholder when tokenId is invalid", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
+    const invalidReceipt = { ...mockReceipt, tokenId: "not-a-number" };
+    render(ReceiptModal, { receipt: invalidReceipt, token: selectedToken });
+
+    // 0.0001 sits within both the receipt balance and the signer balance, so
+    // this same amount leaves UNLOCK enabled for a valid tokenId. The button
+    // status stays READY and the redeem amount stays non-zero, which makes the
+    // invalid tokenId the only thing disabling the button below.
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("redeem-input")).toHaveValue("0.0001");
+      expect(screen.getByTestId("lock-up-price")).toHaveTextContent("—");
+      const unlockButton = screen.getByTestId("unlock-button");
+      expect(unlockButton).toHaveTextContent("UNLOCK");
+      expect(unlockButton).toBeDisabled();
+    });
+    // No preview is requested for an unparseable id once the debounce elapses.
+    await settleDebounce();
+    expect(previewedTokenIds()).not.toContain(null);
+  });
+
+  it.each([
+    ["an empty string", ""],
+    ["whitespace only", " \t "],
+  ])(
+    "should disable unlock and show placeholder when tokenId is %s",
+    async (_label, tokenId) => {
+      setSignerBalances(BigInt(1000000000000000000), BigInt(0));
+
+      const emptyReceipt = { ...mockReceipt, tokenId } as Receipt;
+      render(ReceiptModal, { receipt: emptyReceipt, token: selectedToken });
+
+      // Same covering balances and amount as the invalid-tokenId test, so the
+      // empty tokenId is the only thing disabling the button.
+      const input = screen.getByTestId("redeem-input");
+      await userEvent.type(input, "0.0001");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("redeem-input")).toHaveValue("0.0001");
+        expect(screen.getByTestId("lock-up-price")).toHaveTextContent("—");
+        const unlockButton = screen.getByTestId("unlock-button");
+        expect(unlockButton).toHaveTextContent("UNLOCK");
+        expect(unlockButton).toBeDisabled();
+      });
+      // BigInt("") is 0n: an admitted empty tokenId would preview against id 0
+      // once the debounce elapses.
+      await settleDebounce();
+      expect(previewedTokenIds()).not.toContain(0n);
+      expect(previewedTokenIds()).not.toContain(null);
+      await userEvent.click(screen.getByTestId("unlock-button"));
+      expect(initiateUnlockTransactionSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  it("should clear the preview error when the amount is emptied before the pending preview runs", async () => {
+    setSignerBalances(BigInt(1000000000000000000), BigInt(0));
+
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.reject(new Error("contract reverted")),
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("preview-error")).toHaveTextContent(
+        "contract reverted",
+      );
+    });
+    expect(previewedAmounts()).toContain(parseEther("0.0001"));
+
+    // A further keystroke schedules the debounced preview; emptying the input
+    // before it fires routes checkBalance through its empty-input early return
+    // rather than through readContract.
+    await userEvent.type(input, "1");
+    await userEvent.clear(input);
+    expect(input).toHaveValue("");
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("preview-error")).toBeNull();
+    });
+    expect(previewedAmounts()).not.toContain(parseEther("0.00011"));
+  });
+
+  it("should surface previewRedeem errors without zeroing amountToRedeem", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
+    vi.mocked(readContract).mockImplementation(() =>
+      Promise.reject(new Error("contract reverted")),
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    const input = screen.getByTestId("redeem-input");
+    await userEvent.type(input, "0.0001");
+
+    await waitFor(() => {
+      const previewError = screen.getByTestId("preview-error");
+      expect(previewError).toHaveTextContent("contract reverted");
+    });
+
+    // The failed preview leaves the typed amount intact: UNLOCK stays live and
+    // submits exactly the amount that was entered before the failure.
+    const unlockButton = screen.getByTestId("unlock-button");
+    expect(unlockButton.getAttribute("disabled")).toBeFalsy();
+    await userEvent.click(unlockButton);
+
+    await waitFor(() => {
+      expect(initiateUnlockTransactionSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assets: parseEther("0.0001"),
         }),
       );
     });
