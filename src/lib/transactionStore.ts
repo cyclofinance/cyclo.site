@@ -56,6 +56,7 @@ export type initiateLockTransactionArgs = {
   signerAddress: string | null;
   selectedToken: CyToken;
   assets: bigint;
+  depositMinShareRatio: bigint;
   config: Config;
 };
 
@@ -134,6 +135,7 @@ const transactionStore = () => {
     config,
     selectedToken,
     assets,
+    depositMinShareRatio,
   }: initiateLockTransactionArgs) => {
     const writeLock = async () => {
       let hash: Hex | undefined;
@@ -142,7 +144,7 @@ const transactionStore = () => {
         awaitWalletConfirmation("Awaiting wallet confirmation to lock...");
         hash = await writeErc20PriceOracleReceiptVaultDeposit(config, {
           address: selectedToken.address,
-          args: [assets, signerAddress as Hex, 0n, "0x"],
+          args: [assets, signerAddress as Hex, depositMinShareRatio, "0x"],
         });
       } catch (e) {
         console.log(e);

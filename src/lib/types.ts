@@ -49,4 +49,5 @@ export type InitiateLockTransactionArgs = {
   config: Config;
   selectedToken: CyToken;
   assets: bigint;
+  depositMinShareRatio: bigint;
 };
