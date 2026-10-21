@@ -35,5 +35,8 @@ export const validateOverrideDepositAmount: ValidateFunction = (
   if (overrideDepositAmount === undefined || overrideDepositAmount === "") {
     return "Override deposit amount is required";
   }
+  if (Number(overrideDepositAmount) <= 0) {
+    return "Override deposit amount must be greater than 0";
+  }
   return undefined;
 };
