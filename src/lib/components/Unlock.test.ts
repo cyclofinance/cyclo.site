@@ -65,7 +65,6 @@ const {
     {
       balance: 36928000000000000n,
       chainId: "14",
-      readableFlrPerReceipt: "43.32756",
       readableTokenId: "0.02308",
       readableTotalsFlr: "1.60000",
       tokenAddress: "0x6D6111ab02800aC64f66456874add77F44529a90",
@@ -76,7 +75,6 @@ const {
     {
       balance: 36928000000000000n,
       chainId: "14",
-      readableFlrPerReceipt: "43.32756",
       readableTokenId: "0.02308",
       readableTotalsFlr: "1.60000",
       tokenAddress: "0x5D6111ab02800aC64f66456874add77F44529a90",
