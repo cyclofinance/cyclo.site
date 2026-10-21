@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { get } from "svelte/store";
 import blockNumberStore from "./blockNumberStore";
 import { getBlock } from "@wagmi/core";
+import type { Config } from "@wagmi/core";
 import type { Mock } from "vitest";
 
 vi.mock("@wagmi/core", () => ({
@@ -9,8 +10,11 @@ vi.mock("@wagmi/core", () => ({
 }));
 
 describe("blockNumberStore", () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mockConfig = {} as any;
+  const configFor = (chainId: number) =>
+    ({ state: { chainId } }) as unknown as Config;
+  const FLARE = 14;
+  const ARBITRUM = 42161;
+  const mockConfig = configFor(FLARE);
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -21,10 +25,13 @@ describe("blockNumberStore", () => {
     const mockBlockNumber = BigInt(1000);
     (getBlock as Mock).mockResolvedValue({ number: mockBlockNumber });
 
-    await blockNumberStore.refresh(mockConfig);
+    await expect(blockNumberStore.refresh(mockConfig)).resolves.toBe(
+      mockBlockNumber,
+    );
 
     const store = get(blockNumberStore);
     expect(store.blockNumber).toBe(mockBlockNumber);
+    expect(store.chainId).toBe(FLARE);
     expect(store.status).toBe("Ready");
   });
 
@@ -35,6 +42,139 @@ describe("blockNumberStore", () => {
 
     const store = get(blockNumberStore);
     expect(store.status).toBe("Error");
+  });
+
+  it("stale in-flight response does not overwrite a newer result", async () => {
+    let resolveSlow!: (v: { number: bigint }) => void;
+    const slowPromise = new Promise<{ number: bigint }>((res) => {
+      resolveSlow = res;
+    });
+    (getBlock as Mock)
+      .mockReturnValueOnce(slowPromise)
+      .mockResolvedValueOnce({ number: BigInt(2000) });
+
+    // Start slow request (token=1)
+    const slowCall = blockNumberStore.refresh(mockConfig);
+    // Start fast request (token=2) — this is now the latest
+    await blockNumberStore.refresh(mockConfig);
+
+    expect(get(blockNumberStore).blockNumber).toBe(BigInt(2000));
+
+    // Resolve the stale slow request (token=1) — must be discarded
+    resolveSlow({ number: BigInt(1000) });
+    await slowCall;
+
+    // Store must still reflect the fast request's result
+    expect(get(blockNumberStore).blockNumber).toBe(BigInt(2000));
+    expect(get(blockNumberStore).status).toBe("Ready");
+  });
+
+  it("stale in-flight response does not overwrite a newer request's Error status", async () => {
+    let resolveSlow!: (v: { number: bigint }) => void;
+    const slowPromise = new Promise<{ number: bigint }>((res) => {
+      resolveSlow = res;
+    });
+    (getBlock as Mock)
+      .mockReturnValueOnce(slowPromise)
+      .mockRejectedValueOnce(new Error("Failed to get block"));
+
+    const slowCall = blockNumberStore.refresh(mockConfig);
+    await expect(blockNumberStore.refresh(mockConfig)).rejects.toThrow();
+    expect(get(blockNumberStore).status).toBe("Error");
+
+    // A higher block from the older request must still be discarded: the
+    // token decides, not the number.
+    resolveSlow({ number: BigInt(3000) });
+    await slowCall;
+
+    const store = get(blockNumberStore);
+    expect(store.status).toBe("Error");
+    expect(store.blockNumber).toBe(BigInt(0));
+  });
+
+  it("stale in-flight failure neither touches the store nor is swallowed", async () => {
+    let rejectSlow!: (e: Error) => void;
+    const slowPromise = new Promise<{ number: bigint }>((_, rej) => {
+      rejectSlow = rej;
+    });
+    (getBlock as Mock)
+      .mockReturnValueOnce(slowPromise)
+      .mockResolvedValueOnce({ number: BigInt(2000) });
+
+    const slowCall = blockNumberStore.refresh(mockConfig);
+    await blockNumberStore.refresh(mockConfig);
+    expect(get(blockNumberStore).status).toBe("Ready");
+
+    rejectSlow(new Error("stale failure"));
+    await expect(slowCall).rejects.toThrow("stale failure");
+
+    const store = get(blockNumberStore);
+    expect(store.status).toBe("Ready");
+    expect(store.blockNumber).toBe(BigInt(2000));
+  });
+
+  it("reset() invalidates an in-flight refresh", async () => {
+    let resolveSlow!: (v: { number: bigint }) => void;
+    const slowPromise = new Promise<{ number: bigint }>((res) => {
+      resolveSlow = res;
+    });
+    (getBlock as Mock).mockReturnValueOnce(slowPromise);
+
+    // Start a refresh that stays in flight
+    const slowCall = blockNumberStore.refresh(mockConfig);
+
+    // Reset while the request is still pending
+    blockNumberStore.reset();
+
+    // Resolve the stale request — it must not clobber the reset state
+    resolveSlow({ number: BigInt(1000) });
+    await slowCall;
+
+    const store = get(blockNumberStore);
+    expect(store.blockNumber).toBe(BigInt(0));
+    expect(store.chainId).toBeNull();
+    expect(store.status).toBe("Checking");
+  });
+
+  it("lower block number from the same chain does not clobber a higher block", async () => {
+    (getBlock as Mock)
+      .mockResolvedValueOnce({ number: BigInt(5000) })
+      .mockResolvedValueOnce({ number: BigInt(4999) });
+
+    await blockNumberStore.refresh(configFor(FLARE));
+    await blockNumberStore.refresh(configFor(FLARE));
+
+    const store = get(blockNumberStore);
+    expect(store.blockNumber).toBe(BigInt(5000));
+    expect(store.chainId).toBe(FLARE);
+    expect(store.status).toBe("Ready");
+  });
+
+  it("equal block number from the same chain is kept, not treated as a regression", async () => {
+    (getBlock as Mock)
+      .mockResolvedValueOnce({ number: BigInt(5000) })
+      .mockResolvedValueOnce({ number: BigInt(5000) });
+
+    await blockNumberStore.refresh(configFor(FLARE));
+    await blockNumberStore.refresh(configFor(FLARE));
+
+    expect(get(blockNumberStore).blockNumber).toBe(BigInt(5000));
+  });
+
+  it("lower block number from a different chain replaces the stored block", async () => {
+    (getBlock as Mock)
+      .mockResolvedValueOnce({ number: BigInt(5000) })
+      .mockResolvedValueOnce({ number: BigInt(100) });
+
+    // Arbitrum's head is far above Flare's; switching to Flare must not
+    // leave Arbitrum's block pinned in the store.
+    await blockNumberStore.refresh(configFor(ARBITRUM));
+    await blockNumberStore.refresh(configFor(FLARE));
+
+    const store = get(blockNumberStore);
+    expect(store.blockNumber).toBe(BigInt(100));
+    expect(store.chainId).toBe(FLARE);
+    expect(store.status).toBe("Ready");
   });
 
   it("rejects and sets Error status when RPC returns block.number=0n", async () => {

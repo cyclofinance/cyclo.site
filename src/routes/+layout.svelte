@@ -39,7 +39,8 @@
   };
 
   const getPricesAndBalances = () => {
-    blockNumberStore.refresh($wagmiConfig);
+    // The store already records failures in its own status; nothing to do here.
+    blockNumberStore.refresh($wagmiConfig).catch(() => {});
     balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
     balancesStore.refreshFooterStats($wagmiConfig);
     if ($signerAddress) {
