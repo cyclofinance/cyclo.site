@@ -79,7 +79,14 @@ const initialState = {
 
 const transactionStore = () => {
   const { subscribe, set, update } = writable(initialState);
-  const reset = () => set(initialState);
+  // Lock handlers running right now. TransactionModal calls reset() on
+  // dismiss (Escape/close), which must not clear the pending status that
+  // Lock.svelte keys its in-flight freeze on while the handler still runs.
+  let locksInFlight = 0;
+  const reset = () => {
+    if (locksInFlight > 0) return;
+    set(initialState);
+  };
 
   const checkingWalletAllowance = (message?: string) =>
     update((state) => ({
@@ -129,7 +136,7 @@ const transactionStore = () => {
       hash: hash || "",
     }));
 
-  const handleLockTransaction = async ({
+  const lockTransaction = async ({
     signerAddress,
     config,
     selectedToken,
@@ -216,6 +223,15 @@ const transactionStore = () => {
     } else {
       // WRITE LOCK TRANSACTION
       return writeLock();
+    }
+  };
+
+  const handleLockTransaction = async (args: initiateLockTransactionArgs) => {
+    locksInFlight++;
+    try {
+      return await lockTransaction(args);
+    } finally {
+      locksInFlight--;
     }
   };
 

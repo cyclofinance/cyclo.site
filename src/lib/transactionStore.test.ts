@@ -233,13 +233,14 @@ describe("transactionStore", () => {
     });
   });
 
-  it("should reset the store to its initial state", () => {
-    handleLockTransaction({
+  it("should reset the store to its initial state once the lock handler settles", async () => {
+    await handleLockTransaction({
       signerAddress: mockSignerAddress,
       config: mockWagmiConfigStore as unknown as Config,
       selectedToken: mockSelectedToken,
       assets: mockAssets,
     });
+    expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
     reset();
     expect(get(transactionStore)).toEqual({
       status: TransactionStatus.IDLE,
@@ -249,6 +250,92 @@ describe("transactionStore", () => {
       functionName: "",
       message: "",
     });
+  });
+
+  it("should keep the in-flight status when reset is called under a running lock handler", async () => {
+    // TransactionModal calls reset() when dismissed (Escape/close); while
+    // the handler is still awaiting, the pending status must survive it.
+    let resolveAllowance!: (allowance: bigint) => void;
+    (readErc20Allowance as Mock).mockReturnValueOnce(
+      new Promise<bigint>((resolve) => {
+        resolveAllowance = resolve;
+      }),
+    );
+    const running = handleLockTransaction({
+      signerAddress: mockSignerAddress,
+      config: mockWagmiConfigStore as unknown as Config,
+      selectedToken: mockSelectedToken,
+      assets: mockAssets,
+    });
+    expect(get(transactionStore).status).toBe(
+      TransactionStatus.CHECKING_ALLOWANCE,
+    );
+
+    reset();
+    expect(get(transactionStore).status).toBe(
+      TransactionStatus.CHECKING_ALLOWANCE,
+    );
+
+    resolveAllowance(mockAssets);
+    await running;
+    expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
+
+    reset();
+    expect(get(transactionStore).status).toBe(TransactionStatus.IDLE);
+  });
+
+  it("should keep ignoring reset while a second lock handler is still running", async () => {
+    const deferAllowance = () => {
+      let resolve!: (allowance: bigint) => void;
+      (readErc20Allowance as Mock).mockReturnValueOnce(
+        new Promise<bigint>((r) => {
+          resolve = r;
+        }),
+      );
+      return () => resolve(mockAssets);
+    };
+    const args = {
+      signerAddress: mockSignerAddress,
+      config: mockWagmiConfigStore as unknown as Config,
+      selectedToken: mockSelectedToken,
+      assets: mockAssets,
+    };
+    const resolveFirst = deferAllowance();
+    const first = handleLockTransaction(args);
+    const resolveSecond = deferAllowance();
+    const second = handleLockTransaction(args);
+
+    resolveFirst();
+    await first;
+    expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
+
+    // The first handler settled, the second is still awaiting its allowance
+    // read: a dismiss now must still leave the store untouched.
+    reset();
+    expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
+
+    resolveSecond();
+    await second;
+    reset();
+    expect(get(transactionStore).status).toBe(TransactionStatus.IDLE);
+  });
+
+  it("should let reset clear the store again after the lock handler throws", async () => {
+    (readErc20Allowance as Mock).mockRejectedValueOnce(new Error("rpc down"));
+    await expect(
+      handleLockTransaction({
+        signerAddress: mockSignerAddress,
+        config: mockWagmiConfigStore as unknown as Config,
+        selectedToken: mockSelectedToken,
+        assets: mockAssets,
+      }),
+    ).rejects.toThrow("rpc down");
+    expect(get(transactionStore).status).toBe(
+      TransactionStatus.CHECKING_ALLOWANCE,
+    );
+
+    reset();
+    expect(get(transactionStore).status).toBe(TransactionStatus.IDLE);
   });
 
   it("should prompt the user to approve cysFLR contract to lock sFLR if allowance is less than assets", async () => {
