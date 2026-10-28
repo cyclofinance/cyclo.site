@@ -1,8 +1,8 @@
 import type { CodegenConfig } from "@graphql-codegen/cli";
-import { FLARE_REWARDS_SUBGRAPH_URL } from "./src/lib/subgraph-urls";
+import { FLARE_CYCLO_SUBGRAPH_URL } from "./src/lib/subgraph-urls";
 
 const config: CodegenConfig = {
-  schema: FLARE_REWARDS_SUBGRAPH_URL,
+  schema: FLARE_CYCLO_SUBGRAPH_URL,
   documents: "src/**/*.graphql",
   generates: {
     "src/generated-graphql.ts": {

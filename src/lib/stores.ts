@@ -4,7 +4,7 @@ import { type Chain } from "@wagmi/core/chains";
 import type { Hex } from "viem";
 import type { Receipt, CyToken } from "./types";
 import { flare, arbitrum } from "@wagmi/core/chains";
-import { FLARE_REWARDS_SUBGRAPH_URL } from "./subgraph-urls";
+import { FLARE_CYCLO_SUBGRAPH_URL } from "./subgraph-urls";
 
 export interface NetworkConfig {
   key: string;
@@ -17,7 +17,7 @@ export interface NetworkConfig {
   explorerApiUrl: string;
   explorerUrl: string;
   orderbookSubgraphUrl: string;
-  rewardsSubgraphUrl: string;
+  cycloSubgraphUrl: string;
 }
 
 // Network configurations
@@ -32,7 +32,7 @@ const flareConfig: NetworkConfig = {
   explorerUrl: "https://flarescan.com",
   orderbookSubgraphUrl:
     "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/ob4-flare/prod/gn",
-  rewardsSubgraphUrl: FLARE_REWARDS_SUBGRAPH_URL,
+  cycloSubgraphUrl: FLARE_CYCLO_SUBGRAPH_URL,
   tokens: [
     {
       name: "cysFLR",
@@ -87,7 +87,7 @@ const arbitrumConfig: NetworkConfig = {
   explorerUrl: "https://arbiscan.io",
   orderbookSubgraphUrl:
     "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/ob4-arbitrum-one/prod/gn",
-  rewardsSubgraphUrl:
+  cycloSubgraphUrl:
     "https://api.subgraph.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/cyclo-arbitrum-one/prod/gn",
   tokens: [
     {
@@ -359,11 +359,4 @@ export function getDexScreenerChainName(chain: Chain): string {
     .toLowerCase()
     .replace(/\s+(mainnet|canary|network|testnet).*$/i, "");
   return normalized;
-}
-
-/**
- * Check if the selected network is Flare.
- */
-export function isFlareNetwork(networkConfig: NetworkConfig): boolean {
-  return networkConfig.chain.id === flare.id;
 }
