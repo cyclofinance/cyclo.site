@@ -79,6 +79,29 @@ describe("ReceiptsTable Component", () => {
     );
   });
 
+  it("scales by exactly 10^36 and 10^18", async () => {
+    // tokenId 1 wei: 10^36 / 1 is exactly 10^18 tokens; the double nearest
+    // 1e36 is 999999999999999894846684784341549056.
+    const { component } = render(ReceiptsTable, {
+      receipts: [
+        { ...mockReceipt, balance: 1n, tokenId: "1" },
+      ] as unknown as Receipt[],
+      token: selectedToken,
+    });
+
+    expect(screen.getByTestId("total-locked-0").textContent?.trim()).toBe(
+      "1.00000",
+    );
+    const { mappedReceipts } = (
+      component as unknown as {
+        $capture_state: () => { mappedReceipts: Receipt[] };
+      }
+    ).$capture_state();
+    expect(mappedReceipts[0].readableFlrPerReceipt).toBe(
+      "1000000000000000000.00000",
+    );
+  });
+
   it("opens a receipt modal when redeem button is clicked", async () => {
     render(ReceiptsTable, {
       receipts: mockReceipts as unknown as Receipt[],
