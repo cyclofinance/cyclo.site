@@ -403,7 +403,7 @@ describe("DsfStrategy Component", () => {
     }
 
     // Button should now be enabled (only max amount is required)
-    expect(deployButton).not.toBeDisabled();
+    await waitFor(() => expect(deployButton).not.toBeDisabled());
   });
 
   it("should validate custom deposit amounts when toggled", async () => {
