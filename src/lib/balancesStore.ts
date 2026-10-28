@@ -8,11 +8,7 @@ import {
 } from "../generated";
 import { get, writable } from "svelte/store";
 import type { Hex } from "viem";
-import {
-  BaseError,
-  ContractFunctionRevertedError,
-  zeroAddress,
-} from "viem";
+import { BaseError, ContractFunctionRevertedError, zeroAddress } from "viem";
 import { arbitrum } from "@wagmi/core/chains";
 import type { CyToken } from "./types";
 import {

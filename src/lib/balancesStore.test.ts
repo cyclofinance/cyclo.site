@@ -170,9 +170,7 @@ describe("balancesStore", () => {
   it("marks an Arbitrum lock price stale only on a Pyth StalePrice revert", async () => {
     const allTokens = supportedNetworks.flatMap((network) => network.tokens);
     const cyArb = allTokens.find((token) => token.name === "cyARB.pyth")!;
-    const cyWeth = allTokens.find(
-      (token) => token.name === "cyWETH.pyth",
-    )!;
+    const cyWeth = allTokens.find((token) => token.name === "cyWETH.pyth")!;
     const otherRevertSelector = "0x14aebe68";
 
     // Every non-price read echoes its address, so the feed id is the vault.
@@ -201,6 +199,7 @@ describe("balancesStore", () => {
     (
       simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
     ).mockResolvedValue({ result: BigInt(5) });
+    (readErc20BalanceOf as Mock).mockResolvedValue(BigInt(2e18));
 
     await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
 
@@ -209,6 +208,8 @@ describe("balancesStore", () => {
     expect(stats[cyArb.name].lockPriceStale).toBe(true);
     expect(stats[cyWeth.name].lockPrice).toBe(5n);
     expect(stats[cyWeth.name].lockPriceStale).toBe(false);
+    expect(stats[cyArb.name].usdTvl).toBe(0n);
+    expect(stats[cyWeth.name].usdTvl).toBe(10n);
     expect(
       simulateErc20PriceOracleReceiptVaultPreviewDeposit,
     ).not.toHaveBeenCalledWith(
