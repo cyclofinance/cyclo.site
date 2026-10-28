@@ -280,4 +280,34 @@ describe("transactionStore.handleDeployDca", () => {
     expect(state?.error).toBe(TransactionErrorMessage.GENERIC);
     expect(sendTransaction).not.toHaveBeenCalled();
   });
+
+  it("should show the generic error for an Error with no message", async () => {
+    vi.mocked(getDcaDeploymentArgs).mockRejectedValueOnce(new Error(""));
+    let state: StoreState | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    await transactionStore.handleDeployDca(
+      mockOptions as DcaDeploymentArgs,
+      mockDataFetcher,
+    );
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.ERROR);
+    expect(state?.error).toBe(TransactionErrorMessage.GENERIC);
+  });
+
+  it("should show Preparing strategy while the deployment args are prepared", async () => {
+    vi.mocked(getDcaDeploymentArgs).mockReturnValueOnce(new Promise(() => {}));
+    let state: (StoreState & { message: string }) | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    void transactionStore.handleDeployDca(
+      mockOptions as DcaDeploymentArgs,
+      mockDataFetcher,
+    );
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.PENDING_WALLET);
+    expect(state?.message).toBe("Preparing strategy...");
+  });
 });

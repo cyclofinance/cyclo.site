@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
-import { BUDGET_TOO_LOW_ERROR } from "$lib/trade/getDeploymentArgs";
+import {
+  BUDGET_TOO_LOW_ERROR,
+  getDsfMinimumTradeAmount,
+} from "$lib/trade/getDeploymentArgs";
+import { tick } from "svelte";
 import type { Writable } from "svelte/store";
 import { get } from "svelte/store";
 import DsfStrategy from "./DsfStrategy.svelte";
@@ -32,6 +36,15 @@ vi.mock("ethers", async (importOriginal) => {
 });
 
 // Mock dependencies
+vi.mock("$lib/trade/getDeploymentArgs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$lib/trade/getDeploymentArgs")>()),
+  getDsfMinimumTradeAmount: vi.fn(),
+}));
+const { getDsfMinimumTradeAmount: realGetDsfMinimumTradeAmount } =
+  await vi.importActual<typeof import("$lib/trade/getDeploymentArgs")>(
+    "$lib/trade/getDeploymentArgs",
+  );
+
 vi.mock("$lib/dataFetcher", () => ({
   useDataFetcher: vi.fn(),
 }));
@@ -189,6 +202,9 @@ describe("DsfStrategy Component", () => {
     mockWagmiConfigStore.set(undefined);
     mockChainIdStore.set(undefined);
     vi.mocked(switchNetwork).mockResolvedValue(undefined as never);
+    vi.mocked(getDsfMinimumTradeAmount)
+      .mockReset()
+      .mockImplementation(realGetDsfMinimumTradeAmount);
     // The component persists the rotate-token selection back into
     // selectedCyToken, so reset it to the first token between tests.
     selectedCyToken.set(get(allTokens)[0]);
@@ -608,4 +624,98 @@ describe("DsfStrategy Component", () => {
       });
     },
   );
+
+  describe("minimum trade amount", () => {
+    const enterMaxTradeAmount = async (value: string) => {
+      await fireEvent.input(screen.getAllByTestId("amount-input")[0], {
+        target: { value },
+      });
+    };
+
+    const selectSecondRotateToken = async () => {
+      const rotateSelect = screen.getByTestId(
+        "cy-token-select",
+      ) as HTMLSelectElement;
+      rotateSelect.selectedIndex = 1;
+      await fireEvent.change(rotateSelect);
+    };
+
+    const deferred = () => {
+      let resolve!: (value: { price: string; minimum: bigint }) => void;
+      const promise = new Promise<{ price: string; minimum: bigint }>(
+        (r) => (resolve = r),
+      );
+      return { promise, resolve };
+    };
+
+    it("keeps Deploy disabled without a budget error while the minimum loads", async () => {
+      vi.mocked(getDsfMinimumTradeAmount).mockReturnValue(
+        new Promise(() => {}),
+      );
+      render(DsfStrategy);
+      await enterMaxTradeAmount("1000");
+      await tick();
+
+      expect(screen.getByTestId("deploy-button")).toBeDisabled();
+      expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+    });
+
+    it("leaves the minimum to deploy preparation when it cannot be priced", async () => {
+      vi.mocked(getDsfMinimumTradeAmount).mockRejectedValue(
+        new Error("no route"),
+      );
+      render(DsfStrategy);
+      await enterMaxTradeAmount("0.99");
+
+      await waitFor(() =>
+        expect(screen.getByTestId("deploy-button")).toBeEnabled(),
+      );
+      expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+    });
+
+    it("ignores a minimum that resolves after the rotate token changed", async () => {
+      const first = deferred();
+      const second = deferred();
+      vi.mocked(getDsfMinimumTradeAmount).mockImplementation((_, rotate) =>
+        rotate.symbol === "cyTEST" ? second.promise : first.promise,
+      );
+      render(DsfStrategy);
+
+      await selectSecondRotateToken();
+      await enterMaxTradeAmount("1");
+      second.resolve({ price: "2", minimum: 2000000n });
+      await tick();
+      first.resolve({ price: "1", minimum: 1000000n });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("budget-error")).toBeInTheDocument(),
+      );
+      expect(screen.getByTestId("deploy-button")).toBeDisabled();
+    });
+
+    it("disables Deploy again while the minimum for a new rotate token loads", async () => {
+      render(DsfStrategy);
+      await enterMaxTradeAmount("1000");
+      await waitFor(() =>
+        expect(screen.getByTestId("deploy-button")).toBeEnabled(),
+      );
+
+      vi.mocked(getDsfMinimumTradeAmount).mockReturnValue(
+        new Promise(() => {}),
+      );
+      await selectSecondRotateToken();
+      await tick();
+
+      expect(screen.getByTestId("deploy-button")).toBeDisabled();
+    });
+
+    it("does not report a budget error for a zero maximum trade amount", async () => {
+      render(DsfStrategy);
+      await enterMaxTradeAmount("0");
+      await vi.mocked(getDsfMinimumTradeAmount).mock.results.at(-1)!.value;
+      await tick();
+
+      expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+    });
+  });
 });

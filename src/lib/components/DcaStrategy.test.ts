@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
-import { BUDGET_TOO_LOW_ERROR } from "$lib/trade/getDeploymentArgs";
+import {
+  BUDGET_TOO_LOW_ERROR,
+  getDcaMinimumTradeAmount,
+} from "$lib/trade/getDeploymentArgs";
+import { tick } from "svelte";
 import DcaStrategy from "./DcaStrategy.svelte";
 import transactionStore from "$lib/transactionStore";
 import { useDataFetcher } from "$lib/dataFetcher";
@@ -25,6 +29,15 @@ vi.mock("ethers", async (importOriginal) => {
 });
 
 // Mock dependencies
+vi.mock("$lib/trade/getDeploymentArgs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$lib/trade/getDeploymentArgs")>()),
+  getDcaMinimumTradeAmount: vi.fn(),
+}));
+const { getDcaMinimumTradeAmount: realGetDcaMinimumTradeAmount } =
+  await vi.importActual<typeof import("$lib/trade/getDeploymentArgs")>(
+    "$lib/trade/getDeploymentArgs",
+  );
+
 vi.mock("$lib/dataFetcher", () => ({
   useDataFetcher: vi.fn(),
 }));
@@ -155,6 +168,9 @@ describe("DcaStrategy Component", () => {
     vi.mocked(useDataFetcher).mockReturnValue(mockDataFetcher as any);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(Router.findBestRoute).mockReturnValue(mockRoute as any);
+    vi.mocked(getDcaMinimumTradeAmount)
+      .mockReset()
+      .mockImplementation(realGetDcaMinimumTradeAmount);
   });
 
   it("should render the DCA form", () => {
@@ -554,5 +570,110 @@ describe("DcaStrategy Component", () => {
       expect(screen.getByTestId("deploy-button")).toBeEnabled(),
     );
     expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+  });
+
+  describe("minimum budget", () => {
+    const fillDailyBudget = async (amount: string, period = "1") => {
+      await fireEvent.input(screen.getByTestId("amount-input"), {
+        target: { value: amount },
+      });
+      await fireEvent.input(screen.getByTestId("period-input"), {
+        target: { value: period },
+      });
+      await fireEvent.input(screen.getByTestId("baseline-input"), {
+        target: { value: "1.5" },
+      });
+    };
+
+    const deferred = () => {
+      let resolve!: (value: { price: string; minimum: bigint }) => void;
+      const promise = new Promise<{ price: string; minimum: bigint }>(
+        (r) => (resolve = r),
+      );
+      return { promise, resolve };
+    };
+
+    it("keeps Deploy disabled without a budget error while the minimum loads", async () => {
+      vi.mocked(getDcaMinimumTradeAmount).mockReturnValue(
+        new Promise(() => {}),
+      );
+      render(DcaStrategy);
+      await fillDailyBudget("100");
+      await tick();
+
+      expect(screen.getByTestId("deploy-button")).toBeDisabled();
+      expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+    });
+
+    it("leaves the minimum to deploy preparation when it cannot be priced", async () => {
+      vi.mocked(getDcaMinimumTradeAmount).mockRejectedValue(
+        new Error("no route"),
+      );
+      render(DcaStrategy);
+      await fillDailyBudget("9.99");
+
+      await waitFor(() =>
+        expect(screen.getByTestId("deploy-button")).toBeEnabled(),
+      );
+      expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+    });
+
+    it("ignores a minimum that resolves after the amount token changed", async () => {
+      const usdc = deferred();
+      const test = deferred();
+      vi.mocked(getDcaMinimumTradeAmount).mockImplementation((amountToken) =>
+        amountToken.symbol === "TEST" ? test.promise : usdc.promise,
+      );
+      render(DcaStrategy);
+
+      await fireEvent.change(screen.getAllByRole("combobox")[0], {
+        target: { value: "Sell" },
+      });
+      await fillDailyBudget("14.99");
+      test.resolve({ price: "1.5", minimum: 1500000000000000000n });
+      await tick();
+      usdc.resolve({ price: "1", minimum: 1000000n });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("budget-error")).toBeInTheDocument(),
+      );
+      expect(screen.getByTestId("deploy-button")).toBeDisabled();
+    });
+
+    it("disables Deploy again while the minimum for a new amount token loads", async () => {
+      render(DcaStrategy);
+      await fillDailyBudget("100");
+      await waitFor(() =>
+        expect(screen.getByTestId("deploy-button")).toBeEnabled(),
+      );
+
+      vi.mocked(getDcaMinimumTradeAmount).mockReturnValue(
+        new Promise(() => {}),
+      );
+      await fireEvent.change(screen.getAllByRole("combobox")[0], {
+        target: { value: "Sell" },
+      });
+      await tick();
+
+      expect(screen.getByTestId("deploy-button")).toBeDisabled();
+    });
+
+    it("does not report a budget error for a zero amount", async () => {
+      render(DcaStrategy);
+      await fillDailyBudget("0");
+      await vi.mocked(getDcaMinimumTradeAmount).mock.results.at(-1)!.value;
+      await tick();
+
+      expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+    });
+
+    it("does not report a budget error for a zero period", async () => {
+      render(DcaStrategy);
+      await fillDailyBudget("100", "0");
+      await vi.mocked(getDcaMinimumTradeAmount).mock.results.at(-1)!.value;
+      await tick();
+
+      expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+    });
   });
 });

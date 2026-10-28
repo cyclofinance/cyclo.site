@@ -237,6 +237,18 @@ describe("getDcaDeploymentArgs", () => {
     expect(mockGui.saveDeposit).toHaveBeenCalledWith("output", "1");
   });
 
+  it("should reject a per-trade budget below one reference token's worth", async () => {
+    // 1 USDC.e quotes at 1.5 TEST, so the per-trade minimum is 1.5 TEST.
+    vi.mocked(getMaxTradeAmount).mockReturnValue(1499999999999999999n);
+
+    await expect(
+      getDcaDeploymentArgs(mockOptions, mockDataFetcher),
+    ).rejects.toThrow(
+      new Error("Budget too low. Please increase your budget to at least $10."),
+    );
+    expect(mockGui.getDeploymentTransactionArgs).not.toHaveBeenCalled();
+  });
+
   it("should throw an error if no reference token is found", async () => {
     vi.mocked(tokensForNetwork).mockReturnValueOnce([]);
 
