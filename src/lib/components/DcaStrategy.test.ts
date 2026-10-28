@@ -647,15 +647,21 @@ describe("DcaStrategy Component", () => {
         expect(screen.getByTestId("deploy-button")).toBeEnabled(),
       );
 
-      vi.mocked(getDcaMinimumTradeAmount).mockReturnValue(
-        new Promise(() => {}),
-      );
+      const test = deferred();
+      vi.mocked(getDcaMinimumTradeAmount).mockReturnValue(test.promise);
       await fireEvent.change(screen.getAllByRole("combobox")[0], {
         target: { value: "Sell" },
       });
+      await fillDailyBudget("100");
+      await new Promise((r) => setTimeout(r, 0));
       await tick();
 
       expect(screen.getByTestId("deploy-button")).toBeDisabled();
+
+      test.resolve({ price: "1.5", minimum: 1500000000000000000n });
+      await waitFor(() =>
+        expect(screen.getByTestId("deploy-button")).toBeEnabled(),
+      );
     });
 
     it("does not report a budget error for a zero amount", async () => {
