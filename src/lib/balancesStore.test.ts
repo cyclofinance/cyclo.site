@@ -14,10 +14,12 @@ import {
   ContractFunctionExecutionError,
   ContractFunctionRevertedError,
   parseAbi,
+  type Abi,
   type Hex,
 } from "viem";
 import type { CyToken } from "$lib/types";
 import { supportedNetworks } from "./stores";
+import { arbitrum } from "@wagmi/core/chains";
 
 const { mockWagmiConfigStore } = await vi.hoisted(
   () => import("./mocks/mockStores"),
@@ -312,74 +314,97 @@ describe("balancesStore", () => {
     expect(get(balancesStore)).toEqual(buildInitialState());
   });
 
-  const stalePriceRevert = () =>
+  const revertWith = (data: Hex, abi: Abi = parseAbi(["error StalePrice()"])) =>
     new ContractFunctionExecutionError(
-      new ContractFunctionRevertedError({
-        abi: parseAbi(["error StalePrice()"]),
-        data: "0x19abf40e",
-        functionName: "getPriceNoOlderThan",
-      }),
-      { abi: [], functionName: "getPriceNoOlderThan" },
+      new ContractFunctionRevertedError({ abi, data, functionName: "price" }),
+      { abi: [], functionName: "price" },
     );
 
-  it("marks the selected Arbitrum token stale in refreshPrices on a StalePrice revert", async () => {
-    mockPythPriceRead(async () => {
-      throw stalePriceRevert();
-    });
-    (
-      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
-    ).mockResolvedValue({ result: 0n });
+  const ORACLE: Hex = "0x00000000000000000000000000000000000000aa";
 
+  // Pyth's getPriceNoOlderThan over the site's 30-day window always succeeds
+  // here, so only the vault oracle's own price() decides staleness.
+  const mockLockOracle = (oraclePrice: () => Promise<unknown>) =>
+    (readContract as Mock).mockImplementation(
+      async (_config, { functionName, address }) => {
+        if (functionName === "price") return oraclePrice();
+        if (functionName === "priceOracle") return ORACLE;
+        if (functionName === "getPriceNoOlderThan")
+          return { price: 1n, conf: 0n, expo: -8n, publishTime: 0n };
+        return address;
+      },
+    );
+
+  const refreshSelectedPrices = async (name: string) => {
     (readErc20BalanceOf as Mock).mockResolvedValue(0n);
-
-    await refreshPrices(
-      mockWagmiConfigStore as unknown as Config,
-      tokenNamed("cyARB.pyth"),
-    );
-
-    expect(get(balancesStore).stats["cyARB.pyth"].lockPriceStale).toBe(true);
-  });
-
-  it("reports a fresh selected Arbitrum token as not stale in refreshPrices", async () => {
-    mockPythPriceRead(async () => ({
-      price: 123456789n,
-      conf: 0n,
-      expo: -8n,
-      publishTime: 0n,
-    }));
     (
       simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
     ).mockResolvedValue({ result: 5n });
-
-    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
-
     await refreshPrices(
       mockWagmiConfigStore as unknown as Config,
-      tokenNamed("cyARB.pyth"),
+      tokenNamed(name),
     );
+    return get(balancesStore).stats[name];
+  };
 
-    const { stats } = get(balancesStore);
-    expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
-    expect(stats["cyARB.pyth"].lockPrice).toBe(5n);
+  it("marks the selected Arbitrum token stale when its vault oracle's price() reverts StalePrice", async () => {
+    mockLockOracle(async () => {
+      throw revertWith("0x19abf40e");
+    });
+
+    const stats = await refreshSelectedPrices("cyARB.pyth");
+
+    expect(stats.lockPriceStale).toBe(true);
+    expect(stats.lockPrice).toBe(5n);
   });
 
-  it("reports the selected token as not stale in refreshPrices when the price reads all fail", async () => {
-    mockPythPriceRead(async () => {
-      throw new Error("rpc down");
-    });
-    (
-      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
-    ).mockRejectedValue(new Error("preview failed"));
+  it("calls price() on the oracle the vault names", async () => {
+    mockLockOracle(async () => 1n);
 
-    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+    await refreshSelectedPrices("cyARB.pyth");
 
-    await refreshPrices(
-      mockWagmiConfigStore as unknown as Config,
-      tokenNamed("cyARB.pyth"),
+    expect(readContract).toHaveBeenCalledWith(
+      mockWagmiConfigStore,
+      expect.objectContaining({
+        functionName: "price",
+        address: ORACLE,
+        chainId: arbitrum.id,
+      }),
     );
+  });
 
-    const { stats } = get(balancesStore);
-    expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
-    expect(stats["cyARB.pyth"].lockPrice).toBe(0n);
+  it("reports the selected Arbitrum token as not stale when its vault oracle prices", async () => {
+    mockLockOracle(async () => 10n ** 18n);
+
+    const stats = await refreshSelectedPrices("cyARB.pyth");
+
+    expect(stats.lockPriceStale).toBe(false);
+  });
+
+  it("does not mark the selected token stale on a different oracle revert", async () => {
+    mockLockOracle(async () => {
+      throw revertWith("0x14aebe68", []);
+    });
+
+    const stats = await refreshSelectedPrices("cyARB.pyth");
+
+    expect(stats.lockPriceStale).toBe(false);
+  });
+
+  it("reports the selected token as not stale when the vault's oracle address cannot be read", async () => {
+    (readContract as Mock).mockRejectedValue(revertWith("0x19abf40e"));
+
+    const stats = await refreshSelectedPrices("cyARB.pyth");
+
+    expect(stats.lockPriceStale).toBe(false);
+  });
+
+  it("never marks a non-Arbitrum token stale and never reads an oracle for it", async () => {
+    (readContract as Mock).mockRejectedValue(revertWith("0x19abf40e"));
+
+    const stats = await refreshSelectedPrices("cysFLR");
+
+    expect(stats.lockPriceStale).toBe(false);
+    expect(readContract).not.toHaveBeenCalled();
   });
 });

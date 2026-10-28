@@ -274,6 +274,31 @@ const isStalePriceError = (error: unknown) =>
         e.signature === STALE_PRICE_SELECTOR),
   ) !== null;
 
+// The vault's deposit calls priceOracle.price(), which reverts StalePrice once
+// the feed is older than the oracle's own I_STALE_AFTER.
+const isLockOracleStale = async (config: Config, selectedToken: CyToken) => {
+  if (selectedToken.chainId !== arbitrum.id) return false;
+  const priceOracleAddress = (await readContract(config, {
+    abi: CYCLO_VAULT_ABI,
+    address: selectedToken.address,
+    functionName: "priceOracle",
+    args: [],
+    chainId: selectedToken.chainId,
+  })) as Hex;
+  try {
+    await readContract(config, {
+      abi: PYTH_ORACLE_ABI,
+      address: priceOracleAddress,
+      functionName: "price",
+      args: [],
+      chainId: selectedToken.chainId,
+    });
+    return false;
+  } catch (error) {
+    return isStalePriceError(error);
+  }
+};
+
 const getLockPriceFooterStats = async (
   config: Config,
   selectedToken: CyToken,
@@ -441,10 +466,7 @@ const balancesStore = () => {
         );
         return BigInt(0);
       }),
-      getLockPriceFooterStats(config, selectedToken).then(
-        ({ lockPriceStale }) => lockPriceStale,
-        () => false,
-      ),
+      isLockOracleStale(config, selectedToken).catch(() => false),
       getcysFLRSupply(config, selectedToken).catch((error) => {
         console.log(`Failed to fetch supply for ${selectedToken.name}:`, error);
         return BigInt(0);
