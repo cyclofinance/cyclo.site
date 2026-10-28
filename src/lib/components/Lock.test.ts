@@ -761,4 +761,42 @@ describe("Lock component with divergent share/underlying decimals", () => {
       ).toHaveTextContent("Current market value unavailable");
     });
   });
+
+  it("shows a market value of 0 for an empty amount even when the swap quote failed", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1000000000000000000n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: { signerBalance: 0n, signerUnderlyingBalance: 10_000_000n },
+      },
+      { cusdxOutput: null, cyTokenOutput: null },
+    );
+    render(Lock);
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("calculated-cysflr-usd").textContent?.trim(),
+      ).toBe("Current market value ~$ 0");
+      expect(
+        screen.getByTestId("calculated-cysflr-usd-mobile").textContent?.trim(),
+      ).toBe("Current market value ~$ 0");
+    });
+  });
 });
