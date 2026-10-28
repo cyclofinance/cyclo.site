@@ -170,4 +170,50 @@ describe("Footer.svelte", () => {
       expect(screen.getByText("$ 1000000000000")).toBeInTheDocument();
     });
   });
+
+  it("shows the lock price as unavailable when the Pyth price is stale", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          lockPriceStale: true,
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(1e18),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+    render(Footer);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("lock-price-stale")).toHaveLength(1);
+      expect(
+        screen.getByText("Unavailable (Pyth price stale)"),
+      ).toBeInTheDocument();
+    });
+  });
 });

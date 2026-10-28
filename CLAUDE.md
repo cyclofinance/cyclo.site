@@ -95,10 +95,10 @@ production.
 - Tokens carry an `active` flag; inactive tokens stay in the list with
   `active: false` rather than being deleted.
 - Subgraph URLs are date-versioned Goldsky deployments:
-  `src/lib/subgraph-urls.ts` exports `FLARE_CYCLO_SUBGRAPH_URL` (also the
-  schema source for `codegen.ts`); the Arbitrum cyclo URL and the per-network
-  orderbook URLs are inline in `stores.ts`. Updating a subgraph means replacing
-  the URL string at each of those sites.
+  `src/lib/subgraph-urls.ts` exports `FLARE_CYCLO_SUBGRAPH_URL` (also the schema
+  source for `codegen.ts`); the Arbitrum cyclo URL and the per-network orderbook
+  URLs are inline in `stores.ts`. Updating a subgraph means replacing the URL
+  string at each of those sites.
 - `src/lib/constants.ts` holds the 18-decimal `ONE` and the per-network
   deposit-token pickers (`NETWORK_TOKEN_CONFIGS`).
 - The user-facing contract address list is

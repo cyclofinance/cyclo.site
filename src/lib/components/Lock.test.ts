@@ -362,6 +362,96 @@ describe("Lock Component", () => {
     expect(lockButton).toBeDisabled();
   });
 
+  const setCysFlrLockPriceStale = (lockPriceStale: boolean) =>
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          lockPriceStale,
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(9876000000000000000n),
+          signerUnderlyingBalance: BigInt(9876000000000000000n),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
+  it("disables the lock button and explains why when the Pyth price is stale", async () => {
+    setCysFlrLockPriceStale(true);
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.0005");
+
+    expect(screen.getByTestId("lock-button")).toBeDisabled();
+    expect(screen.getByTestId("lock-price-stale")).toHaveTextContent(
+      "The on-chain Pyth sFLR/USD price on Flare is stale, so locking is disabled until it is updated. Unlocking still works.",
+    );
+  });
+
+  it("offers no price refresh button for an Arbitrum Pyth token", async () => {
+    mockSelectedCyToken.mockSetSubscribeValue(
+      get(allTokens).find((token) => token.name === "cyARB.pyth")!,
+    );
+    render(Lock);
+
+    const priceRatio = await screen.findByTestId("price-ratio");
+    expect(priceRatio.querySelector("button")).toBeNull();
+    expect(priceRatio.querySelector("svg")).not.toBeNull();
+  });
+
+  it("keeps the lock button enabled with no stale message when the Pyth price is not stale", async () => {
+    setCysFlrLockPriceStale(false);
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.0005");
+
+    expect(screen.getByTestId("lock-button")).toBeEnabled();
+    expect(screen.queryByTestId("lock-price-stale")).toBeNull();
+  });
+
+  it("does not dispatch a lock if the Pyth price goes stale between disclaimer open and acknowledge", async () => {
+    setCysFlrLockPriceStale(false);
+    render(Lock);
+
+    const input = screen.getByTestId("lock-input");
+    await userEvent.type(input, "0.0005");
+    await userEvent.click(screen.getByTestId("lock-button"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("disclaimer-modal")).toBeInTheDocument();
+    });
+
+    setCysFlrLockPriceStale(true);
+    await userEvent.click(screen.getByTestId("disclaimer-acknowledge-button"));
+
+    expect(initiateLockTransactionSpy).not.toHaveBeenCalled();
+  });
+
   it("should not dispatch lock transaction if wallet switches to wrong network between disclaimer open and acknowledge", async () => {
     render(Lock);
 

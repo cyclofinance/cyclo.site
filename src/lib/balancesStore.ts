@@ -8,7 +8,7 @@ import {
 } from "../generated";
 import { get, writable } from "svelte/store";
 import type { Hex } from "viem";
-import { zeroAddress } from "viem";
+import { BaseError, ContractFunctionRevertedError, zeroAddress } from "viem";
 import { arbitrum } from "@wagmi/core/chains";
 import type { CyToken } from "./types";
 import {
@@ -29,6 +29,7 @@ interface StatsState {
       supply: bigint;
       price: bigint;
       lockPrice: bigint;
+      lockPriceStale?: boolean;
       underlyingTvl: bigint;
       usdTvl: bigint;
     };
@@ -262,11 +263,47 @@ const getLockPrice = async (
   return result;
 };
 
+const STALE_PRICE_SELECTOR = "0x19abf40e";
+
+const isStalePriceError = (error: unknown) =>
+  error instanceof BaseError &&
+  error.walk(
+    (e) =>
+      e instanceof ContractFunctionRevertedError &&
+      (e.data?.errorName === "StalePrice" ||
+        e.signature === STALE_PRICE_SELECTOR),
+  ) !== null;
+
+// The vault's deposit calls priceOracle.price(), which reverts StalePrice once
+// the feed is older than the oracle's own I_STALE_AFTER.
+const isLockOracleStale = async (config: Config, selectedToken: CyToken) => {
+  if (selectedToken.chainId !== arbitrum.id) return false;
+  const priceOracleAddress = (await readContract(config, {
+    abi: CYCLO_VAULT_ABI,
+    address: selectedToken.address,
+    functionName: "priceOracle",
+    args: [],
+    chainId: selectedToken.chainId,
+  })) as Hex;
+  try {
+    await readContract(config, {
+      abi: PYTH_ORACLE_ABI,
+      address: priceOracleAddress,
+      functionName: "price",
+      args: [],
+      chainId: selectedToken.chainId,
+    });
+    return false;
+  } catch (error) {
+    return isStalePriceError(error);
+  }
+};
+
 const getLockPriceFooterStats = async (
   config: Config,
   selectedToken: CyToken,
   chainId?: number,
-) => {
+): Promise<{ lockPrice: bigint; lockPriceStale: boolean }> => {
   const effectiveChainId = chainId ?? selectedToken.chainId;
 
   // For Arbitrum, use Pyth getPriceNoOlderThan directly
@@ -330,8 +367,11 @@ const getLockPriceFooterStats = async (
         normalizedPrice = unsignedPrice;
       }
 
-      return normalizedPrice;
+      return { lockPrice: normalizedPrice, lockPriceStale: false };
     } catch (error) {
+      if (isStalePriceError(error)) {
+        return { lockPrice: 0n, lockPriceStale: true };
+      }
       console.error("Error getting lock price from Pyth for Arbitrum:", error);
       // Fallback to normal method on error
       const { result } =
@@ -341,7 +381,7 @@ const getLockPriceFooterStats = async (
           account: zeroAddress,
           chainId: effectiveChainId,
         });
-      return result;
+      return { lockPrice: result, lockPriceStale: false };
     }
   }
 
@@ -355,7 +395,7 @@ const getLockPriceFooterStats = async (
       chainId: effectiveChainId,
     },
   );
-  return result;
+  return { lockPrice: result, lockPriceStale: false };
 };
 
 const getcysFLRSupply = async (
@@ -413,32 +453,34 @@ const balancesStore = () => {
     if (!selectedToken?.address) return;
     const { blockNumber } = get(blockNumberStore);
 
-    const [lockPrice, cysFlrSupply, underlyingBalanceLockedInCysToken] =
-      await Promise.all([
-        getLockPrice(config, selectedToken).catch((error) => {
-          console.log(
-            `Failed to fetch lock price for ${selectedToken.name}:`,
-            error,
-          );
-          return BigInt(0);
-        }),
-        getcysFLRSupply(config, selectedToken).catch((error) => {
-          console.log(
-            `Failed to fetch supply for ${selectedToken.name}:`,
-            error,
-          );
-          return BigInt(0);
-        }),
-        getUnderlyingBalanceLockedInCysToken(
-          config,
-          selectedToken,
-          selectedToken.underlyingAddress,
-          blockNumber,
-        ).catch((error) => {
-          console.log(`Failed to fetch TVL for ${selectedToken.name}:`, error);
-          return BigInt(0);
-        }),
-      ]);
+    const [
+      lockPrice,
+      lockPriceStale,
+      cysFlrSupply,
+      underlyingBalanceLockedInCysToken,
+    ] = await Promise.all([
+      getLockPrice(config, selectedToken).catch((error) => {
+        console.log(
+          `Failed to fetch lock price for ${selectedToken.name}:`,
+          error,
+        );
+        return BigInt(0);
+      }),
+      isLockOracleStale(config, selectedToken).catch(() => false),
+      getcysFLRSupply(config, selectedToken).catch((error) => {
+        console.log(`Failed to fetch supply for ${selectedToken.name}:`, error);
+        return BigInt(0);
+      }),
+      getUnderlyingBalanceLockedInCysToken(
+        config,
+        selectedToken,
+        selectedToken.underlyingAddress,
+        blockNumber,
+      ).catch((error) => {
+        console.log(`Failed to fetch TVL for ${selectedToken.name}:`, error);
+        return BigInt(0);
+      }),
+    ]);
 
     update((state) => {
       // Ensure token exists in state, initialize if missing
@@ -467,6 +509,7 @@ const balancesStore = () => {
             ...state.stats[selectedToken.name],
             price: state.stats[selectedToken.name].price,
             lockPrice,
+            lockPriceStale,
             supply: cysFlrSupply,
             underlyingTvl: underlyingBalanceLockedInCysToken,
             usdTvl:
@@ -561,7 +604,7 @@ const balancesStore = () => {
                 `Failed to fetch lock price for ${token.name}:`,
                 error,
               );
-              return BigInt(0);
+              return { lockPrice: BigInt(0), lockPriceStale: false };
             },
           ),
           getUnderlyingBalanceLockedInCysToken(
@@ -579,11 +622,12 @@ const balancesStore = () => {
       const stats = {
         supply: supplyResult,
         price: priceResult,
-        lockPrice: lockPriceResult,
+        lockPrice: lockPriceResult.lockPrice,
+        lockPriceStale: lockPriceResult.lockPriceStale,
         underlyingTvl: tvlResult,
         usdTvl:
-          lockPriceResult > 0n
-            ? (tvlResult * lockPriceResult) / BigInt(1e18)
+          lockPriceResult.lockPrice > 0n
+            ? (tvlResult * lockPriceResult.lockPrice) / BigInt(1e18)
             : BigInt(0),
       };
 
