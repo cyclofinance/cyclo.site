@@ -13,7 +13,6 @@
   import { setActiveNetworkByChainId, supportedNetworks } from "$lib/stores";
   import { selectedCyToken } from "$lib/stores";
   import balancesStore from "$lib/balancesStore";
-  import blockNumberStore from "$lib/blockNumberStore";
   import { onDestroy } from "svelte";
   import type { Hex } from "viem";
   import DataFetcherProvider from "$lib/components/DataFetcherProvider.svelte";
@@ -39,7 +38,6 @@
   };
 
   const getPricesAndBalances = () => {
-    blockNumberStore.refresh($wagmiConfig);
     balancesStore.refreshPrices($wagmiConfig, $selectedCyToken);
     balancesStore.refreshFooterStats($wagmiConfig);
     if ($signerAddress) {

@@ -4,10 +4,22 @@
   import { formatNumberWithAbbreviations } from "$lib/methods";
   import { Spinner } from "flowbite-svelte";
   import { supportedNetworks, allTokens } from "$lib/stores";
+  import type { CyToken } from "$lib/types";
 
-  function calculateMarketCap(price: bigint, supply: bigint): bigint {
-    return (price * supply) / BigInt(1e6);
+  const UNAVAILABLE = "Unavailable";
+
+  function calculateMarketCap(
+    price: bigint | null | undefined,
+    supply: bigint | null | undefined,
+  ): bigint | null {
+    if (price === null || supply === null) return null;
+    return ((price ?? 0n) * (supply ?? 0n)) / BigInt(1e6);
   }
+
+  const display = (
+    value: bigint | null | undefined,
+    format: (value: bigint) => string,
+  ) => (value === null ? UNAVAILABLE : format(value ?? 0n));
 
   const tokensByNetwork = supportedNetworks.map((network) => ({
     key: network.key,
@@ -15,36 +27,32 @@
     tokens: network.tokens,
   }));
 
-  // Calculate globalTvl using allTokens to ensure all active tokens are included
-  // Normalize all usdTvl values to 18 decimals before summing since they're stored with token.decimals
-  $: globalTvl = $allTokens.reduce((sum, token) => {
-    const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
-    // Convert usdTvl from token.decimals to 18 decimals for consistent summing
-    const normalizedUsdTvl =
-      token.decimals === 18
-        ? usdTvl
-        : token.decimals < 18
-          ? usdTvl * BigInt(10 ** (18 - token.decimals))
-          : usdTvl / BigInt(10 ** (token.decimals - 18));
-    return sum + normalizedUsdTvl;
-  }, 0n);
+  // usdTvl is stored with token.decimals; normalize to 18 before summing.
+  // A token whose read failed makes the sum unknown.
+  const sumUsdTvl = (
+    tokens: CyToken[],
+    stats: typeof $balancesStore.stats,
+  ): bigint | null =>
+    tokens.reduce<bigint | null>((sum, token) => {
+      if (sum === null || stats[token.name]?.usdTvl === null) return null;
+      const usdTvl = stats[token.name]?.usdTvl || 0n;
+      const normalizedUsdTvl =
+        token.decimals === 18
+          ? usdTvl
+          : token.decimals < 18
+            ? usdTvl * BigInt(10 ** (18 - token.decimals))
+            : usdTvl / BigInt(10 ** (token.decimals - 18));
+      return sum + normalizedUsdTvl;
+    }, 0n);
+
+  $: globalTvl = sumUsdTvl($allTokens, $balancesStore.stats);
 
   $: networkTvls = tokensByNetwork.reduce(
     (acc, network) => ({
       ...acc,
-      [network.key]: network.tokens.reduce((tokenSum, token) => {
-        const usdTvl = $balancesStore.stats[token.name]?.usdTvl || 0n;
-        // Normalize usdTvl from token.decimals to 18 decimals for consistent summing
-        const normalizedUsdTvl =
-          token.decimals === 18
-            ? usdTvl
-            : token.decimals < 18
-              ? usdTvl * BigInt(10 ** (18 - token.decimals))
-              : usdTvl / BigInt(10 ** (token.decimals - 18));
-        return tokenSum + normalizedUsdTvl;
-      }, 0n),
+      [network.key]: sumUsdTvl(network.tokens, $balancesStore.stats),
     }),
-    {} as Record<string, bigint>,
+    {} as Record<string, bigint | null>,
   );
 </script>
 
@@ -65,7 +73,12 @@
           data-testId="global-tvl"
         >
           <span>Global TVL</span>
-          <span>$ {Number(formatUnits(globalTvl, 18))}</span>
+          <span
+            >{display(
+              globalTvl,
+              (v) => `$ ${Number(formatUnits(v, 18))}`,
+            )}</span
+          >
         </div>
       </div>
       {#each tokensByNetwork as network (network.key)}
@@ -77,7 +90,10 @@
           >
             <span>{network.name}</span>
             <span
-              >$ {Number(formatUnits(networkTvls[network.key] || 0n, 18))}</span
+              >{display(
+                networkTvls[network.key],
+                (v) => `$ ${Number(formatUnits(v, 18))}`,
+              )}</span
             >
           </div>
 
@@ -99,11 +115,9 @@
                   >Current Lock Price ({token.symbol} per {token.underlyingSymbol})</span
                 >
                 <span
-                  >{Number(
-                    formatEther(
-                      $balancesStore.stats[token.name]?.lockPrice || 0n,
-                    ),
-                  ).toString()}</span
+                  >{display($balancesStore.stats[token.name]?.lockPrice, (v) =>
+                    Number(formatEther(v)).toString(),
+                  )}</span
                 >
               </div>
               <div
@@ -112,27 +126,22 @@
               >
                 <span>Current {token.symbol} Price</span>
                 <span>
-                  $ {Number(
-                    formatUnits(
-                      $balancesStore.stats[token.name]?.price || 0n,
-                      6,
-                    ),
+                  {display(
+                    $balancesStore.stats[token.name]?.price,
+                    (v) => `$ ${Number(formatUnits(v, 6))}`,
                   )}
                 </span>
               </div>
-              {#if $balancesStore.stats[token.name]?.supply}
+              {#if $balancesStore.stats[token.name]?.supply || $balancesStore.stats[token.name]?.supply === null}
                 <div
                   class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
                   data-testId="supply"
                 >
                   <span>Total {token.symbol} supply</span>
                   <span>
-                    {formatNumberWithAbbreviations(
-                      Number(
-                        formatUnits(
-                          $balancesStore.stats[token.name].supply,
-                          token.decimals,
-                        ),
+                    {display($balancesStore.stats[token.name].supply, (v) =>
+                      formatNumberWithAbbreviations(
+                        Number(formatUnits(v, token.decimals)),
                       ),
                     )}
                   </span>
@@ -144,36 +153,30 @@
               >
                 <span>{token.symbol} Market Cap</span>
                 <span>
-                  $ {Number(
-                    formatUnits(
-                      calculateMarketCap(
-                        $balancesStore.stats[token.name]?.price || 0n,
-                        $balancesStore.stats[token.name]?.supply || 0n,
-                      ),
-                      token.decimals,
+                  {display(
+                    calculateMarketCap(
+                      $balancesStore.stats[token.name]?.price,
+                      $balancesStore.stats[token.name]?.supply,
                     ),
+                    (v) => `$ ${Number(formatUnits(v, token.decimals))}`,
                   )}
                 </span>
               </div>
-              {#if $balancesStore.stats[token.name]?.underlyingTvl}
+              {#if $balancesStore.stats[token.name]?.underlyingTvl || $balancesStore.stats[token.name]?.underlyingTvl === null}
                 <div
                   class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"
                   data-testId="tvl"
                 >
                   <span>Total Value Locked</span>
                   <span>
-                    {Number(
-                      formatUnits(
-                        $balancesStore.stats[token.name].underlyingTvl,
-                        token.decimals,
-                      ),
+                    {display(
+                      $balancesStore.stats[token.name].underlyingTvl,
+                      (v) =>
+                        `${Number(formatUnits(v, token.decimals))} ${token.underlyingSymbol}`,
                     )}
-                    {token.underlyingSymbol}
-                    / $ {Number(
-                      formatUnits(
-                        $balancesStore.stats[token.name].usdTvl,
-                        token.decimals,
-                      ),
+                    / {display(
+                      $balancesStore.stats[token.name].usdTvl,
+                      (v) => `$ ${Number(formatUnits(v, token.decimals))}`,
                     )}
                   </span>
                 </div>

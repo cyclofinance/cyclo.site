@@ -52,16 +52,16 @@ type BalanceData = {
 };
 
 type StatsData = {
-  lockPrice: bigint;
-  price: bigint;
-  supply: bigint;
-  underlyingTvl: bigint;
-  usdTvl: bigint;
+  lockPrice: bigint | null;
+  price: bigint | null;
+  supply: bigint | null;
+  underlyingTvl: bigint | null;
+  usdTvl: bigint | null;
 };
 
 type SwapQuotes = {
-  cusdxOutput: bigint;
-  cyTokenOutput: bigint;
+  cusdxOutput: bigint | null;
+  cyTokenOutput: bigint | null;
 };
 
 type Balances = {

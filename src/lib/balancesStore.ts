@@ -18,7 +18,6 @@ import {
   type NetworkConfig,
 } from "./stores";
 import { ALGEBRA_QUOTER_ABI, STALE_PERIOD } from "./constants";
-import blockNumberStore from "./blockNumberStore";
 import { I_PYTH_ABI, PYTH_ORACLE_ABI, CYCLO_VAULT_ABI } from "./pyth";
 
 interface StatsState {
@@ -26,11 +25,11 @@ interface StatsState {
   statsLoading: boolean;
   stats: {
     [key: string]: {
-      supply: bigint;
-      price: bigint;
-      lockPrice: bigint;
-      underlyingTvl: bigint;
-      usdTvl: bigint;
+      supply: bigint | null;
+      price: bigint | null;
+      lockPrice: bigint | null;
+      underlyingTvl: bigint | null;
+      usdTvl: bigint | null;
     };
   };
   balances: {
@@ -40,10 +39,17 @@ interface StatsState {
     };
   };
   swapQuotes: {
-    cyTokenOutput: bigint;
-    cusdxOutput: bigint;
+    cyTokenOutput: bigint | null;
+    cusdxOutput: bigint | null;
   };
 }
+
+const getUsdTvl = (underlyingTvl: bigint | null, lockPrice: bigint | null) => {
+  if (underlyingTvl === null || lockPrice === null) return null;
+  return lockPrice > 0n
+    ? (underlyingTvl * lockPrice) / BigInt(1e18)
+    : BigInt(0);
+};
 
 const getAllTokensAcrossNetworks = () =>
   supportedNetworks.flatMap((network) => network.tokens);
@@ -84,7 +90,6 @@ const getDepositPreviewSwapValue = async (
   selectedToken: CyToken,
   valueToken: Hex,
   depositAmount: bigint,
-  blockNumber: bigint,
 ) => {
   try {
     const { result: depositPreviewValue } =
@@ -92,7 +97,6 @@ const getDepositPreviewSwapValue = async (
         address: selectedToken.address,
         args: [depositAmount, 0n],
         account: zeroAddress,
-        blockNumber: blockNumber,
         chainId: selectedToken.chainId,
       });
 
@@ -115,7 +119,7 @@ const getDepositPreviewSwapValue = async (
         };
       } catch (error) {
         console.error("Error getting swapQuote with Algebra quoter:", error);
-        return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
+        return { cyTokenOutput: depositPreviewValue, cusdxOutput: null };
       }
     }
 
@@ -163,12 +167,12 @@ const getDepositPreviewSwapValue = async (
         };
       } catch (error) {
         console.error("Error getting swapQuote with both fee pools:", error);
-        return { cyTokenOutput: depositPreviewValue, cusdxOutput: 0n };
+        return { cyTokenOutput: depositPreviewValue, cusdxOutput: null };
       }
     }
   } catch (error) {
     console.error("Error getting deposit preview:", error);
-    return { cyTokenOutput: 0n, cusdxOutput: 0n };
+    return { cyTokenOutput: null, cusdxOutput: null };
   }
 };
 
@@ -199,7 +203,7 @@ const getCyTokenUsdPrice = async (
         "Error getting cyTokenUsdPrice with Algebra quoter:",
         error,
       );
-      return 0n;
+      return null;
     }
   }
 
@@ -240,7 +244,7 @@ const getCyTokenUsdPrice = async (
       return data.result[0] || 0n;
     } catch (error) {
       console.error("Error getting cyTokenUsdPrice:", error);
-      return 0n;
+      return null;
     }
   }
 };
@@ -375,26 +379,13 @@ const getUnderlyingBalanceLockedInCysToken = async (
   config: Config,
   selectedToken: CyToken,
   underlyingAddress: Hex,
-  currentBlock?: bigint,
   chainId?: number,
 ) => {
-  const request: Record<string, unknown> = {
+  const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(config, {
     address: underlyingAddress,
     args: [selectedToken.address],
-  };
-
-  if (typeof currentBlock !== "undefined") {
-    request.blockNumber = currentBlock;
-  }
-
-  if (typeof chainId !== "undefined") {
-    request.chainId = chainId;
-  }
-
-  const underlyingBalanceLockedInCysToken = await readErc20BalanceOf(
-    config,
-    request as Parameters<typeof readErc20BalanceOf>[1],
-  );
+    chainId,
+  });
   return underlyingBalanceLockedInCysToken;
 };
 
@@ -411,7 +402,6 @@ const balancesStore = () => {
 
   const refreshPrices = async (config: Config, selectedToken: CyToken) => {
     if (!selectedToken?.address) return;
-    const { blockNumber } = get(blockNumberStore);
 
     const [lockPrice, cysFlrSupply, underlyingBalanceLockedInCysToken] =
       await Promise.all([
@@ -420,23 +410,22 @@ const balancesStore = () => {
             `Failed to fetch lock price for ${selectedToken.name}:`,
             error,
           );
-          return BigInt(0);
+          return null;
         }),
         getcysFLRSupply(config, selectedToken).catch((error) => {
           console.log(
             `Failed to fetch supply for ${selectedToken.name}:`,
             error,
           );
-          return BigInt(0);
+          return null;
         }),
         getUnderlyingBalanceLockedInCysToken(
           config,
           selectedToken,
           selectedToken.underlyingAddress,
-          blockNumber,
         ).catch((error) => {
           console.log(`Failed to fetch TVL for ${selectedToken.name}:`, error);
-          return BigInt(0);
+          return null;
         }),
       ]);
 
@@ -469,10 +458,7 @@ const balancesStore = () => {
             lockPrice,
             supply: cysFlrSupply,
             underlyingTvl: underlyingBalanceLockedInCysToken,
-            usdTvl:
-              lockPrice > 0n
-                ? (underlyingBalanceLockedInCysToken * lockPrice) / BigInt(1e18)
-                : BigInt(0),
+            usdTvl: getUsdTvl(underlyingBalanceLockedInCysToken, lockPrice),
           },
         },
       };
@@ -523,13 +509,11 @@ const balancesStore = () => {
     valueToken: Hex,
     assets: bigint,
   ) => {
-    const { blockNumber } = get(blockNumberStore);
     const swapQuotes = await getDepositPreviewSwapValue(
       config,
       selectedToken,
       valueToken,
       assets,
-      blockNumber,
     );
     update((state) => ({
       ...state,
@@ -543,7 +527,7 @@ const balancesStore = () => {
         await Promise.all([
           getcysFLRSupply(config, token, token.chainId).catch((error) => {
             console.log(`Failed to fetch supply for ${token.name}:`, error);
-            return BigInt(0);
+            return null;
           }),
           getCyTokenUsdPrice(
             config,
@@ -553,7 +537,7 @@ const balancesStore = () => {
             token.chainId,
           ).catch((error) => {
             console.log(`Failed to fetch price for ${token.name}:`, error);
-            return BigInt(0);
+            return null;
           }),
           getLockPriceFooterStats(config, token, token.chainId).catch(
             (error) => {
@@ -561,18 +545,17 @@ const balancesStore = () => {
                 `Failed to fetch lock price for ${token.name}:`,
                 error,
               );
-              return BigInt(0);
+              return null;
             },
           ),
           getUnderlyingBalanceLockedInCysToken(
             config,
             token,
             token.underlyingAddress,
-            undefined,
             token.chainId,
           ).catch((error) => {
             console.log(`Failed to fetch TVL for ${token.name}:`, error);
-            return BigInt(0);
+            return null;
           }),
         ]);
 
@@ -581,10 +564,7 @@ const balancesStore = () => {
         price: priceResult,
         lockPrice: lockPriceResult,
         underlyingTvl: tvlResult,
-        usdTvl:
-          lockPriceResult > 0n
-            ? (tvlResult * lockPriceResult) / BigInt(1e18)
-            : BigInt(0),
+        usdTvl: getUsdTvl(tvlResult, lockPriceResult),
       };
 
       return { tokenName: token.name, stats };

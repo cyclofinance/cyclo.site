@@ -47,6 +47,18 @@
       return 0n;
     }
   })();
+  $: lockPrice = $balancesStore.stats[$selectedCyToken.name]?.lockPrice;
+  $: cyTokenOutputDisplay =
+    $balancesStore.swapQuotes.cyTokenOutput === null
+      ? "Unavailable"
+      : formatUnits(
+          $balancesStore.swapQuotes.cyTokenOutput,
+          $selectedCyToken.decimals,
+        );
+  $: cusdxOutputDisplay =
+    $balancesStore.swapQuotes.cusdxOutput === null
+      ? "unavailable"
+      : `~$ ${formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)}`;
   $: insufficientFunds =
     ($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance ||
       0n) < assets;
@@ -185,19 +197,14 @@
         >
       </div>
       <div in:fade class="flex items-center gap-2">
-        {#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+        {#key lockPrice}
           <span
             in:fade={{ duration: 700 }}
             class="flex flex-row items-center gap-2"
             data-testid="price-ratio"
           >
-            {#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-              {Number(
-                formatUnits(
-                  $balancesStore.stats[$selectedCyToken.name].lockPrice,
-                  18,
-                ),
-              ).toString()}
+            {#if lockPrice}
+              {Number(formatUnits(lockPrice, 18)).toString()}
             {:else}
               Stale or Incorrect price
             {/if}
@@ -301,13 +308,10 @@
           class="flex w-1/4 flex-col items-center justify-center pb-12 pl-6 pr-2 text-center text-white"
         >
           <img src={ftso} alt="ftso" class="w-1/2" />
-          {#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+          {#key lockPrice}
             <span class="text-sm">
-              {#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-                {formatUnits(
-                  $balancesStore.stats[$selectedCyToken.name].lockPrice,
-                  18,
-                )}
+              {#if lockPrice}
+                {formatUnits(lockPrice, 18)}
               {:else}
                 Stale or Incorrect price
               {/if}
@@ -321,15 +325,10 @@
       <div
         class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
       >
-        {#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+        {#key lockPrice}
           <span class="text-base" data-testid="calculated-cysflr"
-            >{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-              {!amountToLock
-                ? "0"
-                : formatUnits(
-                    $balancesStore.swapQuotes.cyTokenOutput,
-                    $selectedCyToken.decimals,
-                  )}
+            >{#if lockPrice}
+              {!amountToLock ? "0" : cyTokenOutputDisplay}
             {:else}
               Stale Price / Incorrect price
             {/if}</span
@@ -341,9 +340,9 @@
         class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
       >
         <span class="text-sm" data-testid="calculated-cysflr-usd"
-          >Current market value ~$ {amountToLock
-            ? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
-            : "0"}</span
+          >Current market value {amountToLock
+            ? cusdxOutputDisplay
+            : "~$ 0"}</span
         >
       </div>
     </div>
@@ -362,28 +361,18 @@
         class="flex w-1/4 flex-col items-center justify-center text-center text-white"
       >
         <img src={ftso} alt="ftso" class="" />
-        {#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-          {Number(
-            formatUnits(
-              $balancesStore.stats[$selectedCyToken.name].lockPrice,
-              18,
-            ),
-          )}
+        {#if lockPrice}
+          {Number(formatUnits(lockPrice, 18))}
         {/if}
       </div>
       <img src={mintMobile} alt="diagram" class="h-60" />
       <div
         class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white md:text-2xl"
       >
-        {#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
+        {#key lockPrice}
           <span class="text-base" data-testid="calculated-cysflr-mobile"
-            >{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-              {!amountToLock
-                ? "0"
-                : formatUnits(
-                    $balancesStore.swapQuotes.cyTokenOutput,
-                    $selectedCyToken.decimals,
-                  )}
+            >{#if lockPrice}
+              {!amountToLock ? "0" : cyTokenOutputDisplay}
             {:else}
               Stale Price / Incorrect price
             {/if}</span
@@ -395,9 +384,9 @@
         class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
       >
         <span class="text-sm" data-testid="calculated-cysflr-usd-mobile"
-          >Current market value ~$ {amountToLock
-            ? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
-            : "0"}</span
+          >Current market value {amountToLock
+            ? cusdxOutputDisplay
+            : "~$ 0"}</span
         >
       </div>
     </div>
