@@ -16,5 +16,23 @@
       "testsAfter": 29,
       "filed": []
     }
+  },
+  {
+    "timestamp": "2026-10-28T19:03:51Z",
+    "commit": "e4f76429cbcf72153e549aa67459b7ae7cf4db30",
+    "testsAfterCommit": "6a8eeaa82dc9612539073db8fe8b4922eeda90dc",
+    "publishedTag": null,
+    "commitsAheadOfTag": null,
+    "scope": "PR #455 (issue #452), read-only rework: src/lib/balancesStore.ts isStalePriceError, isLockOracleStale, refreshPrices and refreshFooterStats stale wiring; src/lib/components/Lock.svelte stale gate, message and refresh-button removal; src/lib/components/Footer.svelte stale branch",
+    "tool": "adversarial-mutation-test",
+    "skillVersion": "0.35.0",
+    "summary": {
+      "behaviours": 39,
+      "candidates": 2,
+      "confirmed": 0,
+      "testsBefore": 283,
+      "testsAfter": 285,
+      "filed": []
+    }
   }
 ]
