@@ -24,7 +24,7 @@ const { mockActiveNetworkKey, mockSupportedNetworks, mockSwitchNetwork } =
         explorerApiUrl: "",
         explorerUrl: "",
         orderbookSubgraphUrl: "",
-        rewardsSubgraphUrl: "",
+        cycloSubgraphUrl: "",
         tokens: [],
       },
       {
@@ -37,7 +37,7 @@ const { mockActiveNetworkKey, mockSupportedNetworks, mockSwitchNetwork } =
         explorerApiUrl: "",
         explorerUrl: "",
         orderbookSubgraphUrl: "",
-        rewardsSubgraphUrl: "",
+        cycloSubgraphUrl: "",
         tokens: [],
       },
     ];

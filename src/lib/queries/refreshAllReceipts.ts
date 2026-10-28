@@ -37,7 +37,7 @@ export const refreshAllReceipts = async (
   let hasMore = true;
 
   // Fetch all receipt balances in pages
-  const subgraphUrl = get(selectedNetwork).rewardsSubgraphUrl;
+  const subgraphUrl = get(selectedNetwork).cycloSubgraphUrl;
   while (hasMore) {
     const response = await fetch(subgraphUrl, {
       method: "POST",
