@@ -9,8 +9,11 @@ import {
 import balancesStore from "./balancesStore";
 import { getBlock, readContract, type Config } from "@wagmi/core";
 import {
+  AbiErrorSignatureNotFoundError,
+  BaseError,
   ContractFunctionExecutionError,
   ContractFunctionRevertedError,
+  parseAbi,
   type Hex,
 } from "viem";
 import type { CyToken } from "$lib/types";
@@ -216,6 +219,84 @@ describe("balancesStore", () => {
       expect.anything(),
       expect.objectContaining({ address: cyArb.address }),
     );
+  });
+
+  const allTokens = supportedNetworks.flatMap((network) => network.tokens);
+  const tokenNamed = (name: string) =>
+    allTokens.find((token) => token.name === name)!;
+
+  const mockPythPriceRead = (priceRead: () => Promise<unknown>) =>
+    (readContract as Mock).mockImplementation(
+      async (_config, { functionName, address }) =>
+        functionName === "getPriceNoOlderThan" ? priceRead() : address,
+    );
+
+  it("marks a lock price stale on a StalePrice revert decoded from the ABI", async () => {
+    mockPythPriceRead(async () => {
+      throw new ContractFunctionExecutionError(
+        new ContractFunctionRevertedError({
+          abi: parseAbi(["error StalePrice()"]),
+          data: "0x19abf40e",
+          functionName: "getPriceNoOlderThan",
+        }),
+        { abi: [], functionName: "getPriceNoOlderThan" },
+      );
+    });
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    expect(stats["cyARB.pyth"].lockPrice).toBe(0n);
+    expect(stats["cyARB.pyth"].lockPriceStale).toBe(true);
+  });
+
+  it("does not mark a lock price stale for a non-revert error carrying the StalePrice selector", async () => {
+    mockPythPriceRead(async () => {
+      throw new BaseError("decode failed", {
+        cause: new AbiErrorSignatureNotFoundError("0x19abf40e", {
+          docsPath: "",
+        }),
+      });
+    });
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(5) });
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    expect(stats["cyARB.pyth"].lockPrice).toBe(5n);
+    expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
+  });
+
+  it("reports fresh Pyth, non-Arbitrum and failed lock prices as not stale", async () => {
+    // 123456789 * 10^-8 USD normalised to 18 decimals.
+    mockPythPriceRead(async () => ({
+      price: 123456789n,
+      conf: 0n,
+      expo: -8n,
+      publishTime: 0n,
+    }));
+    const cysFlr = tokenNamed("cysFLR");
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockImplementation(async (_config, { address }: { address: Hex }) => {
+      if (address === cysFlr.address) return { result: BigInt(7) };
+      throw new Error("preview failed");
+    });
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    expect(stats["cyARB.pyth"].lockPrice).toBe(1234567890000000000n);
+    expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
+    expect(stats["cysFLR"].lockPrice).toBe(7n);
+    expect(stats["cysFLR"].lockPriceStale).toBe(false);
+    expect(stats["cyWETH"].lockPrice).toBe(0n);
+    expect(stats["cyWETH"].lockPriceStale).toBe(false);
   });
 
   it("should reset the store to its initial state", () => {
