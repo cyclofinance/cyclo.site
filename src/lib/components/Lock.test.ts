@@ -412,6 +412,17 @@ describe("Lock Component", () => {
     );
   });
 
+  it("offers no price refresh button for an Arbitrum Pyth token", async () => {
+    mockSelectedCyToken.mockSetSubscribeValue(
+      allTokens.find((token) => token.name === "cyARB.pyth")!,
+    );
+    render(Lock);
+
+    const priceRatio = await screen.findByTestId("price-ratio");
+    expect(priceRatio.querySelector("button")).toBeNull();
+    expect(priceRatio.querySelector("svg")).not.toBeNull();
+  });
+
   it("keeps the lock button enabled with no stale message when the Pyth price is not stale", async () => {
     setCysFlrLockPriceStale(false);
     render(Lock);

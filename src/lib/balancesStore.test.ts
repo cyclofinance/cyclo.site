@@ -273,6 +273,20 @@ describe("balancesStore", () => {
     expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
   });
 
+  it("falls back to previewDeposit when the Pyth read rejects with a non-Error value", async () => {
+    mockPythPriceRead(() => Promise.reject(undefined));
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(5) });
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    expect(stats["cyARB.pyth"].lockPrice).toBe(5n);
+    expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
+  });
+
   it("reports fresh Pyth, non-Arbitrum and failed lock prices as not stale", async () => {
     // 123456789 * 10^-8 USD normalised to 18 decimals.
     mockPythPriceRead(async () => ({
