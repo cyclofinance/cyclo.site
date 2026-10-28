@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/svelte";
 import Footer from "./Footer.svelte";
+import { supportedNetworks } from "$lib/stores";
 import { describe, it, vi, expect, beforeEach } from "vitest";
 
 const { mockBalancesStore } = await vi.hoisted(
@@ -217,6 +218,69 @@ describe("Footer.svelte", () => {
       );
       expect(screen.getByTestId("supply")).toHaveTextContent(
         "Total cysFLR supply Unavailable",
+      );
+      expect(screen.getByTestId("market-cap-cysFLR")).toHaveTextContent(
+        "cysFLR Market Cap Unavailable",
+      );
+      expect(
+        screen
+          .getAllByTestId("lock-price")
+          .filter((el) => el.textContent?.includes("Unavailable")),
+      ).toHaveLength(1);
+      expect(
+        screen
+          .getAllByTestId("price")
+          .filter((el) => el.textContent?.includes("Unavailable")),
+      ).toHaveLength(1);
+      const flare = supportedNetworks.find((n) =>
+        n.tokens.some((t) => t.name === "cysFLR"),
+      )!;
+      expect(
+        screen.getByText(flare.chain?.name ?? flare.key).parentElement,
+      ).toHaveTextContent("Unavailable");
+    });
+  });
+
+  it("shows market cap as unavailable when only price or only supply failed", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: null,
+          supply: BigInt(1e18),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          price: BigInt(1e6),
+          supply: null,
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+    render(Footer);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("market-cap-cyWETH")).toHaveTextContent(
+        "cyWETH Market Cap Unavailable",
       );
       expect(screen.getByTestId("market-cap-cysFLR")).toHaveTextContent(
         "cysFLR Market Cap Unavailable",

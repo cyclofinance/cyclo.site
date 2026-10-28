@@ -8,7 +8,7 @@ import {
   simulateQuoterQuoteExactInputSingle,
 } from "../generated";
 import balancesStore from "./balancesStore";
-import type { Config } from "@wagmi/core";
+import { simulateContract, type Config } from "@wagmi/core";
 import type { CyToken } from "$lib/types";
 import { supportedNetworks } from "./stores";
 
@@ -295,6 +295,54 @@ describe("balancesStore", () => {
         cyTokenOutput: BigInt(1000),
         cusdxOutput: null,
       });
+    });
+
+    it("refreshDepositPreviewSwapValue stores a failed Algebra swap quote as null", async () => {
+      (simulateContract as Mock).mockRejectedValue(new Error("rpc"));
+
+      await balancesStore.refreshDepositPreviewSwapValue(
+        config,
+        { ...token, chainId: 42161 },
+        "0xusdc",
+        BigInt(10),
+      );
+
+      expect(simulateContract).toHaveBeenCalledTimes(1);
+      expect(get(balancesStore).swapQuotes).toEqual({
+        cyTokenOutput: BigInt(1000),
+        cusdxOutput: null,
+      });
+    });
+
+    it("refreshFooterStats values TVL at underlying balance times lock price", async () => {
+      (
+        simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+      ).mockResolvedValue({ result: BigInt(2e18) });
+
+      await balancesStore.refreshFooterStats(config);
+
+      const { stats } = get(balancesStore);
+      for (const t of supportedNetworks.flatMap((n) => n.tokens)) {
+        expect(stats[t.name].lockPrice).toBe(BigInt(2e18));
+        expect(stats[t.name].underlyingTvl).toBe(BigInt(3e18));
+        // 3e18 underlying * 2e18 lock price / 1e18
+        expect(stats[t.name].usdTvl).toBe(BigInt(6e18));
+      }
+    });
+
+    it("refreshFooterStats stores a failed lock price read as null for every token", async () => {
+      (
+        simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+      ).mockRejectedValue(new Error("rpc"));
+
+      await balancesStore.refreshFooterStats(config);
+
+      const { stats } = get(balancesStore);
+      for (const t of supportedNetworks.flatMap((n) => n.tokens)) {
+        expect(stats[t.name].lockPrice).toBeNull();
+        expect(stats[t.name].usdTvl).toBeNull();
+        expect(stats[t.name].underlyingTvl).toBe(BigInt(3e18));
+      }
     });
 
     it("refreshFooterStats stores failed reads as null for every token", async () => {
