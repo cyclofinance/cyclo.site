@@ -27,6 +27,11 @@
     validateOverrideDepositAmount,
   } from "$lib/trade/validateDeploymentArgs";
   import InfoTooltip from "$lib/components/InfoTooltip.svelte";
+  import {
+    BUDGET_TOO_LOW_ERROR,
+    getDcaMinimumTradeAmount,
+  } from "$lib/trade/getDeploymentArgs";
+  import { getMaxTradeAmount } from "$lib/trade/derivations";
 
   // selected values - initialize from store
   let selectedCyToken: CyToken = $storeSelectedCyToken;
@@ -135,7 +140,50 @@
   let outputVaultIdError: boolean = false;
   let overrideDepositAmountError: boolean = false;
 
+  // undefined while the minimum for the current amount token is loading
+  let minimumTradeAmount: bigint | undefined;
+  const updateMinimumTradeAmount = async (
+    amountToken: Token | undefined,
+    referenceToken: Token | undefined,
+  ) => {
+    minimumTradeAmount = undefined;
+    if (!amountToken || !referenceToken) return;
+    const minimum = await getDcaMinimumTradeAmount(
+      amountToken,
+      referenceToken,
+      dataFetcher,
+    ).then(
+      (result) => result.minimum,
+      // Unknown minimum: deploy preparation reports the underlying error.
+      () => 0n,
+    );
+    if (amountToken === selectedAmountToken) minimumTradeAmount = minimum;
+  };
+  $: updateMinimumTradeAmount(selectedAmountToken, networkTokens[0]);
+
+  const isBudgetTooLow = (
+    amount: bigint,
+    period: string,
+    periodUnit: "Days" | "Hours" | "Minutes",
+    minimum: bigint | undefined,
+  ) => {
+    if (!amount || !period || minimum === undefined) return false;
+    try {
+      return getMaxTradeAmount(amount, period, periodUnit) < minimum;
+    } catch {
+      return false;
+    }
+  };
+  $: budgetTooLow = isBudgetTooLow(
+    selectedAmount,
+    selectedPeriod,
+    selectedPeriodUnit,
+    minimumTradeAmount,
+  );
+
   $: disableDeploy =
+    minimumTradeAmount === undefined ||
+    budgetTooLow ||
     !selectedToken ||
     !selectedAmountToken ||
     !selectedAmount ||
@@ -279,6 +327,11 @@
         dataTestId="period-unit-select"
       />
     </div>
+    {#if budgetTooLow}
+      <span class="text-right text-sm text-red-500" data-testid="budget-error"
+        >{BUDGET_TOO_LOW_ERROR}</span
+      >
+    {/if}
   </div>
 
   <!-- lowest price to spend or receive -->

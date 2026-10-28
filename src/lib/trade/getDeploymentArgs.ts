@@ -16,6 +16,38 @@ import {
 import { tokensForNetwork } from "$lib/constants";
 import type { Hex } from "viem";
 
+export const BUDGET_TOO_LOW_ERROR =
+  "Budget too low. Please increase your budget to at least $10.";
+
+export const getDcaMinimumTradeAmount = async (
+  outputToken: Token,
+  referenceToken: Token,
+  dataFetcher: DataFetcher,
+) => {
+  const price =
+    outputToken.address === referenceToken.address
+      ? "1"
+      : await getPrice(referenceToken, outputToken, dataFetcher);
+  return { price, minimum: parseUnits(price, outputToken.decimals) };
+};
+
+export const getDsfMinimumTradeAmount = async (
+  amountToken: Token,
+  rotateToken: Token,
+  referenceToken: Token,
+  dataFetcher: DataFetcher,
+) => {
+  const isReference = amountToken.address === referenceToken.address;
+  const price = isReference
+    ? "1"
+    : await getPrice(amountToken, rotateToken, dataFetcher);
+  const minimum = parseUnits(
+    price,
+    isReference ? amountToken.decimals : rotateToken.decimals,
+  );
+  return { price, minimum };
+};
+
 export type DcaDeploymentArgs = {
   selectedCyToken: CyToken;
   selectedToken: Token;
@@ -85,22 +117,14 @@ export const getDcaDeploymentArgs = async (
     selectedAmountToken.decimals,
   );
 
-  const outputTokenInUSDC =
-    outputToken.address === referenceToken.address
-      ? "1"
-      : await getPrice(referenceToken, outputToken, dataFetcher);
+  const { price: outputTokenInUSDC, minimum: outputTokenInUSDCBigInt } =
+    await getDcaMinimumTradeAmount(outputToken, referenceToken, dataFetcher);
 
   // Check if maxAmount (in BigInt) is less than outputTokenInUSDC (in BigInt)
   const maxAmountBigInt = parseUnits(maxAmount, selectedAmountToken.decimals);
-  const outputTokenInUSDCBigInt = parseUnits(
-    outputTokenInUSDC,
-    outputToken.decimals,
-  );
 
   if (maxAmountBigInt < outputTokenInUSDCBigInt) {
-    throw new Error(
-      "Budget too low. Please increase your budget to at least $10.",
-    );
+    throw new Error(BUDGET_TOO_LOW_ERROR);
   }
 
   gui.saveFieldValue("max-trade-amount", {
@@ -228,20 +252,19 @@ export const getDsfDeploymentArgs = async (
     isPreset: false,
   });
 
-  const outputTokenInUSDC =
-    amountToken.address === referenceToken.address
-      ? "1"
-      : await getPrice(amountToken, rotateToken, dataFetcher);
+  const { price: outputTokenInUSDC, minimum: outputTokenInUSDCBigInt } =
+    await getDsfMinimumTradeAmount(
+      amountToken,
+      rotateToken,
+      referenceToken,
+      dataFetcher,
+    );
 
   // Convert prices to BigInt and check if they are zero
   const initialPriceFetchedBigInt = parseUnits(
     initialPriceFetched,
     amountToken.decimals,
   );
-  const outputTokenInUSDCBigInt =
-    amountToken.address === referenceToken.address
-      ? parseUnits(outputTokenInUSDC, amountToken.decimals)
-      : parseUnits(outputTokenInUSDC, rotateToken.decimals);
 
   if (initialPriceFetchedBigInt === 0n) {
     throw new Error("Unable to fetch initial price. Price is zero.");
@@ -253,9 +276,7 @@ export const getDsfDeploymentArgs = async (
 
   // Check if maxTradeAmount (in BigInt) is less than outputTokenInUSDC (in BigInt)
   if (maxTradeAmount < outputTokenInUSDCBigInt) {
-    throw new Error(
-      "Budget too low. Please increase your budget to at least $10.",
-    );
+    throw new Error(BUDGET_TOO_LOW_ERROR);
   }
 
   gui.saveFieldValue("min-amount", {

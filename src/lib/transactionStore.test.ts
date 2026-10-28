@@ -32,6 +32,18 @@ import {
   extractParsedTimes,
   extractPublishTime,
 } from "./pyth";
+import type { DataFetcher } from "sushi";
+import {
+  BUDGET_TOO_LOW_ERROR,
+  getDcaDeploymentArgs,
+  getDsfDeploymentArgs,
+} from "./trade/getDeploymentArgs";
+
+vi.mock("./trade/getDeploymentArgs", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./trade/getDeploymentArgs")>()),
+  getDcaDeploymentArgs: vi.fn(),
+  getDsfDeploymentArgs: vi.fn(),
+}));
 
 vi.mock("$lib/queries/getReceipts", () => ({
   getReceipts: vi.fn(),
@@ -530,4 +542,49 @@ describe("transactionStore", () => {
       expect(get(transactionStore).status).toBe(TransactionStatus.SUCCESS);
     });
   });
+});
+
+describe("strategy deploy preparation errors", () => {
+  const { handleDeployDca, handleDeployDsf, reset } = transactionStore;
+  const dataFetcher = {} as DataFetcher;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    reset();
+  });
+
+  it.each([
+    ["DCA", handleDeployDca, getDcaDeploymentArgs],
+    ["DSF", handleDeployDsf, getDsfDeploymentArgs],
+  ] as const)(
+    "%s shows the preparation error instead of staying on Preparing strategy",
+    async (_, handleDeploy, getDeploymentArgs) => {
+      vi.mocked(getDeploymentArgs).mockRejectedValue(
+        new Error(BUDGET_TOO_LOW_ERROR),
+      );
+
+      await expect(
+        handleDeploy({} as never, dataFetcher),
+      ).resolves.toBeUndefined();
+
+      expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
+      expect(get(transactionStore).error).toBe(BUDGET_TOO_LOW_ERROR);
+      expect(sendTransaction).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ["DCA", handleDeployDca, getDcaDeploymentArgs],
+    ["DSF", handleDeployDsf, getDsfDeploymentArgs],
+  ] as const)(
+    "%s falls back to the generic error for a non-Error rejection",
+    async (_, handleDeploy, getDeploymentArgs) => {
+      vi.mocked(getDeploymentArgs).mockRejectedValue("boom");
+
+      await handleDeploy({} as never, dataFetcher);
+
+      expect(get(transactionStore).status).toBe(TransactionStatus.ERROR);
+      expect(get(transactionStore).error).toBe(TransactionErrorMessage.GENERIC);
+    },
+  );
 });

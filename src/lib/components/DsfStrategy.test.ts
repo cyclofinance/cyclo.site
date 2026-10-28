@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/svelte";
+import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import { BUDGET_TOO_LOW_ERROR } from "$lib/trade/getDeploymentArgs";
 import type { Writable } from "svelte/store";
 import { get } from "svelte/store";
 import DsfStrategy from "./DsfStrategy.svelte";
@@ -572,4 +573,39 @@ describe("DsfStrategy Component", () => {
     expect(switchNetwork).not.toHaveBeenCalled();
     expect(transactionStore.handleDeployDsf).toHaveBeenCalled();
   });
+
+  it.each([
+    ["0.99", true],
+    ["1", false],
+  ])(
+    "should validate the minimum trade amount (%s USDC.e, disabled: %s)",
+    async (amount, tooLow) => {
+      render(DsfStrategy);
+
+      await fireEvent.input(screen.getAllByTestId("amount-input")[0], {
+        target: { value: amount },
+      });
+
+      const deployButton = screen.getByTestId("deploy-button");
+      await waitFor(() =>
+        tooLow
+          ? expect(deployButton).toBeDisabled()
+          : expect(deployButton).toBeEnabled(),
+      );
+      if (tooLow) {
+        expect(screen.getByTestId("budget-error")).toHaveTextContent(
+          BUDGET_TOO_LOW_ERROR,
+        );
+      } else {
+        expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+      }
+
+      await fireEvent.click(deployButton);
+      await waitFor(() =>
+        expect(transactionStore.handleDeployDsf).toHaveBeenCalledTimes(
+          tooLow ? 0 : 1,
+        ),
+      );
+    },
+  );
 });

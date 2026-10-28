@@ -24,6 +24,10 @@
     validateOverrideDepositAmount,
   } from "$lib/trade/validateDeploymentArgs";
   import InfoTooltip from "$lib/components/InfoTooltip.svelte";
+  import {
+    BUDGET_TOO_LOW_ERROR,
+    getDsfMinimumTradeAmount,
+  } from "$lib/trade/getDeploymentArgs";
 
   // Network and token setup
   let selectedNetworkForRotateToken = supportedNetworks[0];
@@ -115,7 +119,38 @@
   let costBasisMultiplierError: boolean = false;
   let timePerEpochError: boolean = false;
 
+  // undefined while the minimum for the current token pair is loading
+  let minimumTradeAmount: bigint | undefined;
+  const updateMinimumTradeAmount = async (
+    amount: Token | undefined,
+    rotate: Token | undefined,
+    referenceToken: Token | undefined,
+  ) => {
+    minimumTradeAmount = undefined;
+    if (!amount || !rotate || !referenceToken) return;
+    const minimum = await getDsfMinimumTradeAmount(
+      amount,
+      rotate,
+      referenceToken,
+      dataFetcher,
+    ).then(
+      (result) => result.minimum,
+      // Unknown minimum: deploy preparation reports the underlying error.
+      () => 0n,
+    );
+    if (amount === amountToken && rotate === rotateToken)
+      minimumTradeAmount = minimum;
+  };
+  $: updateMinimumTradeAmount(amountToken, rotateToken, networkTokens[0]);
+
+  $: budgetTooLow =
+    !!maxTradeAmount &&
+    minimumTradeAmount !== undefined &&
+    maxTradeAmount < minimumTradeAmount;
+
   $: disableDeploy =
+    minimumTradeAmount === undefined ||
+    budgetTooLow ||
     !amountToken ||
     !rotateToken ||
     !maxTradeAmount ||
@@ -273,6 +308,11 @@
         validate={validateSelectedAmount}
         bind:isError={maxTradeAmountError}
       />
+    {/if}
+    {#if budgetTooLow}
+      <span class="text-right text-sm text-red-500" data-testid="budget-error"
+        >{BUDGET_TOO_LOW_ERROR}</span
+      >
     {/if}
   </div>
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/svelte";
+import { render, screen, fireEvent, waitFor } from "@testing-library/svelte";
+import { BUDGET_TOO_LOW_ERROR } from "$lib/trade/getDeploymentArgs";
 import DcaStrategy from "./DcaStrategy.svelte";
 import transactionStore from "$lib/transactionStore";
 import { useDataFetcher } from "$lib/dataFetcher";
@@ -480,5 +481,76 @@ describe("DcaStrategy Component", () => {
 
     // TradePrice component should be rendered
     expect(screen.getByTestId("trade-price")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["9.99", true],
+    ["10", false],
+  ])(
+    "should validate the $10 daily minimum budget (%s USDC.e per day, disabled: %s)",
+    async (amount, tooLow) => {
+      render(DcaStrategy);
+
+      await fireEvent.input(screen.getByTestId("amount-input"), {
+        target: { value: amount },
+      });
+      await fireEvent.input(screen.getByTestId("period-input"), {
+        target: { value: "1" },
+      });
+      await fireEvent.input(screen.getByTestId("baseline-input"), {
+        target: { value: "1.5" },
+      });
+
+      const deployButton = screen.getByTestId("deploy-button");
+      await waitFor(() =>
+        tooLow
+          ? expect(deployButton).toBeDisabled()
+          : expect(deployButton).toBeEnabled(),
+      );
+      if (tooLow) {
+        expect(screen.getByTestId("budget-error")).toHaveTextContent(
+          BUDGET_TOO_LOW_ERROR,
+        );
+      } else {
+        expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+      }
+
+      await fireEvent.click(deployButton);
+      expect(transactionStore.handleDeployDca).toHaveBeenCalledTimes(
+        tooLow ? 0 : 1,
+      );
+    },
+  );
+
+  it("should validate the minimum budget against the priced amount token when selling", async () => {
+    // 1 USDC.e quotes at 1.5 TEST, so the per-trade minimum is 1.5 TEST and
+    // the daily minimum is 15 TEST.
+    render(DcaStrategy);
+
+    await fireEvent.change(screen.getAllByRole("combobox")[0], {
+      target: { value: "Sell" },
+    });
+    await fireEvent.input(screen.getByTestId("amount-input"), {
+      target: { value: "14.99" },
+    });
+    await fireEvent.input(screen.getByTestId("period-input"), {
+      target: { value: "1" },
+    });
+    await fireEvent.input(screen.getByTestId("baseline-input"), {
+      target: { value: "1.5" },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId("budget-error")).toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("deploy-button")).toBeDisabled();
+
+    await fireEvent.input(screen.getByTestId("amount-input"), {
+      target: { value: "15" },
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId("deploy-button")).toBeEnabled(),
+    );
+    expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
   });
 });
