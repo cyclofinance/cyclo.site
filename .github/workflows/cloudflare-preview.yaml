@@ -12,9 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: recursive
           fetch-depth: 0
-
       - uses: nixbuild/nix-quick-install-action@v30
         with:
           nix_conf: |
@@ -31,11 +29,6 @@ jobs:
           # before trying to save a new cache
           # 1G = 1073741824
           gc-max-store-size-linux: 1G
-
-      - run: nix develop -c npm ci
-        working-directory: ./cyclo.sol
-      - run: nix develop -c forge build
-        working-directory: ./cyclo.sol
       - run: nix develop -c npm run codegen
       - run: nix develop -c npm run graphql-codegen
       - run: nix develop -c npm run build
@@ -44,7 +37,6 @@ jobs:
           PUBLIC_WALLETCONNECT_ID: ${{ secrets.PUBLIC_WALLETCONNECT_ID }}
           PUBLIC_ETHERSCAN_API_KEY: ${{ secrets.PUBLIC_ETHERSCAN_API_KEY }}
           PUBLIC_PYTH_API_KEY: ${{ secrets.PUBLIC_PYTH_API_KEY }}
-
       - name: Publish
         uses: cloudflare/pages-action@v1
         with:

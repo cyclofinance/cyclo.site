@@ -77,7 +77,7 @@
         abi: erc20PriceOracleReceiptVaultAbi,
         functionName: "previewRedeem",
         address: $selectedCyToken.address,
-        args: [amountToRedeem, receipt.tokenId],
+        args: [amountToRedeem, BigInt(receipt.tokenId)],
       });
       sFlrToReceive = _sFlrToReceive as bigint;
     } catch {
