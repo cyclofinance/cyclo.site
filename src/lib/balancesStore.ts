@@ -428,32 +428,37 @@ const balancesStore = () => {
     if (!selectedToken?.address) return;
     const { blockNumber } = get(blockNumberStore);
 
-    const [lockPrice, cysFlrSupply, underlyingBalanceLockedInCysToken] =
-      await Promise.all([
-        getLockPrice(config, selectedToken).catch((error) => {
-          console.log(
-            `Failed to fetch lock price for ${selectedToken.name}:`,
-            error,
-          );
-          return BigInt(0);
-        }),
-        getcysFLRSupply(config, selectedToken).catch((error) => {
-          console.log(
-            `Failed to fetch supply for ${selectedToken.name}:`,
-            error,
-          );
-          return BigInt(0);
-        }),
-        getUnderlyingBalanceLockedInCysToken(
-          config,
-          selectedToken,
-          selectedToken.underlyingAddress,
-          blockNumber,
-        ).catch((error) => {
-          console.log(`Failed to fetch TVL for ${selectedToken.name}:`, error);
-          return BigInt(0);
-        }),
-      ]);
+    const [
+      lockPrice,
+      lockPriceStale,
+      cysFlrSupply,
+      underlyingBalanceLockedInCysToken,
+    ] = await Promise.all([
+      getLockPrice(config, selectedToken).catch((error) => {
+        console.log(
+          `Failed to fetch lock price for ${selectedToken.name}:`,
+          error,
+        );
+        return BigInt(0);
+      }),
+      getLockPriceFooterStats(config, selectedToken).then(
+        ({ lockPriceStale }) => lockPriceStale,
+        () => false,
+      ),
+      getcysFLRSupply(config, selectedToken).catch((error) => {
+        console.log(`Failed to fetch supply for ${selectedToken.name}:`, error);
+        return BigInt(0);
+      }),
+      getUnderlyingBalanceLockedInCysToken(
+        config,
+        selectedToken,
+        selectedToken.underlyingAddress,
+        blockNumber,
+      ).catch((error) => {
+        console.log(`Failed to fetch TVL for ${selectedToken.name}:`, error);
+        return BigInt(0);
+      }),
+    ]);
 
     update((state) => {
       // Ensure token exists in state, initialize if missing
@@ -482,6 +487,7 @@ const balancesStore = () => {
             ...state.stats[selectedToken.name],
             price: state.stats[selectedToken.name].price,
             lockPrice,
+            lockPriceStale,
             supply: cysFlrSupply,
             underlyingTvl: underlyingBalanceLockedInCysToken,
             usdTvl:

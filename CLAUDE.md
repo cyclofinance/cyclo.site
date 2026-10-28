@@ -23,7 +23,7 @@ Everything runs inside the nix dev shell (`flake.nix` re-exports
 this order (mirrors `.github/workflows/test.yaml`):
 
 ```sh
-cp env.example .env                         # set PUBLIC_WALLETCONNECT_ID, PUBLIC_PYTH_API_KEY
+cp env.example .env                         # set PUBLIC_WALLETCONNECT_ID
 nix develop -c npm run codegen              # @wagmi/cli -> src/generated.ts
 nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
 ```
@@ -37,9 +37,8 @@ nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
   by `src/` code.
 - `npm run graphql-codegen` introspects the live Flare cyclo subgraph (schema
   URL from `src/lib/subgraph-urls.ts`), so it needs network access.
-- `PUBLIC_WALLETCONNECT_ID` (`src/routes/+layout.svelte`) and
-  `PUBLIC_PYTH_API_KEY` (`src/lib/pyth.ts`, the Hermes bearer token) are read
-  via `$env/static/public`; CI injects them as secrets.
+- `PUBLIC_WALLETCONNECT_ID` is read via `$env/static/public` in
+  `src/routes/+layout.svelte`; CI injects it as a secret.
 
 ## Commands
 

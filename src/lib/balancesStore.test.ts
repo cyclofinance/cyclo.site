@@ -311,4 +311,75 @@ describe("balancesStore", () => {
 
     expect(get(balancesStore)).toEqual(buildInitialState());
   });
+
+  const stalePriceRevert = () =>
+    new ContractFunctionExecutionError(
+      new ContractFunctionRevertedError({
+        abi: parseAbi(["error StalePrice()"]),
+        data: "0x19abf40e",
+        functionName: "getPriceNoOlderThan",
+      }),
+      { abi: [], functionName: "getPriceNoOlderThan" },
+    );
+
+  it("marks the selected Arbitrum token stale in refreshPrices on a StalePrice revert", async () => {
+    mockPythPriceRead(async () => {
+      throw stalePriceRevert();
+    });
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: 0n });
+
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+
+    await refreshPrices(
+      mockWagmiConfigStore as unknown as Config,
+      tokenNamed("cyARB.pyth"),
+    );
+
+    expect(get(balancesStore).stats["cyARB.pyth"].lockPriceStale).toBe(true);
+  });
+
+  it("reports a fresh selected Arbitrum token as not stale in refreshPrices", async () => {
+    mockPythPriceRead(async () => ({
+      price: 123456789n,
+      conf: 0n,
+      expo: -8n,
+      publishTime: 0n,
+    }));
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: 5n });
+
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+
+    await refreshPrices(
+      mockWagmiConfigStore as unknown as Config,
+      tokenNamed("cyARB.pyth"),
+    );
+
+    const { stats } = get(balancesStore);
+    expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
+    expect(stats["cyARB.pyth"].lockPrice).toBe(5n);
+  });
+
+  it("reports the selected token as not stale in refreshPrices when the price reads all fail", async () => {
+    mockPythPriceRead(async () => {
+      throw new Error("rpc down");
+    });
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockRejectedValue(new Error("preview failed"));
+
+    (readErc20BalanceOf as Mock).mockResolvedValue(0n);
+
+    await refreshPrices(
+      mockWagmiConfigStore as unknown as Config,
+      tokenNamed("cyARB.pyth"),
+    );
+
+    const { stats } = get(balancesStore);
+    expect(stats["cyARB.pyth"].lockPriceStale).toBe(false);
+    expect(stats["cyARB.pyth"].lockPrice).toBe(0n);
+  });
 });

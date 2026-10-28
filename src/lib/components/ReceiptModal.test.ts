@@ -425,6 +425,59 @@ describe("ReceiptModal Component", () => {
     });
   });
 
+  it("keeps unlock enabled and dispatches it when the token's Pyth price is stale", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+        cysFLR: {
+          lockPrice: BigInt(0),
+          lockPriceStale: true,
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(0),
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(1000000000000000000),
+          signerUnderlyingBalance: BigInt(1000000000000000000),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+
+    render(ReceiptModal, { receipt: mockReceipt, token: selectedToken });
+
+    await userEvent.type(screen.getByTestId("redeem-input"), "0.0001");
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("unlock-button").getAttribute("disabled"),
+      ).toBeFalsy();
+    });
+    await userEvent.click(screen.getByTestId("unlock-button"));
+
+    await waitFor(() => {
+      expect(initiateUnlockTransactionSpy).toHaveBeenCalledOnce();
+    });
+  });
+
   it("should set exact receipt balance when max button is clicked and receipt balance is less than cysFlrBalance", async () => {
     const mockCysFlrBalance = BigInt("1000000000000000000");
     mockBalancesStore.mockSetSubscribeValue(

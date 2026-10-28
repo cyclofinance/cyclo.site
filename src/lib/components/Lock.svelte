@@ -1,7 +1,6 @@
 <script lang="ts">
   import Card from "$lib/components/Card.svelte";
   import transactionStore from "$lib/transactionStore";
-  import { RefreshOutline } from "flowbite-svelte-icons";
   import balancesStore from "$lib/balancesStore";
   import Input from "$lib/components/Input.svelte";
   import {
@@ -24,7 +23,6 @@
   import Select from "./Select.svelte";
   import { switchNetwork } from "@wagmi/core";
   import { formatUnits, parseUnits, type Hex } from "viem";
-  import { arbitrum } from "@wagmi/core/chains";
 
   export let amountToLock = "";
   let disclaimerAcknowledged = false;
@@ -50,6 +48,8 @@
   $: insufficientFunds =
     ($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance ||
       0n) < assets;
+  $: priceStale =
+    $balancesStore.stats[$selectedCyToken.name]?.lockPriceStale === true;
   $: buttonStatus = !amountToLock
     ? ButtonStatus.READY
     : insufficientFunds
@@ -103,7 +103,7 @@
     // re-check synchronously in case the wallet chain changes between
     // render and click (e.g. the disclaimer modal is acknowledged after
     // a chain switch).
-    if ($wrongNetwork) return;
+    if ($wrongNetwork || priceStale) return;
     transactionStore.handleLockTransaction({
       signerAddress: $signerAddress,
       config: $wagmiConfig,
@@ -111,13 +111,6 @@
       assets: assets,
     });
   };
-
-  const refreshSelectedTokenData = async () => {
-    if ($selectedCyToken?.chainId === arbitrum.id) {
-      transactionStore.handlePythPriceUpdate();
-    }
-  };
-  let refreshing = false;
 
   $: if (assets || amountToLock) {
     balancesStore.refreshDepositPreviewSwapValue(
@@ -201,37 +194,26 @@
             {:else}
               Stale or Incorrect price
             {/if}
-            {#if $selectedCyToken?.chainId === arbitrum.id}
-              <button
-                class="refresh-button rounded border border-white/40 px-2 py-1 text-xs font-medium text-white transition hover:border-white hover:text-white/80 disabled:opacity-60"
-                on:click={refreshSelectedTokenData}
-                disabled={refreshing}
-                type="button"
-              >
-                <RefreshOutline class="h-4 w-4" />
-              </button>
-            {:else}
-              <svg width="20" height="20" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  stroke="none"
-                  stroke-width="10"
-                  fill="none"
-                />
-                <circle
-                  class="fill-circle"
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  stroke="white"
-                  stroke-width="10"
-                  fill="none"
-                  stroke-dasharray="282 282"
-                />
-              </svg>
-            {/if}
+            <svg width="20" height="20" viewBox="0 0 100 100">
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                stroke="none"
+                stroke-width="10"
+                fill="none"
+              />
+              <circle
+                class="fill-circle"
+                cx="50"
+                cy="50"
+                r="45"
+                stroke="white"
+                stroke-width="10"
+                fill="none"
+                stroke-dasharray="282 282"
+              />
+            </svg>
           </span>
         {/key}
       </div>
@@ -402,12 +384,20 @@
       </div>
     </div>
 
+    {#if priceStale}
+      <p class="text-center text-sm text-white" data-testid="lock-price-stale">
+        The on-chain Pyth {$selectedCyToken.underlyingSymbol}/USD price on {$selectedCyToken.networkName}
+        is stale, so locking is disabled until it is updated. Unlocking still works.
+      </p>
+    {/if}
+
     {#if $signerAddress}
       <Button
         disabled={insufficientFunds ||
           !assets ||
           !amountToLock ||
-          $wrongNetwork}
+          $wrongNetwork ||
+          priceStale}
         customClass="sm:text-xl text-lg w-full bg-white text-primary"
         dataTestId="lock-button"
         on:click={() => initiateLockWithDisclaimer()}>{buttonStatus}</Button
