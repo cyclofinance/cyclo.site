@@ -23,7 +23,7 @@ in this order (mirrors `.github/workflows/test.yaml`):
 
 ```sh
 git submodule update --init --recursive     # cyclo.sol + its forge deps (slow)
-cp env.example .env                         # set PUBLIC_WALLETCONNECT_ID
+cp env.example .env                         # set PUBLIC_WALLETCONNECT_ID, PUBLIC_PYTH_API_KEY
 nix develop -c npm ci                       # JS deps (the repo root holds the only package.json)
 cd cyclo.sol && nix develop -c forge build && cd ..
 nix develop -c npm run codegen              # @wagmi/cli -> src/generated.ts
@@ -40,8 +40,9 @@ nix develop -c npm run graphql-codegen      # -> src/generated-graphql.ts
   built (`wagmi.config.ts` reads from `cyclo.sol/out/`).
 - `npm run graphql-codegen` introspects the live Flare cyclo subgraph
   (schema URL from `src/lib/subgraph-urls.ts`), so it needs network access.
-- `PUBLIC_WALLETCONNECT_ID` is read via `$env/static/public` in
-  `src/routes/+layout.svelte`; CI injects it as a secret.
+- `PUBLIC_WALLETCONNECT_ID` (`src/routes/+layout.svelte`) and
+  `PUBLIC_PYTH_API_KEY` (`src/lib/pyth.ts`, the Hermes bearer token) are
+  read via `$env/static/public`; CI injects them as secrets.
 
 ## Commands
 

@@ -1,5 +1,6 @@
 import { bytesToHex, isHex } from "viem";
 import type { Abi } from "viem";
+import { PUBLIC_PYTH_API_KEY } from "$env/static/public";
 import ipythAbi from "../../cyclo.sol/out/IPyth.sol/IPyth.json";
 import pythOracleAbi from "../../cyclo.sol/out/PythOracle.sol/PythOracle.json";
 import cycloVault from "../../cyclo.sol/out/CycloVault.sol/CycloVault.json";
@@ -194,7 +195,14 @@ export async function fetchUpdateBlobs(
     }
     u.searchParams.set("encoding", attempt.encoding);
 
-    const resp = await fetch(u.toString());
+    const resp = await fetch(u.toString(), {
+      headers: { Authorization: `Bearer ${PUBLIC_PYTH_API_KEY}` },
+    });
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error(
+        `Hermes rejected the Pyth API key (HTTP ${resp.status}); check PUBLIC_PYTH_API_KEY`,
+      );
+    }
     if (!resp.ok) continue;
 
     const json = (await resp.json()) as HermesJson;

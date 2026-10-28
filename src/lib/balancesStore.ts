@@ -8,7 +8,11 @@ import {
 } from "../generated";
 import { get, writable } from "svelte/store";
 import type { Hex } from "viem";
-import { zeroAddress } from "viem";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  zeroAddress,
+} from "viem";
 import { arbitrum } from "@wagmi/core/chains";
 import type { CyToken } from "./types";
 import {
@@ -29,6 +33,7 @@ interface StatsState {
       supply: bigint;
       price: bigint;
       lockPrice: bigint;
+      lockPriceStale?: boolean;
       underlyingTvl: bigint;
       usdTvl: bigint;
     };
@@ -262,11 +267,22 @@ const getLockPrice = async (
   return result;
 };
 
+const STALE_PRICE_SELECTOR = "0x19abf40e";
+
+const isStalePriceError = (error: unknown) =>
+  error instanceof BaseError &&
+  error.walk(
+    (e) =>
+      e instanceof ContractFunctionRevertedError &&
+      (e.data?.errorName === "StalePrice" ||
+        e.signature === STALE_PRICE_SELECTOR),
+  ) !== null;
+
 const getLockPriceFooterStats = async (
   config: Config,
   selectedToken: CyToken,
   chainId?: number,
-) => {
+): Promise<{ lockPrice: bigint; lockPriceStale: boolean }> => {
   const effectiveChainId = chainId ?? selectedToken.chainId;
 
   // For Arbitrum, use Pyth getPriceNoOlderThan directly
@@ -330,8 +346,11 @@ const getLockPriceFooterStats = async (
         normalizedPrice = unsignedPrice;
       }
 
-      return normalizedPrice;
+      return { lockPrice: normalizedPrice, lockPriceStale: false };
     } catch (error) {
+      if (isStalePriceError(error)) {
+        return { lockPrice: 0n, lockPriceStale: true };
+      }
       console.error("Error getting lock price from Pyth for Arbitrum:", error);
       // Fallback to normal method on error
       const { result } =
@@ -341,7 +360,7 @@ const getLockPriceFooterStats = async (
           account: zeroAddress,
           chainId: effectiveChainId,
         });
-      return result;
+      return { lockPrice: result, lockPriceStale: false };
     }
   }
 
@@ -355,7 +374,7 @@ const getLockPriceFooterStats = async (
       chainId: effectiveChainId,
     },
   );
-  return result;
+  return { lockPrice: result, lockPriceStale: false };
 };
 
 const getcysFLRSupply = async (
@@ -561,7 +580,7 @@ const balancesStore = () => {
                 `Failed to fetch lock price for ${token.name}:`,
                 error,
               );
-              return BigInt(0);
+              return { lockPrice: BigInt(0), lockPriceStale: false };
             },
           ),
           getUnderlyingBalanceLockedInCysToken(
@@ -579,11 +598,12 @@ const balancesStore = () => {
       const stats = {
         supply: supplyResult,
         price: priceResult,
-        lockPrice: lockPriceResult,
+        lockPrice: lockPriceResult.lockPrice,
+        lockPriceStale: lockPriceResult.lockPriceStale,
         underlyingTvl: tvlResult,
         usdTvl:
-          lockPriceResult > 0n
-            ? (tvlResult * lockPriceResult) / BigInt(1e18)
+          lockPriceResult.lockPrice > 0n
+            ? (tvlResult * lockPriceResult.lockPrice) / BigInt(1e18)
             : BigInt(0),
       };
 

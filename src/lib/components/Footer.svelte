@@ -98,13 +98,19 @@
                 <span
                   >Current Lock Price ({token.symbol} per {token.underlyingSymbol})</span
                 >
-                <span
-                  >{Number(
-                    formatEther(
-                      $balancesStore.stats[token.name]?.lockPrice || 0n,
-                    ),
-                  ).toString()}</span
-                >
+                {#if $balancesStore.stats[token.name]?.lockPriceStale}
+                  <span data-testId="lock-price-stale"
+                    >Unavailable (Pyth price stale)</span
+                  >
+                {:else}
+                  <span
+                    >{Number(
+                      formatEther(
+                        $balancesStore.stats[token.name]?.lockPrice || 0n,
+                      ),
+                    ).toString()}</span
+                  >
+                {/if}
               </div>
               <div
                 class="flex flex-col justify-between gap-0 sm:flex-row sm:gap-2"

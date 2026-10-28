@@ -34,6 +34,7 @@ jobs:
         env:
           PUBLIC_WALLETCONNECT_ID: ${{ secrets.PUBLIC_WALLETCONNECT_ID }}
           PUBLIC_ETHERSCAN_API_KEY: ${{ secrets.PUBLIC_ETHERSCAN_API_KEY }}
+          PUBLIC_PYTH_API_KEY: ${{ secrets.PUBLIC_PYTH_API_KEY }}
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -67,4 +68,5 @@ jobs:
         env:
           PUBLIC_WALLETCONNECT_ID: ${{ secrets.PUBLIC_WALLETCONNECT_ID }}
           PUBLIC_ETHERSCAN_API_KEY: ${{ secrets.PUBLIC_ETHERSCAN_API_KEY }}
+          PUBLIC_PYTH_API_KEY: ${{ secrets.PUBLIC_PYTH_API_KEY }}
       - run: nix develop -c pre-commit run --all-files prettier

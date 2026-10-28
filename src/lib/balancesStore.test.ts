@@ -7,7 +7,12 @@ import {
   readErc20TotalSupply,
 } from "../generated";
 import balancesStore from "./balancesStore";
-import { getBlock, type Config } from "@wagmi/core";
+import { getBlock, readContract, type Config } from "@wagmi/core";
+import {
+  ContractFunctionExecutionError,
+  ContractFunctionRevertedError,
+  type Hex,
+} from "viem";
 import type { CyToken } from "$lib/types";
 import { supportedNetworks } from "./stores";
 
@@ -24,12 +29,14 @@ vi.mock("../generated", () => ({
 
 vi.mock("@wagmi/core", () => ({
   getBlock: vi.fn(),
+  readContract: vi.fn(),
 }));
 
 describe("balancesStore", () => {
   const mockSignerAddress = "0x1234567890abcdef";
 
-  const { reset, refreshBalances, refreshPrices } = balancesStore;
+  const { reset, refreshBalances, refreshPrices, refreshFooterStats } =
+    balancesStore;
 
   const buildInitialState = () => {
     const stats: Record<
@@ -158,6 +165,56 @@ describe("balancesStore", () => {
       (BigInt(3e18) * BigInt(1000n)) / BigInt(1e18),
     );
     expect(storeValue.status).toBe("Ready");
+  });
+
+  it("marks an Arbitrum lock price stale only on a Pyth StalePrice revert", async () => {
+    const allTokens = supportedNetworks.flatMap((network) => network.tokens);
+    const cyArb = allTokens.find((token) => token.name === "cyARB.pyth")!;
+    const cyWeth = allTokens.find(
+      (token) => token.name === "cyWETH.pyth",
+    )!;
+    const otherRevertSelector = "0x14aebe68";
+
+    // Every non-price read echoes its address, so the feed id is the vault.
+    (readContract as Mock).mockImplementation(
+      async (
+        _config,
+        {
+          functionName,
+          address,
+          args,
+        }: { functionName: string; address: Hex; args: Hex[] },
+      ) => {
+        if (functionName !== "getPriceNoOlderThan") return address;
+        const data =
+          args[0] === cyArb.address ? "0x19abf40e" : otherRevertSelector;
+        throw new ContractFunctionExecutionError(
+          new ContractFunctionRevertedError({
+            abi: [],
+            data,
+            functionName,
+          }),
+          { abi: [], functionName, contractAddress: address },
+        );
+      },
+    );
+    (
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit as Mock
+    ).mockResolvedValue({ result: BigInt(5) });
+
+    await refreshFooterStats(mockWagmiConfigStore as unknown as Config);
+
+    const { stats } = get(balancesStore);
+    expect(stats[cyArb.name].lockPrice).toBe(0n);
+    expect(stats[cyArb.name].lockPriceStale).toBe(true);
+    expect(stats[cyWeth.name].lockPrice).toBe(5n);
+    expect(stats[cyWeth.name].lockPriceStale).toBe(false);
+    expect(
+      simulateErc20PriceOracleReceiptVaultPreviewDeposit,
+    ).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ address: cyArb.address }),
+    );
   });
 
   it("should reset the store to its initial state", () => {

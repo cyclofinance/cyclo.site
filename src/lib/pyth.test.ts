@@ -6,6 +6,10 @@ import {
   toU64,
 } from "./pyth";
 
+vi.mock("$env/static/public", () => ({
+  PUBLIC_PYTH_API_KEY: "test-pyth-key",
+}));
+
 describe("pyth helpers", () => {
   describe("toU64", () => {
     it("clamps negative values to zero", () => {
@@ -124,6 +128,34 @@ describe("pyth helpers", () => {
       expect(updateData).toEqual(["0x010203"]);
       expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(2);
     });
+
+    it("sends the Pyth API key as a bearer token", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ binary: ["0xdeadbeef"] }),
+      });
+      globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch;
+
+      await fetchUpdateBlobs(["0x1234"]);
+
+      expect(mockFetch).toHaveBeenCalledWith(expect.any(String), {
+        headers: { Authorization: "Bearer test-pyth-key" },
+      });
+    });
+
+    it.each([401, 403])(
+      "throws an API key error on HTTP %i without retrying",
+      async (status) => {
+        const mockFetch = vi.fn().mockResolvedValue({ ok: false, status });
+        globalThis.fetch = mockFetch as unknown as typeof globalThis.fetch;
+
+        await expect(fetchUpdateBlobs(["0x1234"])).rejects.toThrow(
+          `Hermes rejected the Pyth API key (HTTP ${status}); check PUBLIC_PYTH_API_KEY`,
+        );
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+      },
+    );
 
     it("throws when no update data is returned", async () => {
       const mockFetch = vi
