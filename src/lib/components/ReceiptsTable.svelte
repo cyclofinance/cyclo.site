@@ -14,6 +14,7 @@
 
   import ReceiptModal from "$lib/components/ReceiptModal.svelte";
   import Card from "./Card.svelte";
+  import { trimToDecimals } from "$lib/utils/trimToDecimals";
 
   export let token: CyToken;
 
@@ -37,19 +38,21 @@
     // Calculate totals: (balance * 10^18) / tokenId
     // balance is in token.decimals, we scale to 18 decimals, then divide by tokenId (in 18 decimals)
     // Result is total underlying token locked in 18 decimals
-    const totalsFlr = (balance * BigInt(10 ** 18)) / tokenId;
+    const totalsFlr = (balance * 10n ** 18n) / tokenId;
 
     // Calculate per-receipt: 10^36 / tokenId
     // This gives the cyToken per locked underlying token (in 18 decimals)
-    const flrPerReceipt = BigInt(10 ** 36) / tokenId;
+    const flrPerReceipt = 10n ** 36n / tokenId;
 
     return {
       ...receipt,
       totalsFlr: totalsFlr,
-      readableFlrPerReceipt: Number(
+      readableFlrPerReceipt: trimToDecimals(
         formatUnits(flrPerReceipt, token.decimals),
-      ).toFixed(5),
-      readableTotalsFlr: Number(formatUnits(totalsFlr, token.decimals)).toFixed(
+        5,
+      ),
+      readableTotalsFlr: trimToDecimals(
+        formatUnits(totalsFlr, token.decimals),
         5,
       ),
     };
@@ -80,10 +83,10 @@
             {receipt.readableTotalsFlr}
           </TableBodyCell>
           <TableBodyCell data-testid={`number-held-${index}`}>
-            {Number(formatUnits(receipt.balance, token.decimals)).toFixed(5)}
+            {trimToDecimals(formatUnits(receipt.balance, token.decimals), 5)}
           </TableBodyCell>
           <TableBodyCell data-testid={`locked-price-${index}`}>
-            {Number(formatUnits(BigInt(receipt.tokenId), 18)).toFixed(5)}
+            {trimToDecimals(formatUnits(BigInt(receipt.tokenId), 18), 5)}
           </TableBodyCell>
           <TableBodyCell class="">
             <Button
