@@ -1,0 +1,20 @@
+[
+  {
+    "timestamp": "2026-10-28T17:35:00Z",
+    "commit": "88882da4afab9ef86554a99a4c793e3fcd8bb1bf",
+    "testsAfterCommit": "53878ddbaa7fdc87e708492efc302dc97892ad69",
+    "publishedTag": null,
+    "commitsAheadOfTag": null,
+    "scope": "PR #455 (issue #452): src/lib/pyth.ts fetchUpdateBlobs, src/lib/balancesStore.ts stale lock price path, src/lib/components/Footer.svelte stale branch",
+    "tool": "adversarial-mutation-test",
+    "skillVersion": "0.35.0",
+    "summary": {
+      "behaviours": 27,
+      "candidates": 5,
+      "confirmed": 0,
+      "testsBefore": 26,
+      "testsAfter": 29,
+      "filed": []
+    }
+  }
+]
