@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import transactionStore from "./transactionStore";
+import transactionStore, { TransactionStatus } from "./transactionStore";
+import { TransactionErrorMessage } from "./types/errors";
+
+type StoreState = { status: TransactionStatus; error: string };
 import {
   getDcaDeploymentArgs,
   type DcaDeploymentArgs,
@@ -238,5 +241,73 @@ describe("transactionStore.handleDeployDca", () => {
       MOCKED_ORDERBOOK_SUBGRAPH_URL,
       "0xtxhash",
     );
+  });
+
+  it("should show a preparation error instead of staying on Preparing strategy", async () => {
+    vi.mocked(getDcaDeploymentArgs).mockRejectedValueOnce(
+      new Error("Budget too low. Please increase your budget to at least $10."),
+    );
+    let state: StoreState | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    await expect(
+      transactionStore.handleDeployDca(
+        mockOptions as DcaDeploymentArgs,
+        mockDataFetcher,
+      ),
+    ).resolves.toBeUndefined();
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.ERROR);
+    expect(state?.error).toBe(
+      "Budget too low. Please increase your budget to at least $10.",
+    );
+    expect(sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it("should show the generic error for a non-Error preparation rejection", async () => {
+    vi.mocked(getDcaDeploymentArgs).mockRejectedValueOnce("boom");
+    let state: StoreState | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    await transactionStore.handleDeployDca(
+      mockOptions as DcaDeploymentArgs,
+      mockDataFetcher,
+    );
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.ERROR);
+    expect(state?.error).toBe(TransactionErrorMessage.GENERIC);
+    expect(sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it("should show the generic error for an Error with no message", async () => {
+    vi.mocked(getDcaDeploymentArgs).mockRejectedValueOnce(new Error(""));
+    let state: StoreState | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    await transactionStore.handleDeployDca(
+      mockOptions as DcaDeploymentArgs,
+      mockDataFetcher,
+    );
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.ERROR);
+    expect(state?.error).toBe(TransactionErrorMessage.GENERIC);
+  });
+
+  it("should show Preparing strategy while the deployment args are prepared", async () => {
+    vi.mocked(getDcaDeploymentArgs).mockReturnValueOnce(new Promise(() => {}));
+    let state: (StoreState & { message: string }) | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    void transactionStore.handleDeployDca(
+      mockOptions as DcaDeploymentArgs,
+      mockDataFetcher,
+    );
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.PENDING_WALLET);
+    expect(state?.message).toBe("Preparing strategy...");
   });
 });

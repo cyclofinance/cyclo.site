@@ -121,7 +121,7 @@ const transactionStore = () => {
       hash: hash,
       message: message || "",
     }));
-  const transactionError = (message: TransactionErrorMessage, hash?: string) =>
+  const transactionError = (message: string, hash?: string) =>
     update((state) => ({
       ...state,
       status: TransactionStatus.ERROR,
@@ -368,12 +368,22 @@ const transactionStore = () => {
     }, 2000);
   };
 
+  const preparationErrorMessage = (error: unknown) =>
+    error instanceof Error && error.message
+      ? error.message
+      : TransactionErrorMessage.GENERIC;
+
   const handleDeployDca = async (
     options: DcaDeploymentArgs,
     dataFetcher: DataFetcher,
   ) => {
     awaitWalletConfirmation(`Preparing strategy...`);
-    const { deploymentArgs } = await getDcaDeploymentArgs(options, dataFetcher);
+    let deploymentArgs;
+    try {
+      ({ deploymentArgs } = await getDcaDeploymentArgs(options, dataFetcher));
+    } catch (error) {
+      return transactionError(preparationErrorMessage(error));
+    }
     await deployStrategy(deploymentArgs, "DCA");
   };
 
@@ -382,7 +392,12 @@ const transactionStore = () => {
     dataFetcher: DataFetcher,
   ) => {
     awaitWalletConfirmation(`Preparing strategy...`);
-    const { deploymentArgs } = await getDsfDeploymentArgs(options, dataFetcher);
+    let deploymentArgs;
+    try {
+      ({ deploymentArgs } = await getDsfDeploymentArgs(options, dataFetcher));
+    } catch (error) {
+      return transactionError(preparationErrorMessage(error));
+    }
     await deployStrategy(deploymentArgs, "DSF");
   };
 
