@@ -414,7 +414,7 @@ describe("Lock Component", () => {
 
   it("offers no price refresh button for an Arbitrum Pyth token", async () => {
     mockSelectedCyToken.mockSetSubscribeValue(
-      allTokens.find((token) => token.name === "cyARB.pyth")!,
+      get(allTokens).find((token) => token.name === "cyARB.pyth")!,
     );
     render(Lock);
 
