@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import transactionStore from "./transactionStore";
+import transactionStore, { TransactionStatus } from "./transactionStore";
+import { TransactionErrorMessage } from "./types/errors";
+
+type StoreState = { status: TransactionStatus; error: string };
 import {
   getDsfDeploymentArgs,
   type DsfDeploymentArgs,
@@ -366,5 +369,37 @@ describe("transactionStore.handleDeployDsf", () => {
       optionsWithCustomAdvanced,
       mockDataFetcher,
     );
+  });
+
+  it("should show a preparation error instead of staying on Preparing strategy", async () => {
+    vi.mocked(getDsfDeploymentArgs).mockRejectedValueOnce(
+      new Error("Budget too low. Please increase your budget to at least $10."),
+    );
+    let state: StoreState | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    await expect(
+      transactionStore.handleDeployDsf(mockOptions, mockDataFetcher),
+    ).resolves.toBeUndefined();
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.ERROR);
+    expect(state?.error).toBe(
+      "Budget too low. Please increase your budget to at least $10.",
+    );
+    expect(sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it("should show the generic error for a non-Error preparation rejection", async () => {
+    vi.mocked(getDsfDeploymentArgs).mockRejectedValueOnce("boom");
+    let state: StoreState | undefined;
+    const unsubscribe = transactionStore.subscribe((s) => (state = s));
+
+    await transactionStore.handleDeployDsf(mockOptions, mockDataFetcher);
+    unsubscribe();
+
+    expect(state?.status).toBe(TransactionStatus.ERROR);
+    expect(state?.error).toBe(TransactionErrorMessage.GENERIC);
+    expect(sendTransaction).not.toHaveBeenCalled();
   });
 });

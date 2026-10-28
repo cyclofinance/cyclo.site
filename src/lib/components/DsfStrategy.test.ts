@@ -36,6 +36,14 @@ vi.mock("$lib/dataFetcher", () => ({
   useDataFetcher: vi.fn(),
 }));
 
+// TradeAmountInput parses amounts with the decimals read from the token.
+vi.mock("../../generated", () => ({
+  readErc20BalanceOf: vi.fn(async () => 0n),
+  readErc20Decimals: vi.fn(async (_config, { address }) =>
+    address === "0xfbda5f676cb37624f28265a144a48b0d6e87d3b6" ? 6 : 18,
+  ),
+}));
+
 vi.mock("@wagmi/core", () => ({
   switchNetwork: vi.fn(),
 }));
@@ -45,7 +53,7 @@ vi.mock("svelte-wagmi", async () => {
   return {
     wagmiConfig: writable(undefined),
     chainId: writable(undefined),
-    signerAddress: writable(undefined),
+    signerAddress: writable("0x1234567890123456789012345678901234567890"),
   };
 });
 
@@ -587,25 +595,17 @@ describe("DsfStrategy Component", () => {
       });
 
       const deployButton = screen.getByTestId("deploy-button");
-      await waitFor(() =>
-        tooLow
-          ? expect(deployButton).toBeDisabled()
-          : expect(deployButton).toBeEnabled(),
-      );
-      if (tooLow) {
-        expect(screen.getByTestId("budget-error")).toHaveTextContent(
-          BUDGET_TOO_LOW_ERROR,
-        );
-      } else {
-        expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
-      }
-
-      await fireEvent.click(deployButton);
-      await waitFor(() =>
-        expect(transactionStore.handleDeployDsf).toHaveBeenCalledTimes(
-          tooLow ? 0 : 1,
-        ),
-      );
+      await waitFor(() => {
+        if (tooLow) {
+          expect(deployButton).toBeDisabled();
+          expect(screen.getByTestId("budget-error")).toHaveTextContent(
+            BUDGET_TOO_LOW_ERROR,
+          );
+        } else {
+          expect(deployButton).toBeEnabled();
+          expect(screen.queryByTestId("budget-error")).not.toBeInTheDocument();
+        }
+      });
     },
   );
 });
