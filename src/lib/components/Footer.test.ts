@@ -170,4 +170,57 @@ describe("Footer.svelte", () => {
       expect(screen.getByText("$ 1000000000000")).toBeInTheDocument();
     });
   });
+
+  it("shows failed reads as unavailable, not 0", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: BigInt(0),
+          price: BigInt(0),
+          supply: BigInt(0),
+          underlyingTvl: BigInt(0),
+          usdTvl: BigInt(3000),
+        },
+        cysFLR: {
+          lockPrice: null,
+          price: null,
+          supply: null,
+          underlyingTvl: null,
+          usdTvl: null,
+        },
+      },
+      {
+        cyWETH: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+        cysFLR: {
+          signerBalance: BigInt(0),
+          signerUnderlyingBalance: BigInt(0),
+        },
+      },
+      {
+        cusdxOutput: BigInt(0),
+        cyTokenOutput: BigInt(0),
+      },
+    );
+    render(Footer);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("global-tvl")).toHaveTextContent(
+        "Global TVL Unavailable",
+      );
+      expect(screen.getByTestId("tvl")).toHaveTextContent(
+        "Total Value Locked Unavailable / Unavailable",
+      );
+      expect(screen.getByTestId("supply")).toHaveTextContent(
+        "Total cysFLR supply Unavailable",
+      );
+      expect(screen.getByTestId("market-cap-cysFLR")).toHaveTextContent(
+        "cysFLR Market Cap Unavailable",
+      );
+    });
+  });
 });

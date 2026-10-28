@@ -715,4 +715,50 @@ describe("Lock component with divergent share/underlying decimals", () => {
       ).toBe("5");
     });
   });
+
+  it("shows failed deposit preview and swap quote reads as unavailable, not 0", async () => {
+    mockBalancesStore.mockSetSubscribeValue(
+      "Ready",
+      false,
+      {
+        cyWETH: {
+          lockPrice: 0n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+        cysFLR: {
+          lockPrice: 1000000000000000000n,
+          price: 0n,
+          supply: 0n,
+          underlyingTvl: 0n,
+          usdTvl: 0n,
+        },
+      },
+      {
+        cyWETH: { signerBalance: 0n, signerUnderlyingBalance: 0n },
+        cysFLR: { signerBalance: 0n, signerUnderlyingBalance: 10_000_000n },
+      },
+      { cusdxOutput: null, cyTokenOutput: null },
+    );
+    render(Lock);
+
+    await userEvent.type(screen.getByTestId("lock-input"), "5");
+
+    await waitFor(() => {
+      expect(screen.getByTestId("calculated-cysflr").textContent?.trim()).toBe(
+        "Unavailable",
+      );
+      expect(
+        screen.getByTestId("calculated-cysflr-mobile").textContent?.trim(),
+      ).toBe("Unavailable");
+      expect(screen.getByTestId("calculated-cysflr-usd")).toHaveTextContent(
+        "Current market value unavailable",
+      );
+      expect(
+        screen.getByTestId("calculated-cysflr-usd-mobile"),
+      ).toHaveTextContent("Current market value unavailable");
+    });
+  });
 });

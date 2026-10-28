@@ -47,6 +47,17 @@
       return 0n;
     }
   })();
+  $: cyTokenOutputDisplay =
+    $balancesStore.swapQuotes.cyTokenOutput === null
+      ? "Unavailable"
+      : formatUnits(
+          $balancesStore.swapQuotes.cyTokenOutput,
+          $selectedCyToken.decimals,
+        );
+  $: cusdxOutputDisplay =
+    $balancesStore.swapQuotes.cusdxOutput === null
+      ? "unavailable"
+      : `~$ ${formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)}`;
   $: insufficientFunds =
     ($balancesStore.balances[$selectedCyToken.name]?.signerUnderlyingBalance ||
       0n) < assets;
@@ -324,12 +335,7 @@
         {#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
           <span class="text-base" data-testid="calculated-cysflr"
             >{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-              {!amountToLock
-                ? "0"
-                : formatUnits(
-                    $balancesStore.swapQuotes.cyTokenOutput,
-                    $selectedCyToken.decimals,
-                  )}
+              {!amountToLock ? "0" : cyTokenOutputDisplay}
             {:else}
               Stale Price / Incorrect price
             {/if}</span
@@ -341,9 +347,9 @@
         class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
       >
         <span class="text-sm" data-testid="calculated-cysflr-usd"
-          >Current market value ~$ {amountToLock
-            ? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
-            : "0"}</span
+          >Current market value {amountToLock
+            ? cusdxOutputDisplay
+            : "~$ 0"}</span
         >
       </div>
     </div>
@@ -378,12 +384,7 @@
         {#key $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
           <span class="text-base" data-testid="calculated-cysflr-mobile"
             >{#if $balancesStore.stats[$selectedCyToken.name]?.lockPrice}
-              {!amountToLock
-                ? "0"
-                : formatUnits(
-                    $balancesStore.swapQuotes.cyTokenOutput,
-                    $selectedCyToken.decimals,
-                  )}
+              {!amountToLock ? "0" : cyTokenOutputDisplay}
             {:else}
               Stale Price / Incorrect price
             {/if}</span
@@ -395,9 +396,9 @@
         class="flex w-full items-center justify-center gap-2 text-center text-lg font-semibold text-white sm:text-xl"
       >
         <span class="text-sm" data-testid="calculated-cysflr-usd-mobile"
-          >Current market value ~$ {amountToLock
-            ? formatUnits($balancesStore.swapQuotes.cusdxOutput, 6)
-            : "0"}</span
+          >Current market value {amountToLock
+            ? cusdxOutputDisplay
+            : "~$ 0"}</span
         >
       </div>
     </div>
